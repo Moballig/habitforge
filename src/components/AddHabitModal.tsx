@@ -44,23 +44,36 @@ export default function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalP
     onClose();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-habit-title"
+      onKeyDown={handleKeyDown}
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-scale-in max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">New Habit</h2>
+            <h2 id="add-habit-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+              New Habit
+            </h2>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -71,10 +84,11 @@ export default function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalP
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="add-habit-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Habit Name *
             </label>
             <input
+              id="add-habit-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -87,10 +101,11 @@ export default function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalP
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="add-habit-desc" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description
             </label>
             <textarea
+              id="add-habit-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Why is this habit important to you?"

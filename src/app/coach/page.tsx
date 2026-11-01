@@ -6,6 +6,7 @@ import { useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useHabits } from '@/hooks/useHabits';
 import { HabitCategory, CATEGORY_CONFIG, AIMessage } from '@/lib/types';
+import { useToast } from '@/components/Toast';
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -13,6 +14,7 @@ function generateId(): string {
 
 export default function CoachPage() {
   const { habits, addHabit } = useHabits();
+  const { toast } = useToast();
   const chatAction = useAction(api.ai.chat);
   const suggestAction = useAction(api.ai.suggest);
 
@@ -112,6 +114,7 @@ export default function CoachPage() {
       color: CATEGORY_CONFIG[(suggestion.category as HabitCategory) || 'other']?.color || '#6B7280',
       frequency: 'daily',
     });
+    toast(`Added "${suggestion.name}" to your habits`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -227,6 +230,7 @@ export default function CoachPage() {
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || isLoading}
+                aria-label="Send message"
                 className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25 transition-all"
               >
                 <Send className="w-5 h-5" />
@@ -272,7 +276,18 @@ export default function CoachPage() {
                     className="flex items-start justify-between gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{s.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{
+                            backgroundColor:
+                              CATEGORY_CONFIG[(s.category as HabitCategory) || 'other']?.color ||
+                              '#6B7280',
+                          }}
+                          aria-hidden="true"
+                        />
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{s.name}</p>
+                      </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{s.description}</p>
                     </div>
                     <button

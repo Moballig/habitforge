@@ -13,14 +13,14 @@
 
 | Item | Status |
 |------|--------|
-| **Current Phase** | Phase 3 — Polish & UX |
-| **Day** | Day 1 (Nov 1, 2026) — Phases 1 & 2 both closed |
+| **Current Phase** | Phase 4 — Deployment & Testing |
+| **Day** | Day 1 (Nov 1, 2026) — Phases 1–3 all closed |
 | **Build Status** | ✅ `bun run build` passes, lint 0 errors, all routes HTTP 200 |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`) |
 | **AI (Gemini)** | 🟡 Key set, but Google returns **403 — free tier unavailable for this project** (needs billing or a new key from [AI Studio](https://aistudio.google.com/apikey)) |
 | **Deployment** | ⬜ Not deployed to Vercel |
-| **Browser testing** | ⬜ Pending human click-through (`bun dev`) |
-| **Last Updated** | 2026-11-01 21:15 BST |
+| **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
+| **Last Updated** | 2026-11-01 21:35 BST |
 
 ---
 
@@ -59,6 +59,12 @@
 | 21:00 | Updated all 5 docs to Convex architecture | ✅ SRS, Architecture, Endpoints, Plan, Context |
 | 21:05 | **Phase 2:** built `WeeklyChart`, `CategoryChart`, `HabitAnalyticsCard`, `AIReport`, `analytics/page.tsx` | ✅ CSS-only charts, no chart library |
 | 21:12 | Build + lint + Convex push + HTTP smoke test (`/`, `/analytics`, `/coach` → 200) | ✅ Phase 2 closed |
+| 21:15 | **Phase 3:** dark mode toggle (class-based Tailwind v4 + no-FOUC script) | ✅ `ThemeToggle.tsx` |
+| 21:20 | Habit editing modal wired to `habits.update` | ✅ `EditHabitModal.tsx` + card menu |
+| 21:25 | Toast notifications (context provider, aria-live) | ✅ wired to add/delete/edit/suggest |
+| 21:28 | Confetti on all-daily-habits complete (seeded RNG, no deps) | ✅ `Confetti.tsx` |
+| 21:30 | Dashboard loading skeleton + a11y pass (focus-visible, dialog roles, Escape, aria-labels) | ✅ |
+| 21:35 | Fixed new React Compiler lint errors (purity/set-state-in-effect); build + lint green | ✅ Phase 3 closed |
 
 **Files (current):**
 - `convex/schema.ts` — Habits + habitLogs tables (indexed)
@@ -72,6 +78,10 @@
 - `src/components/CategoryChart.tsx` — habit distribution by category
 - `src/components/HabitAnalyticsCard.tsx` — per-habit stats + 7-day strip
 - `src/components/AIReport.tsx` — AI weekly report via `api.ai.analyze`
+- `src/components/ThemeToggle.tsx` — dark/light switch (CSS-swap icons, no hydration mismatch)
+- `src/components/EditHabitModal.tsx` — edit name/description/category/frequency
+- `src/components/Toast.tsx` — toast context provider (success/error/info)
+- `src/components/Confetti.tsx` — celebration overlay (deterministic seeded particles)
 - `src/app/` — Dashboard, AI Coach, **Analytics**, layout, globals.css
 - `docs/*` — Project documentation (5 files)
 
@@ -83,24 +93,17 @@
 
 ## 🔮 What's Next
 
-### Current — Phase 3 (Day 3): Polish & UX
-1. [ ] Polish UI — animations, transitions, hover states
-2. [ ] Dark mode toggle (`ThemeToggle.tsx` — currently system-only)
-3. [ ] Habit editing UI (backend `habits.update` already exists — needs `EditHabitModal.tsx`)
-4. [ ] Toast notifications for actions
-5. [ ] Mobile testing & fixes (320px–768px)
-6. [ ] Accessibility pass (focus states, ARIA labels)
-7. [ ] Confetti on completing all daily habits
+### Current — Phase 4 (Day 4): Deployment & Testing
+1. [ ] Push code to GitHub
+2. [ ] Connect to Vercel, set `NEXT_PUBLIC_CONVEX_URL` env var
+3. [ ] Deploy + verify production (all routes, Convex connection)
+4. [ ] Real-device mobile testing (320px–768px) — **pending human**
+5. [ ] Browser click-through of all features (`bun dev`) — **pending human**
+6. [ ] Lighthouse audit
+7. [ ] README.md with setup instructions
 
 ### Blocked on user
 - [ ] **Gemini 403 billing issue** — either enable billing at https://aistudio.google.com/billing or generate a fresh key at https://aistudio.google.com/apikey and run `bunx convex env set GEMINI_API_KEY=<new_key>`
-- [ ] **Browser click-through** — run `bun dev` and exercise Dashboard / Analytics / Coach with Convex connected
-
-### Day 4 Priorities
-1. [ ] Deploy to Vercel (set `NEXT_PUBLIC_CONVEX_URL` env var there)
-2. [ ] End-to-end testing on production
-3. [ ] Performance optimization (Lighthouse)
-4. [ ] README.md
 
 ### Day 5 Priorities
 1. [ ] Presentation deck (5 slides)
@@ -116,9 +119,10 @@
 | 1 | App not yet tested in browser (`bun dev` manual click-through) | 🔴 Critical | ⬜ Open | Build/lint/smoke tests pass; needs human click-through with Convex |
 | 2 | Gemini AI returns 403 (free tier not available for project) | 🔴 Critical | ⬜ Open | **User action:** billing or new API key — all AI features degrade gracefully meanwhile |
 | 3 | AI report / coach responses untestable until #2 fixed | 🟡 Medium | ⚠️ Blocked by #2 | Error + fallback paths verified via `convex run` |
-| 4 | Dark mode is system-only (no toggle) | 🟢 Low | ⬜ Open | Phase 3 |
-| 5 | No habit editing UI (backend `habits.update` exists) | 🟡 Medium | ⬜ Open | Phase 3 |
-| 6 | Chat history not persisted (session only) | 🟢 Low | ⬜ Open | Could save to localStorage or Convex |
+| 4 | Real-device mobile testing not done | 🟡 Medium | ⬜ Open | Phase 4 — code reviewed for responsive, needs human devices |
+| 5 | Chat history not persisted (session only) | 🟢 Low | ⬜ Open | Could save to localStorage or Convex |
+
+*Resolved: dark mode toggle (3.2), habit editing (3.4), toasts (3.6), confetti (3.1), a11y pass (3.7) — Phase 3.*
 
 ---
 
@@ -202,11 +206,11 @@
 ```
 Day 1 ██████████████████████░░  100% — Foundation + Convex migration verified, build green
 Day 2 ██████████████████████░░  100% — Analytics & AI reports (built early, Nov 1 night)
-Day 3 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Polish & UX (next)
-Day 4 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Deploy & test
+Day 3 ██████████████████████░░  100% — Polish & UX (built early, Nov 1 night)
+Day 4 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Deploy & test (next)
 Day 5 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Submit
 ```
 
 ---
 
-*Last updated: November 1, 2026 — 21:15 BST*
+*Last updated: November 1, 2026 — 21:35 BST*

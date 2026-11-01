@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Flame, Trash2, MoreVertical } from 'lucide-react';
+import { Check, Flame, Trash2, MoreVertical, Pencil } from 'lucide-react';
 import { HabitCategory, CATEGORY_CONFIG } from '@/lib/types';
 import { Id } from '../../convex/_generated/dataModel';
 
@@ -11,6 +11,7 @@ interface HabitData {
   description: string;
   category: HabitCategory;
   color: string;
+  frequency: 'daily' | 'weekdays' | 'weekends' | 'custom';
   currentStreak: number;
   longestStreak: number;
   completionRate: number;
@@ -22,9 +23,10 @@ interface HabitCardProps {
   habit: HabitData;
   onToggle: (id: Id<"habits">) => void;
   onDelete: (id: Id<"habits">) => void;
+  onEdit: (habit: HabitData) => void;
 }
 
-export default function HabitCard({ habit, onToggle, onDelete }: HabitCardProps) {
+export default function HabitCard({ habit, onToggle, onDelete, onEdit }: HabitCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const config = CATEGORY_CONFIG[habit.category];
@@ -53,6 +55,8 @@ export default function HabitCard({ habit, onToggle, onDelete }: HabitCardProps)
           {/* Toggle button */}
           <button
             onClick={handleToggle}
+            aria-label={`Mark ${habit.name} as ${habit.todayCompleted ? 'not completed' : 'completed'}`}
+            aria-pressed={habit.todayCompleted}
             className={`mt-0.5 flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
               habit.todayCompleted
                 ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-105'
@@ -118,15 +122,33 @@ export default function HabitCard({ habit, onToggle, onDelete }: HabitCardProps)
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 opacity-0 group-hover:opacity-100 transition-all"
+              aria-label={`Actions for ${habit.name}`}
+              aria-expanded={showMenu}
+              aria-haspopup="menu"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-8 z-20 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden">
+                <div
+                  role="menu"
+                  className="absolute right-0 top-8 z-20 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-scale-in"
+                >
                   <button
+                    role="menuitem"
+                    onClick={() => {
+                      onEdit(habit);
+                      setShowMenu(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    role="menuitem"
                     onClick={() => {
                       onDelete(habit._id);
                       setShowMenu(false);
