@@ -1,0 +1,28 @@
+// Copyright (C) 2025-26 Subhajit Sahu
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// See LICENSE for full terms
+export * from "./abbreviations/index.js";
+export * from "./about/index.js";
+export * from "./carbohydrates/index.js";
+export * from "./codes/index.js";
+export * from "./columns/index.js";
+export * from "./compositingcentres/index.js";
+export * from "./compositions/index.js";
+export * from "./compositionstats/index.js";
+export * from "./contents/index.js";
+export * from "./descriptions/index.js";
+export * from "./energies/index.js";
+export * from "./frequencydistribution/index.js";
+export * from "./groups/index.js";
+export * from "./hierarchy/index.js";
+export * from "./intakes/index.js";
+export * from "./jonesfactors/index.js";
+export * from "./languages/index.js";
+export * from "./methods/index.js";
+export * from "./groups/index.js";
+export * from "./regions/index.js";
+export * from "./representations/index.js";
+export * from "./samplingunits/index.js";
+export * from "./yieldfactors/index.js";
+export * from "./columndescriptions/index.js";
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImZpbGU6Ly8vaG9tZS9ydW5uZXIvd29yay9pZmN0MjAxNy9pZmN0MjAxNy9pbmRleC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBDb3B5cmlnaHQgKEMpIDIwMjUtMjYgU3ViaGFqaXQgU2FodVxuLy8gU1BEWC1MaWNlbnNlLUlkZW50aWZpZXI6IEFHUEwtMy4wLW9yLWxhdGVyXG4vLyBTZWUgTElDRU5TRSBmb3IgZnVsbCB0ZXJtc1xuZXhwb3J0ICogZnJvbSBcIi4vYWJicmV2aWF0aW9ucy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vYWJvdXQvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2NhcmJvaHlkcmF0ZXMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2NvZGVzL2luZGV4LmpzXCI7XG5leHBvcnQgKiBmcm9tIFwiLi9jb2x1bW5zL2luZGV4LmpzXCI7XG5leHBvcnQgKiBmcm9tIFwiLi9jb21wb3NpdGluZ2NlbnRyZXMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2NvbXBvc2l0aW9ucy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vY29tcG9zaXRpb25zdGF0cy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vY29udGVudHMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2Rlc2NyaXB0aW9ucy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vZW5lcmdpZXMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2ZyZXF1ZW5jeWRpc3RyaWJ1dGlvbi9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vZ3JvdXBzL2luZGV4LmpzXCI7XG5leHBvcnQgKiBmcm9tIFwiLi9oaWVyYXJjaHkvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2ludGFrZXMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL2pvbmVzZmFjdG9ycy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vbGFuZ3VhZ2VzL2luZGV4LmpzXCI7XG5leHBvcnQgKiBmcm9tIFwiLi9tZXRob2RzL2luZGV4LmpzXCI7XG5leHBvcnQgKiBmcm9tIFwiLi9ncm91cHMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL3JlZ2lvbnMvaW5kZXguanNcIjtcbmV4cG9ydCAqIGZyb20gXCIuL3JlcHJlc2VudGF0aW9ucy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4vc2FtcGxpbmd1bml0cy9pbmRleC5qc1wiO1xuZXhwb3J0ICogZnJvbSBcIi4veWllbGRmYWN0b3JzL2luZGV4LmpzXCI7XG5leHBvcnQgKiBmcm9tIFwiLi9jb2x1bW5kZXNjcmlwdGlvbnMvaW5kZXguanNcIjtcbiJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSxzQ0FBc0M7QUFDdEMsNkNBQTZDO0FBQzdDLDZCQUE2QjtBQUM3QixjQUFjLDJCQUEyQjtBQUN6QyxjQUFjLG1CQUFtQjtBQUNqQyxjQUFjLDJCQUEyQjtBQUN6QyxjQUFjLG1CQUFtQjtBQUNqQyxjQUFjLHFCQUFxQjtBQUNuQyxjQUFjLGdDQUFnQztBQUM5QyxjQUFjLDBCQUEwQjtBQUN4QyxjQUFjLDhCQUE4QjtBQUM1QyxjQUFjLHNCQUFzQjtBQUNwQyxjQUFjLDBCQUEwQjtBQUN4QyxjQUFjLHNCQUFzQjtBQUNwQyxjQUFjLG1DQUFtQztBQUNqRCxjQUFjLG9CQUFvQjtBQUNsQyxjQUFjLHVCQUF1QjtBQUNyQyxjQUFjLHFCQUFxQjtBQUNuQyxjQUFjLDBCQUEwQjtBQUN4QyxjQUFjLHVCQUF1QjtBQUNyQyxjQUFjLHFCQUFxQjtBQUNuQyxjQUFjLG9CQUFvQjtBQUNsQyxjQUFjLHFCQUFxQjtBQUNuQyxjQUFjLDZCQUE2QjtBQUMzQyxjQUFjLDJCQUEyQjtBQUN6QyxjQUFjLDBCQUEwQjtBQUN4QyxjQUFjLGdDQUFnQyJ9

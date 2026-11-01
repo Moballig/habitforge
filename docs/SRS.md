@@ -1,6 +1,6 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
-**Version:** 2.1 (Wave 1 live; SRS traceability table added)
+**Version:** 2.2 (Wave 2 core logging live; traceability updated)
 **Date:** November 2, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
@@ -328,9 +328,9 @@ Global apps (MyFitnessPal, Cronometer, MacroFactor, photo-first apps) and Indian
 
 | Entity | Key content | Convex table | Source |
 |--------|-------------|--------------|--------|
-| **FoodItem** | Bangla/English names, aliases, region tags, per-100g and per-serving macros/micros, **source tag** (measured/FCTB/borrowed/user/estimated), household-measure conversions, confidence range, season/price references | `foods` (171 rows) | §4.1, §6-B/K |
+| **FoodItem** | Bangla/English names, aliases, region tags, per-100g and per-serving macros/micros, **source tag** (measured/FCTB/borrowed/user/estimated), household-measure conversions, confidence range, season/price references | `foods` (318 rows) | §4.1, §6-B/K |
 | **Recipe** | Ingredients, oil, servings, cooking method; per-serving values; owner label ("Amma's dal") | ⬜ W2 | §6-B |
-| **MealLog** | Date/time, items + quantities (household measures or grams), method (text/voice/photo/preset), editable result, confidence, source | `mealLogs` (schema ready) | §6-B, §7.3–7.4 |
+| **MealLog** | Date/time, items + quantities (household measures or grams), method (text/voice/photo/preset), editable result, confidence, source | `mealLogs` (schema + core API live) | §6-B, §7.3–7.4 |
 | **Profile** | Age, sex, height, weight, activity, goal, pace, eating style, budget band (taka), household, routine (work/prayer/commute), **safety-screen results**, home region, calibrated plate/rice portion | `profiles` (live) | §6-A, §6-G |
 | **HealthMeasure** | Weight trend entries (with notes: Eid, illness, travel, cycle), waist circumference, waist-to-height ratio; Asian BMI display (23/27.5) | `weighIns` (live) | §3, §5.3, §6-A |
 | **ActivityLog** | Activity type, duration, MET energy, net energy; steps import | `activityLogs` (schema ready) | §5.1, §6-D |
@@ -431,16 +431,16 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-B-01 | Bangla/Banglish text logging | P0 | W2 | 🔄 | `ai.parseMeal` scaffold; UI fixtures |
+| FR-B-01 | Bangla/Banglish text logging | P0 | W2 | 🔄 | Parser wired; 20 local cases + live Groq smoke pass; browser gate pending |
 | FR-B-02 | Photo logging | P0 | W2 | 🔄 | UI fixtures; `analyzePhoto` planned |
-| FR-B-03 | Deshi food DB (BN/EN/aliases) | P0 | W1 | ✅ | 171 rows; `foods.search` |
+| FR-B-03 | Deshi food DB (BN/EN/aliases) | P0 | W1 | ✅ | 318 rows; indexed server search + offline alias search |
 | FR-B-04 | Household measures | P0 | W1 | ✅ | `measures[]` in seed |
-| FR-B-05 | Recents, favourites, copy meal | P0 | W2 | ⬜ | Planned |
+| FR-B-05 | Recents, favourites, copy meal | P0 | W2 | 🔄 | `listRecent` + `copyMeal` live; UI chips/favourites pending |
 | FR-B-06 | Bangla voice (Chrome-only) | P1 | W2 | ⬜ | Probe-gated |
 | FR-B-07 | Rice calibrator | P1 | W2 | 🔄 | UI route exists; not wired |
 | FR-B-08 | Rice type hints | P1 | W2 | ⬜ | GI data in seed |
 | FR-B-09 | Recipe builder | P1 | W2 | 🔄 | UI route exists; not wired |
-| FR-B-10 | Shared-pot mode | P1 | W2 | ⬜ | Planned |
+| FR-B-10 | Shared-pot mode | P1 | W2 | 🔄 | Fraction-of-pot grams + kcal UI/test live; spoon mode pending |
 | FR-B-11 | Street food presets | P1 | W2 | 🔄 | UI route exists; not wired |
 | FR-B-12 | Restaurant/delivery items | P1 | W2 | ⬜ | Planned |
 | FR-B-13 | Barcode scan | P1 | W7 | ⬜ | Later |
@@ -510,7 +510,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-G-01 | Deshi-first food intelligence | P0 | W1 | ✅ | 171-row seed |
+| FR-G-01 | Deshi-first food intelligence | P0 | W1 | ✅ | 318-row seed |
 | FR-G-02 | Regional variants | P1 | W6 | ⬜ | `regionTags` in seed |
 | FR-G-03 | Plate personalisation | P1 | W6 | ⬜ | `calibratedPlate` in profile |
 | FR-G-04 | Ramadan mode | P1 | W6 | ⬜ | Planned |
@@ -563,7 +563,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 |----|---------------------|---|------|--------|----------------|
 | FR-K-01 | Admin CRUD foods/recipes | P1 | W7 | ⬜ | `foods.upsert` exists |
 | FR-K-02 | Report wrong button | P1 | W7 | ⬜ | Planned |
-| FR-K-03 | Source tag on every row | P1 | W1 | ✅ | `sourceTag` on all 171 rows |
+| FR-K-03 | Source tag on every row | P1 | W1 | ✅ | `sourceTag` on all 318 rows |
 | FR-K-04 | Analytics dashboard | P2 | W7 | ⬜ | Planned |
 
 ### 9.3 Non-Functional (NFR-01…10)
@@ -602,7 +602,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 |------|-----------|---------|------------|------------|
 | Engine (ENG/REBAL/ATDEE/SAFETY) | 32 | 24 | 3 | 5 |
 | A Onboarding | 9 | 8 | 0 | 1 |
-| B Logging | 15 | 2 | 4 | 9 |
+| B Logging | 15 | 2 | 6 | 7 |
 | C Tracking | 8 | 0 | 2 | 6 |
 | D Activity | 10 | 1 | 1 | 8 |
 | E Balance | 10 | 4 | 3 | 3 |
@@ -614,6 +614,6 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | K Admin | 4 | 1 | 0 | 3 |
 | NFR | 10 | 6 | 2 | 2 |
 | AC | 10 | 2 | 0 | 8 |
-| **Total** | **140** | **58** | **19** | **63** |
+| **Total** | **140** | **58** | **21** | **61** |
 
-> Status reflects Wave 1 completion (Nov 2, 2026). Wave 2 is the active frontier.
+> Status reflects Wave 1 completion and verified Wave 2 core logging progress (Nov 2, 2026).

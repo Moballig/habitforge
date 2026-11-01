@@ -1,6 +1,6 @@
 # Deshi Health Companion — Backend Functions Documentation
 
-**Version:** 3.2 (aligned with Build Plan v3 — Wave 1 live)
+**Version:** 3.3 (aligned with Build Plan v3 — Wave 2 in progress)
 **Last Updated:** November 2, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
@@ -12,21 +12,19 @@
 
 | Where | What |
 |-------|------|
-| **`lib/engine/`** | Pure TS deterministic functions (`bmr`, `tdee`, `metNetKcal`, `safetyMode`, `rebalance`, `adaptiveTdee`) — **shared by client and Convex**, unit + property tested, **no LLM** |
+| **`src/lib/engine/`** | Pure TS deterministic functions (`bmr`, `tdee`, `metNetKcal`, `safetyMode`, `rebalance`, `adaptiveTdee`) — **shared by client and Convex**, unit + property tested, **no LLM** |
 | **`convex/`** | Tables, queries, mutations, actions (LLM/vision/embedding side effects) |
 | **Client** | Fuzzy search over bundled food JSON (top-5 candidates); `useQuery`/`useMutation`/`useAction` |
-
-> Convex reserved words: avoid `get` as a query name (use `getByName`-style).
 
 | Module | Status | Purpose | Wave |
 |--------|--------|---------|------|
 | `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee — 27 tests, property-tested | W1 |
 | `convex/schema` | ✅ Done (v2 live) | profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs | W1 |
 | `convex/profile` | ✅ Done | `get`, `save`, `energy` — engine computes safetyMode server-side | W1 |
-| `convex/foods` | ✅ Done | `seed`, `seedAll`, `count`, `search`, `getById`, `upsert` — 171 rows live | W1 |
+| `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
 | `convex/ai` | ✅ Base scaffold | `chat` (privacy-safe), `parseMeal` (top-5 candidate pick) | W2/5 |
-| `convex/mealLogs` | ⬜ Planned | Text/photo/preset logging mutations | W2 |
+| `convex/mealLogs` | ✅ Core live | List/create/update/remove/copy/day summary; profile-key checks | W2 |
 | `convex/budget` | ⬜ Planned | 7-day budget, overshoot, spread plan (engine-backed) | W3 |
 | `convex/activity` | ⬜ Planned | MET logging, manual steps | W4 |
 | `convex/rag` | ⬜ Planned | `ctx.vectorSearch` + keyword merge (action only) | W5 |
@@ -85,16 +83,17 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 {
   nameBn: string, nameEn: string,
   aliases: string[],            // Banglish spellings: bhorta, vorta, ভর্তা
-  per100g: { kcal, protein, carb, fat, fiber?, micros? },
+  kcalPer100: number, proteinPer100: number,
+  carbPer100: number, fatPer100: number, fiberPer100?: number,
   measures: { label: string, grams: number }[],  // bati-s, spoon, glass, piece, plate-quarter…
-  sourceTag: "measured" | "fctb" | "borrowed" | "user" | "estimated" | "estimated-recipe",
+  sourceTag: "measured" | "fctb" | "borrowed" | "user" | "estimated" | "estimated-recipe" | "ai-assisted",
   isCooked: boolean,
   rangeLow?: number, rangeHigh?: number,   // uncertain nutrients (Ali & Amin)
   regionTags?: string[],
 }
 ```
 
-**Seed (D1–D3):** FCTB Excel → script → 150 hand-verified staples → grow to 300–500; **plate-ready recipe rows** (cooked rice, dal, bhorta, curries, khichuri, biriyani, tehari, ruti, paratha, singara, fuchka, milk tea, pitha, mishti) tagged `estimated-recipe`. Every row shows its tag in UI.
+**Current seed:** 318 unique demo rows with source tags and plate-ready recipes. `estimated-recipe` rows show ranges. FCTB-tagged values still require D1 source-row verification before production claims.
 
 ### Other tables
 
@@ -104,7 +103,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Convex Queries & Mutations (current — Wave 1 live)
+## 3. Convex Queries & Mutations (current — Wave 2 in progress)
 
 ### `profile` (Wave 1 — ✅ live)
 
@@ -114,14 +113,14 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `profile.save` | mutation | demographics + screening + consent | `{ id, safetyMode, asianBmiBand }` | Engine computes `safetyMode` server-side |
 | `profile.energy` | query | `key?` | `{ bmrKcal, tdeeKcal, floorKcal, allowsDeficit, ... }` | Deterministic; no LLM |
 
-### `foods` (Wave 1 — ✅ live, 171 rows)
+### `foods` (Wave 1–2 — ✅ live, 318 rows)
 
 | Function | Type | Args | Returns | Notes |
 |----------|------|------|---------|-------|
-| `foods.seed` | mutation | — | `{ inserted, total, skipped }` | Idempotent; public for demo |
-| `foods.seedAll` | internalMutation | — | `{ inserted, total, skipped }` | Internal use |
+| `foods.seed` | mutation | — | `{ inserted, updated, removedStale, total, skipped }` | Idempotent reconciliation; public for demo |
+| `foods.seedAll` | internalMutation | — | Same | Internal use |
 | `foods.count` | query | — | `{ total, byTag }` | Source-tag breakdown |
-| `foods.search` | query | `q`, `limit?` | Food[] | Alias + name matching |
+| `foods.search` | query | `q`, `limit?` | Food[] | Indexed Bangla/English name search; bundled client seed adds alias/offline search |
 | `foods.getById` | query | `id` | Food row | |
 | `foods.upsert` | mutation | food row | id | Admin/seed |
 
@@ -133,14 +132,17 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `privacy.deleteMyData` | mutation | `key?`, `confirm: "DELETE"` | `{ ok, deleted }` | Purges all user tables |
 | `privacy.auditTrail` | query | `key?` | AuditLog[] | Last 50 entries |
 
-### `mealLogs` (Wave 2 — ⬜ planned)
+### `mealLogs` (Wave 2 — ✅ core live)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `mealLogs.listByDate` | query | `date` | Day view |
-| `mealLogs.create` | mutation | items[], method | After user confirms parse/photo result |
-| `mealLogs.update` / `remove` | mutation | id | Always editable |
-| `mealLogs.copyMeal` | mutation | sourceId, date | "Same as yesterday" |
+| `mealLogs.listByDate` | query | `key?`, `date` | Bounded day view |
+| `mealLogs.listRecent` | query | `key?`, `limit?` | Recent meals for recents/copy UI |
+| `mealLogs.create` | mutation | `key?`, date, slot, items[], method, time? | Validates positive portions and kcal ranges |
+| `mealLogs.update` | mutation | `key?`, id, items?/slot?/date? | Always editable; key ownership check |
+| `mealLogs.remove` | mutation | `key?`, id | Key ownership check |
+| `mealLogs.copyMeal` | mutation | `key?`, sourceId, targetDate/slot? | "Same as yesterday" backend |
+| `mealLogs.daySummary` | query | `key?`, date | Meal count, kcal range, totals by slot |
 
 ### `budget` / plan (Wave 3 — ⬜ planned)
 
@@ -186,7 +188,7 @@ Pipeline (Wave 5): rewrite → embed → `ctx.vectorSearch` + keyword merge → 
 
 **Current (W1 scaffold):** privacy-safe system prompt only; no RAG, no sources yet.
 
-### 4.2 `ai.parseMeal` (Wave 2 — LLM chooses, code computes)
+### 4.2 `ai.parseMeal` (Wave 2 — ✅ wired; LLM chooses, code computes)
 
 ```ts
 await parseMealAction({
@@ -196,7 +198,7 @@ await parseMealAction({
 // → { picks: [{ id, qty, unit }], notes? } | { error }
 ```
 
-JSON mode; **may not invent foods or numbers**. Code converts units → grams via `measures` and computes kcal. On failure → client shows **tap-to-pick** list. ≤1 clarifying question when top-2 candidates differ a lot in calories.
+JSON mode with a maximum 25-item candidate pool. Returned IDs are checked against that pool; quantity is bounded to `0 < qty ≤ 20`; units are length-bounded. Code converts units → grams via `measures` and computes kcal. On Groq failure, `/log` uses the deterministic offline top candidate per clause. The 20-case local parser set and a live four-item Groq smoke pass.
 
 ### 4.3 `ai.analyzePhoto` (Wave 2 — assisted)
 

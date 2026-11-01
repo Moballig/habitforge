@@ -118,7 +118,9 @@ export default defineSchema({
     seededAt: v.optional(v.number()),
   })
     .index("by_name_en", ["nameEn"])
-    .index("by_source", ["sourceTag"]),
+    .index("by_source", ["sourceTag"])
+    .searchIndex("search_name_en", { searchField: "nameEn" })
+    .searchIndex("search_name_bn", { searchField: "nameBn" }),
 
   // ─── Meal logging (W2 skeleton now) ────────────────────
   mealLogs: defineTable({

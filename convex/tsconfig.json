@@ -21,5 +21,9 @@
     "noEmit": true
   },
   "include": ["./**/*", "../src/lib/engine/**/*.ts", "../src/lib/foods/**/*.ts"],
-  "exclude": ["./_generated", "../src/lib/engine/**/*.test.ts"]
+  "exclude": [
+    "./_generated",
+    "../src/lib/engine/**/*.test.ts",
+    "../src/lib/foods/**/*.test.ts"
+  ]
 }

@@ -51,7 +51,7 @@ flowchart TB
 
 | Layer | Used for | Notes | Repo status |
 |-------|----------|-------|-------------|
-| **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled JSON snapshot (171 rows live) |
+| **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
 | **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 27 tests, property-tested |
 | **Vector store (RAG)** | National dietary guidelines text, FCTB notes, cooking/portion guidance, exercise guidance, curated FAQs | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, cosine, dim 2–4096, ≤256 results) **merged with keyword/alias match**; chunks carry section + page; refuse below tuned threshold | ⬜ Wave 5 |
 | **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Scaffold — Groq via `convex/ai.ts` `groqChat()`; `chat` + `parseMeal` live |
@@ -309,12 +309,17 @@ habitforge/
 │   │   │   ├── adaptive.ts        #    adaptiveTdee
 │   │   │   ├── types.ts           #    Engine types
 │   │   │   └── engine.test.ts     #    27 tests, property-tested
-│   │   ├── foods/seed.ts          #    171-row seed with source tags
+│   │   ├── foods/seed.ts          #    318-row seed with source tags
+│   │   ├── foods/search.ts        #    Offline name/alias search + code-only portion math
+│   │   ├── foods/foods.test.ts    #    Seed integrity + offline search tests
+│   │   ├── foods/parser.ts        #    Clause/quantity/unit extraction + candidate pool/fallback
+│   │   ├── foods/portion.ts       #    Shared-pot fraction → grams
+│   │   ├── foods/parser.test.ts   #    20 Bangla/Banglish gate lines
+│   │   ├── foods/portion.test.ts  #    Shared-pot dal gate
 │   │   ├── i18n.tsx               #    Bangla/English + numerals
 │   │   ├── types.ts               #    UI types (SafetyMode, Profile, FoodItem)
 │   │   ├── mock/index.ts          #    Demo fixtures (until W2+ wiring)
 │   │   ├── format.ts / nav.ts
-│   │   └── ConvexClientProvider.tsx
 │   ├── components/
 │   │   ├── shell/                 #    AppFrame, NavRail, SideNav, BottomTabs, TopBar, RightPanel, Banners
 │   │   ├── data/                  #    Primitives (Num, Range, SourceTag), Cards, Charts (SVG)

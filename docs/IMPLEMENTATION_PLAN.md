@@ -69,9 +69,9 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 | Food DB schema, seed from FCTB, source tags, ranges for uncertain nutrients, measures table | §4, §6-K |
 
 **Gate:** six test profiles give the expected safety mode; property test passes; 150+ foods seeded with visible source tags; hand check of 40 minutes brisk walking at 4.3 MET for 70 kg ≈ 154 kcal net.
-**Gate result (Nov 2):** ✅ 27/27 tests · 171 foods seeded · 154 kcal verified · 6 profiles pass · lint 0 errors · build green
+**Gate result (Nov 2):** ✅ 30/30 tests (27 engine + 3 food) · 318 foods seeded · 154 kcal verified · 6 profiles pass · lint 0 errors · build green
 
-### Wave 2: Logging — ⬜ NEXT
+### Wave 2: Logging — 🔄 IN PROGRESS
 
 | Item | Ref |
 |---|---|
@@ -88,6 +88,8 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 | Barcode scan for local packaged brands (start with a small crowd-built list) | §6-B P1 |
 
 **Gate:** 20 saved Banglish lines parse correctly; five tested plate photos reach correct items after at most one edit; a shared-pot dal entry computes sensible grams.
+
+**Progress (Nov 2):** ✅ 318-row reconciled seed · indexed BN/EN server search + bundled offline alias search · live meal CRUD/day-summary · `/log` saves through Convex · 20 deterministic Bangla/Banglish parser cases pass + live Groq candidate smoke passes · shared-pot 1/5 dal math/UI passes. ⬜ Assisted-photo gate remains; rice/recipe/voice/barcode scope remains.
 
 ### Wave 3: Tracking and the balance engine — ⬜
 
@@ -202,7 +204,7 @@ Report the sample size beside every number and state limits found (mixed dishes,
 | Wave | Title | Gate | Status |
 |------|-------|------|--------|
 | 1 | Foundation (engine, safety, profile, data) | 6 safety profiles · property test · 150+ foods · 154 kcal | ✅ **Done** (Nov 2, 2026) |
-| 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | ⬜ **Next** |
+| 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | 🔄 **In progress** — parser/shared-pot pass; photo pending |
 | 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | ⬜ |
 | 4 | Activity | AQI/heat → indoor · MET minutes match formula | ⬜ |
 | 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | ⬜ |

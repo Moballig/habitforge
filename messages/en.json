@@ -72,7 +72,15 @@
     "rice": "Rice calibrator", "recipe": "Recipe builder", "street": "Street food",
     "reportWrong": "Report wrong calories",
     "portion": "Portion",
-    "candidates": "Candidates"
+    "candidates": "Candidates",
+    "parseLine": "Understand this meal",
+    "parsing": "Understanding…",
+    "parsed": "Meal items added — check portions before saving",
+    "offlineParsed": "AI unavailable — using the offline food matches",
+    "noCandidates": "No matching foods found. Try commas between items.",
+    "potWeight": "Whole pot weight",
+    "myShare": "My share: 1 of",
+    "sharedPotHint": "Enter the cooked pot weight and how many equal shares it serves."
   },
   "plan": {
     "title": "This week",

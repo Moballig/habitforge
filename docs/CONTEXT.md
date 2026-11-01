@@ -15,16 +15,16 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Wave 1 gate met** (engine + safety + profile + 171-food seed) → Wave 2 (meal logging, LLM parser, photo) |
+| **Current Phase** | **Wave 2 in progress** — manual logging, parser and shared-pot sub-gates pass; assisted-photo gate next |
 | **Day** | Day 2 (Nov 2, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, `bun test` 27/27 green, all routes HTTP 200 |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 53/53 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema v2 live (profiles/foods/mealLogs/activityLogs/budgetState/weighIns/auditLogs) |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat model `openai/gpt-oss-120b`; vision plan `qwen/qwen3.8-27b` (probe); embeddings `nomic-embed-text-v1_5` (probe Bangla) |
-| **P0 product surface** | 🔄 Wave 1 done (engine + safety + profile + foods); onboarding saves via Convex; log/plan/coach still on fixtures |
+| **P0 product surface** | 🔄 Onboarding + `/log` use Convex; `/log` has 318-food offline search and live CRUD; plan/coach still on fixtures |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-02 (Wave 1 gate; docs re-audit; DIAGRAMS.md + SRS table added) |
+| **Last Updated** | 2026-11-02 (Wave 2 core logging + 318-food reconciliation verified) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
@@ -33,19 +33,30 @@
 - **Hand-check:** 70 kg, 40 min @ 4.3 MET → **154 kcal net** ✓
 - **Six safety profiles (unit + Convex `profile:save` smoke):** normal / under-18→doctor-first / low BMI→restricted / insulin→doctor-first / ED history→doctor-first / pregnancy→doctor-first
 - **Schema v2 live:** profiles (engine-derived `safetyMode`, Asian BMI), foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs; habit tables dropped
-- **Foods:** **171** rows seeded (`foods:seed`) with sourceTag breakdown — fctb 76, estimated-recipe 58, estimated 19, borrowed 16, measured 1, user 1
+- **Foods:** Wave 1 gate originally used 171 rows; Wave 2 now has **318** reconciled rows — FCTB 111, estimated-recipe 162, estimated 23, borrowed 21, measured 1
 - **Onboarding:** final step → `api.profile.save` (deterministic safetyMode server-side); energy query returns BMR/TDEE/floor
 - **Privacy:** `privacy:deleteMyData` + audit trail live
 - **LLM scaffold:** `ai:chat` (privacy-safe context only), `ai:parseMeal` (top-5 candidate pick — W2)
+
+### Wave 2 progress (Nov 2, 2026)
+
+- `convex/mealLogs.ts`: live `listByDate`, `listRecent`, `create`, `update`, `remove`, `copyMeal`, `daySummary`; bounded indexed reads, return validators, profile-key checks
+- `/log`: bundled offline Bangla/English/Banglish alias search; code-only gram/kcal ranges; Convex create/list/delete; Groq parser with offline fallback
+- Food seed: **318 unique rows**, stale seeded names reconciled safely, indexed Bangla/English server search; 3 regression tests prevent duplicate/invalid rows
+- Parser: **20 deterministic lines pass**; live Groq smoke selected bhat/dal/alu bhorta/dim exactly from 14 candidates
+- Shared pot: 1000 g dal × 1/5 = 200 g; deterministic range test + UI pass
+- Smoke: create → list → copy → summary → wrong-key rejection → cleanup passed on `dev:disciplined-zebra-716`
+- Verification: **53 tests**, lint 0 errors (4 generated warnings), root + Convex TypeScript pass, production build passes
+- Remaining W2 gate: five assisted-photo tests; spoon-based shared-pot entry and other W2 enhancements remain
 
 ### Docs re-audit (Nov 2, 2026)
 
 | Doc | Action | Notes |
 |-----|--------|-------|
-| `ENDPOINTS.md` | ✅ Updated to v3.2 | Module status table now reflects live Wave 1 modules; function names match code (`profile.save` not `upsert`, `foods.search`/`getById`, etc.); habits modules removed |
-| `ARCHITECTURE.md` | ✅ Updated to v3.1 | Layer status table (engine/food DB ✅); data model split live vs planned; directory tree corrected (`src/lib/engine/`, no `hooks/`, no phantom files); fonts fixed to Manrope + Hind Siliguri |
-| `SRS.md` | ✅ Updated to v2.1 | Removed stale `habits`/`habitLogs` note; added Convex table column to data model; **added §9 SRS Traceability Table** (140 IDs with status/priority/wave/implementation) |
-| `IMPLEMENTATION_PLAN.md` | ✅ Updated | Wave status markers (W1 ✅ Done, W2 ⬜ Next); **added §2a Wave status summary table** |
+| `ENDPOINTS.md` | ✅ Updated to v3.3 | Live Wave 1–2 functions, exact signatures, indexed searches, 318-row seed reconciliation |
+| `ARCHITECTURE.md` | ✅ Updated to v3.2 | Layer status, live/planned data model, current directory tree, Manrope + Hind Siliguri |
+| `SRS.md` | ✅ Updated to v2.2 | Convex table mapping + **§9 SRS Traceability Table** (140 IDs with status/priority/wave/implementation) |
+| `IMPLEMENTATION_PLAN.md` | ✅ Updated | Wave status markers (W1 ✅ Done, W2 🔄 In progress); **added §2a Wave status summary table** |
 | **`DIAGRAMS.md`** | ✅ **New** | **DFD Level 0 (context), Level 1 (7 processes), Level 2 (P2 logging, P4 engine, P6 RAG, P1 onboarding); 8 sequence diagrams** |
 | `ui_prompt.md` | ✅ Clean | No changes needed |
 | `ui-design-system.md` | ✅ Clean | Matches implemented tokens |
@@ -56,7 +67,7 @@
 - Design tokens in `src/app/globals.css` (violet/lavender, pastels, radii, Manrope + Hind Siliguri)
 - Shell: `AppFrame`, `NavRail`/`SideNav`/`BottomTabs`, `TopBar`, right panel, offline/safety banners
 - Routes: `/login /signup /onboarding /home /log(+photo|rice|recipe|street) /plan /coach /activity /settings /insights /dev/components`
-- Data still from `src/lib/mock` + `messages/{en,bn}.json`; numbers as props only (no component-side health math)
+- Most pages still use `src/lib/mock`; onboarding and `/log` are Convex-backed; messages come from `messages/{en,bn}.json`
 - Deleted: `analytics`, old `coach`, habit components, `useHabits`
 - Note: gallery lives at `/dev/components` (App Router treats `_dev` as a private folder)
 
@@ -64,7 +75,7 @@
 
 - **New spec:** `docs/bangladeshi-calorie-companion-research.md` — market/gaps (§1–2), health context (§3), data sources (§4), rebalance engine (§5), P0/P1/P2 checklist (§6), RAG architecture (§7), evaluation (§8), demo (§9), build order (§10)
 - **Build plan:** `docs/IMPLEMENTATION_PLAN.md` **v3** — full scope (all P0/P1 + most P2) in **8 waves with exit gates**; v2 quality decisions kept (deterministic `lib/engine/`, LLM never numbers, safety gates, citations, assisted photo, Bangla plan templates); Convex vector search + Qwen vision + PWA substitutions verified
-- **Docs rewritten:** SRS (FR IDs + §1.1a web deviations + §9 traceability table), ARCHITECTURE (v3.1), ENDPOINTS (v3.2 — live Wave 1 status), IMPLEMENTATION_PLAN (v3 waves + status), CONTEXT, **DIAGRAMS** (DFD L0–L2 + 8 sequence diagrams)
+- **Docs rewritten:** SRS v2.2, ARCHITECTURE v3.2, ENDPOINTS v3.3, IMPLEMENTATION_PLAN v3, CONTEXT, **DIAGRAMS** (DFD L0–L2 + 8 sequence diagrams)
 - **Platform kept:** Convex, Groq AI, Claymorphism design system, build/lint green
 - **Never cut:** safety gates · citations · rebalancing engine (wave gates enforce this)
 
@@ -116,7 +127,7 @@
 | 23:55 | Monotone pass: removed all gradients/glows/pulse sticker, single amber hue + warm neutrals everywhere (heatmap, stats, confetti, report, chat) | ✅ lint 0 errors, build ✅, routes 200 |
 | 00:10 | **Migrated AI from Gemini (403 billing block) → Groq** via raw REST in `convex/ai.ts`; model `openai/gpt-oss-120b` (override: `GROQ_MODEL`); removed `@google/generative-ai` + GEMINI env vars | ✅ chat/suggest/analyze all live-tested OK; lint 0 errors, build ✅ |
 
-**Files (current):**
+**Historical files at that time (superseded by the Nov 2 product pivot):**
 - `convex/schema.ts` — Habits + habitLogs tables (indexed)
 - `convex/habits.ts` — list/get/create/update/remove/archive functions
 - `convex/habitLogs.ts` — list/toggle/addNote functions
@@ -147,9 +158,11 @@
 
 **Probes first (30 min each):** Qwen vision on 10 plate photos · Bangla/Banglish on Groq embeddings · Chrome `bn-BD` speech.
 
-**Wave 1 (foundation):** delete habit routes + final route skeleton + i18n · profile + Asian BMI + waist · eating style/budget/household/routine · `lib/engine/` (BMR/TDEE/MET/safetyMode/rebalance + property test) · safety screening modes · consent/delete-data · food DB schema + FCTB seed (150 tagged) + measures table
+**Wave 1 (foundation):** ✅ Complete. Engine, safety modes, onboarding/profile, consent/delete-data, schema and tagged food seed passed their gate.
 
-**Then waves in order (parallel if team >1):** W2 logging (parser, recipes, photo assisted, rice calibrator) → W3 tracking + balance engine UI → W4 activity → W5 RAG coach → W6 personalisation (Ramadan, taka, family) → W7 offline/PWA/admin/polish → W8 proof (eval 50–100 plates, 200 parse lines, 50 RAG Qs, 30 red-team, deploy, deck)
+**Wave 2 now:** manual logging + 318-food search + meal CRUD ✅; next are parser evaluation, shared-pot math, assisted photo flow, rice calibration and recipes.
+
+**Then waves in order:** W3 tracking + balance engine UI → W4 activity → W5 RAG coach → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
 
 **Never cut:** safety gates · citations · rebalancing engine. **Gate rule:** never start a wave with a failing gate behind it. Main branch stays demoable.
 
@@ -177,30 +190,30 @@
 | 2 | Real-device mobile testing not done | 🟡 Medium | ⬜ Open | Code reviewed for responsive, needs human devices |
 | 3 | Chat history not persisted (session only) | 🟢 Low | ⬜ Open | Could save to localStorage or Convex |
 
-*Resolved: Gemini 403 → migrated to Groq (Nov 2, chat/suggest/analyze live-tested); dark mode toggle (3.2), habit editing (3.4), toasts (3.6), confetti (3.1), a11y pass (3.7) — Phase 3.*
+*Pre-pivot issues such as Gemini billing and the old HabitForge UI are retained in session history only; they do not describe the current product.*
 
 ---
 
 ## 💡 Improvement Ideas
 
 ### High Priority
-- [ ] Add confetti animation when completing all daily habits
-- [ ] Add "habit stacking" suggestions from AI (pair habits together)
-- [ ] Add weekly streak badges/achievements
-- [ ] Add data export functionality (JSON or PDF)
+- [ ] Wire `ai.parseMeal` into `/log` and evaluate 20 Banglish lines
+- [ ] Implement shared-pot fraction-to-grams calculation and test dal example
+- [ ] Wire assisted photo confirmation flow and test five plates
+- [ ] Complete rice calibration and recipe persistence
 
 ### Medium Priority
-- [ ] Implement habit reminders (notification API)
-- [ ] Add habit templates (pre-built habit collections)
-- [ ] Add habit notes/journaling per completion (backend `habitLogs.addNote` exists)
-- [ ] Add social sharing of streaks
+- [ ] Wire recents/copy-meal UI to the live backend
+- [ ] Add favourites and report-wrong review queue
+- [ ] Probe Chrome `bn-BD` voice input
+- [ ] Begin W3 budget-state UI integration
 
 ### Low Priority (Post-Buildathon)
 - [ ] User authentication (Convex Auth)
-- [ ] Cross-device sync — **already free via Convex** 🎉
-- [ ] PWA with offline support
-- [ ] Habit categories with custom colors
-- [ ] Integration with Google Calendar
+- [ ] Production-grade FCTB source-row verification
+- [ ] Full PWA queue and local-first storage
+- [ ] Barcode database expansion
+- [ ] Dietitian-reviewed recipe contributions
 
 ---
 
@@ -224,10 +237,11 @@
 
 | Item | Impact | Effort to Fix |
 |------|--------|---------------|
-| No unit tests | Medium | Medium — add Vitest for streak logic in `useHabits.ts` |
+| No Convex function test suite | Medium | Medium — add `convex-test` auth/data-scope coverage |
 | No error boundary component | Medium | Low — add React error boundary |
-| Chat history not persisted | Low | Low — save to localStorage or Convex |
-| Stats computed in hook (duplicated vs lib) | Low | N/A — single source of truth now, keep |
+| FCTB-tagged demo values not source-row verified | High | High — complete D1 import/review before production claims |
+| Shared-pot, photo and parser gates incomplete | High | Medium — remaining Wave 2 work |
+| No authentication; profile key is demo-only | High | Medium — add Convex Auth before multi-user launch |
 | AI responses not cached | Low | Low — add Convex caching if rate-limited |
 
 ---
@@ -256,14 +270,15 @@
 
 ---
 
-## 📈 Daily Progress Chart
+## 📈 Wave Progress
 
 ```
-Day 1 ██████████████████████░░  100% — Foundation + Convex migration verified, build green
-Day 2 ██████████████████████░░  100% — Analytics & AI reports (built early, Nov 1 night)
-Day 3 ██████████████████████░░  100% — Polish & UX (built early, Nov 1 night)
-Day 4 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Deploy & test (next)
-Day 5 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Submit
+Wave 1 ████████████████████████  100% — Foundation gate met
+Wave 2 █████████████████░░░░░░░   70% — Core/parser/shared-pot live; photo gate pending
+Wave 3 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Tracking + balance UI
+Wave 4 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Activity
+Wave 5 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — RAG coach
+Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof
 ```
 
 ---

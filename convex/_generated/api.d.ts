@@ -10,6 +10,7 @@
 
 import type * as ai from "../ai.js";
 import type * as foods from "../foods.js";
+import type * as mealLogs from "../mealLogs.js";
 import type * as privacy from "../privacy.js";
 import type * as profile from "../profile.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   foods: typeof foods;
+  mealLogs: typeof mealLogs;
   privacy: typeof privacy;
   profile: typeof profile;
 }>;

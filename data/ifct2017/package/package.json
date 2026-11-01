@@ -1,0 +1,20 @@
+{
+  "name": "ifct2017",
+  "version": "2.1.2",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    }
+  },
+  "dependencies": {
+    "@jsr/nodef__extra-sql": "^0.1.2",
+    "@jsr/std__csv": "^1.0.6",
+    "lunr": "^2.3.9"
+  }
+}

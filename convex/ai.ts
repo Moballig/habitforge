@@ -7,7 +7,7 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 async function groqChat(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
-  opts: { temperature?: number; maxTokens?: number } = {},
+  opts: { temperature?: number; maxTokens?: number; jsonMode?: boolean } = {},
 ): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) {
@@ -25,6 +25,7 @@ async function groqChat(
       messages,
       temperature: opts.temperature ?? 0.7,
       max_tokens: opts.maxTokens ?? 1024,
+      ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
     }),
   });
   if (!res.ok) {
@@ -66,6 +67,10 @@ export const chat = action({
       }),
     ),
   },
+  returns: v.object({
+    response: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
   handler: async (_ctx, args) => {
     const mode = args.safeContext?.mode ?? "normal";
     const goal = args.safeContext?.goal ?? "maintain";
@@ -113,10 +118,30 @@ export const parseMeal = action({
       }),
     ),
   },
+  returns: v.object({
+    picks: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          qty: v.number(),
+          unit: v.string(),
+        }),
+      ),
+    ),
+    notes: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
   handler: async (_ctx, args) => {
+    const line = args.line.trim();
+    if (!line) return { error: "Meal line is empty" };
+    if (line.length > 500) return { error: "Meal line is too long" };
     if (args.candidates.length === 0) {
       return { error: "No candidates provided" };
     }
+    if (args.candidates.length > 25) {
+      return { error: "Too many candidates" };
+    }
+    const allowedIds = new Set(args.candidates.map((candidate) => candidate.id));
     const list = args.candidates
       .map(
         (c, i) =>
@@ -125,7 +150,11 @@ export const parseMeal = action({
       .join("\n");
     const system = `Pick foods from the candidate list that match the user's meal line.
 Return ONLY JSON: { "picks": [{ "id": string, "qty": number, "unit": string }], "notes"?: string }
-Do not invent food ids. Prefer Banglish/Bangla aliases. Default qty=1 if unsure.`;
+Rules:
+- Never invent an id: copy it exactly from Candidates.
+- Extract quantities and household units only from the meal line.
+- If quantity is absent use qty=1; if unit is absent use unit="default".
+- Prefer Bangla/Banglish alias matches. Do not calculate calories or grams.`;
 
     try {
       const text = await groqChat(
@@ -133,17 +162,34 @@ Do not invent food ids. Prefer Banglish/Bangla aliases. Default qty=1 if unsure.
           { role: "system", content: system },
           {
             role: "user",
-            content: `Candidates:\n${list}\n\nMeal line: ${args.line}`,
+            content: `Candidates:\n${list}\n\nMeal line: ${line}`,
           },
         ],
-        { temperature: 0.1, maxTokens: 400 },
+        { temperature: 0.1, maxTokens: 400, jsonMode: true },
       );
       const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       const parsed = JSON.parse(cleaned) as {
         picks?: { id: string; qty: number; unit: string }[];
         notes?: string;
       };
-      return { picks: parsed.picks ?? [], notes: parsed.notes };
+      const picks = (Array.isArray(parsed.picks) ? parsed.picks : []).flatMap((pick) => {
+        if (
+          typeof pick?.id !== "string" ||
+          !allowedIds.has(pick.id) ||
+          typeof pick.qty !== "number" ||
+          !Number.isFinite(pick.qty) ||
+          pick.qty <= 0 ||
+          pick.qty > 20 ||
+          typeof pick.unit !== "string"
+        ) {
+          return [];
+        }
+        const unit = pick.unit.trim().slice(0, 40) || "default";
+        return [{ id: pick.id, qty: pick.qty, unit }];
+      });
+      if (picks.length === 0) return { error: "No valid candidate picks" };
+      const notes = typeof parsed.notes === "string" ? parsed.notes.slice(0, 200) : undefined;
+      return { picks, notes };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return { error: `parse failed: ${message.slice(0, 200)}` };
