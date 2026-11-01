@@ -13,11 +13,14 @@
 
 | Item | Status |
 |------|--------|
-| **Current Phase** | Phase 1 — Foundation |
-| **Day** | Day 1 (Nov 1, 2026) |
-| **Build Status** | 🟡 In Progress (not yet tested locally) |
-| **Deployment** | ⬜ Not deployed |
-| **Last Updated** | 2026-11-01 20:00 BST |
+| **Current Phase** | Phase 3 — Polish & UX |
+| **Day** | Day 1 (Nov 1, 2026) — Phases 1 & 2 both closed |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, all routes HTTP 200 |
+| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`) |
+| **AI (Gemini)** | 🟡 Key set, but Google returns **403 — free tier unavailable for this project** (needs billing or a new key from [AI Studio](https://aistudio.google.com/apikey)) |
+| **Deployment** | ⬜ Not deployed to Vercel |
+| **Browser testing** | ⬜ Pending human click-through (`bun dev`) |
+| **Last Updated** | 2026-11-01 21:15 BST |
 
 ---
 
@@ -25,7 +28,7 @@
 
 ### Day 1 — November 1, 2026
 
-**Session 1 (19:46–20:05)**
+**Session 1 (19:46–20:05)** — Foundation
 
 | Time | Action | Result |
 |------|--------|--------|
@@ -35,55 +38,66 @@
 | 19:54 | Built core library layer | ✅ `types.ts`, `storage.ts`, `analytics.ts`, `gemini.ts` |
 | 19:55 | Built React hook | ✅ `useHabits.ts` |
 | 19:56 | Built UI components | ✅ Navbar, HabitCard, HabitGrid, StatsCards, AddHabitModal |
-| 19:57 | Built API routes | ✅ `/api/coach`, `/api/analyze`, `/api/suggest` |
+| 19:57 | Built API routes | ✅ `/api/coach`, `/api/analyze`, `/api/suggest` (later replaced by Convex) |
 | 19:57 | Built pages | ✅ Dashboard (`page.tsx`), AI Coach (`coach/page.tsx`) |
 | 19:58 | Updated layout & styles | ✅ `layout.tsx`, `globals.css` |
 | 20:03 | Created documentation | ✅ SRS, Architecture, Endpoints, Implementation Plan |
 
-**Files Created (18 total):**
-- `src/lib/types.ts` — TypeScript interfaces & constants
-- `src/lib/storage.ts` — localStorage CRUD utilities
-- `src/lib/analytics.ts` — Streak & stats calculations
-- `src/lib/gemini.ts` — Gemini API wrapper
-- `src/hooks/useHabits.ts` — Habit state management hook
-- `src/components/Navbar.tsx` — Nav with buildathon sticker
-- `src/components/HabitCard.tsx` — Habit card with toggle
-- `src/components/HabitGrid.tsx` — GitHub-style activity grid
-- `src/components/StatsCards.tsx` — Dashboard stat cards
-- `src/components/AddHabitModal.tsx` — New habit modal
-- `src/app/layout.tsx` — Root layout
-- `src/app/page.tsx` — Dashboard page
-- `src/app/globals.css` — Global styles
-- `src/app/coach/page.tsx` — AI Coach chat page
-- `src/app/api/coach/route.ts` — AI chat endpoint
-- `src/app/api/analyze/route.ts` — Habit analysis endpoint
-- `src/app/api/suggest/route.ts` — Habit suggestions endpoint
+**Session 2 (20:15–21:00)** — Convex migration verified & Phase 1 closed
+
+| Time | Action | Result |
+|------|--------|--------|
+| 20:19 | Migrated backend to Convex (commit `bc65df3`) | ✅ Schema, queries/mutations/actions |
+| 20:35 | Reviewed all code vs Phase 1 plan | ❌ Build was broken (`convex/_generated` missing) |
+| 20:45 | Convex login + project setup + `env set GEMINI_API_KEY` | ✅ `disciplined-zebra-716` |
+| 20:47 | Fixed wrong import path in `HabitCard.tsx` | ✅ TypeScript passes |
+| 20:49 | Fixed Next 16 prerender crash (`new Date()` in hook) | ✅ Build passes — gate stats on `isLoaded` |
+| 20:50 | Removed dead code: `src/app/api/*`, `lib/gemini.ts`, `lib/analytics.ts`, `lib/storage.ts` | ✅ localStorage era fully retired |
+| 20:52 | Updated Gemini model `gemini-2.0-flash` → `gemini-3.8-flash` (old one 404s) | ✅ Model configurable via `GEMINI_MODEL` env |
+| 20:54 | End-to-end AI test via `convex run ai:suggest` | 🟡 Auth OK, but **403 free-tier/billing blocked** (user action needed) |
+| 20:56 | Lint: 0 errors (only warnings in `_generated/*`) | ✅ |
+| 21:00 | Updated all 5 docs to Convex architecture | ✅ SRS, Architecture, Endpoints, Plan, Context |
+| 21:05 | **Phase 2:** built `WeeklyChart`, `CategoryChart`, `HabitAnalyticsCard`, `AIReport`, `analytics/page.tsx` | ✅ CSS-only charts, no chart library |
+| 21:12 | Build + lint + Convex push + HTTP smoke test (`/`, `/analytics`, `/coach` → 200) | ✅ Phase 2 closed |
+
+**Files (current):**
+- `convex/schema.ts` — Habits + habitLogs tables (indexed)
+- `convex/habits.ts` — list/get/create/update/remove/archive functions
+- `convex/habitLogs.ts` — list/toggle/addNote functions
+- `convex/ai.ts` — `chat`, `suggest`, `analyze` actions (Gemini, server-side)
+- `src/lib/types.ts` — HabitCategory, HabitLog, AIMessage, CATEGORY_CONFIG
+- `src/hooks/useHabits.ts` — Convex-backed state + all streak/stats calculations
+- `src/components/` — Navbar, HabitCard, HabitGrid, StatsCards, AddHabitModal, ConvexClientProvider
+- `src/components/WeeklyChart.tsx` — 7-day completion bar chart (CSS-only)
+- `src/components/CategoryChart.tsx` — habit distribution by category
+- `src/components/HabitAnalyticsCard.tsx` — per-habit stats + 7-day strip
+- `src/components/AIReport.tsx` — AI weekly report via `api.ai.analyze`
+- `src/app/` — Dashboard, AI Coach, **Analytics**, layout, globals.css
 - `docs/*` — Project documentation (5 files)
+
+**Removed (superseded by Convex):**
+- `src/app/api/{coach,analyze,suggest}/route.ts` — replaced by `convex/ai.ts` actions
+- `src/lib/storage.ts`, `src/lib/analytics.ts`, `src/lib/gemini.ts` — logic moved into `useHabits.ts` / `convex/ai.ts`
 
 ---
 
 ## 🔮 What's Next
 
-### Immediate (Tonight / Day 2 Morning)
-1. [ ] **Test the app locally** — `bun dev` and verify all features work
-2. [ ] **Fix any build/runtime errors** — TypeScript, import issues, etc.
-3. [ ] **Set up `.env.local`** with Gemini API key
-4. [ ] **Build Analytics page** — `src/app/analytics/page.tsx`
-
-### Day 2 Priorities
-1. [ ] Analytics page with charts (bar chart, category distribution)
-2. [ ] AI weekly report component
-3. [ ] Per-habit analytics cards
-4. [ ] Bug fixes from Day 1 testing
-
-### Day 3 Priorities
+### Current — Phase 3 (Day 3): Polish & UX
 1. [ ] Polish UI — animations, transitions, hover states
-2. [ ] Dark mode toggle
-3. [ ] Habit editing
-4. [ ] Mobile testing & fixes
+2. [ ] Dark mode toggle (`ThemeToggle.tsx` — currently system-only)
+3. [ ] Habit editing UI (backend `habits.update` already exists — needs `EditHabitModal.tsx`)
+4. [ ] Toast notifications for actions
+5. [ ] Mobile testing & fixes (320px–768px)
+6. [ ] Accessibility pass (focus states, ARIA labels)
+7. [ ] Confetti on completing all daily habits
+
+### Blocked on user
+- [ ] **Gemini 403 billing issue** — either enable billing at https://aistudio.google.com/billing or generate a fresh key at https://aistudio.google.com/apikey and run `bunx convex env set GEMINI_API_KEY=<new_key>`
+- [ ] **Browser click-through** — run `bun dev` and exercise Dashboard / Analytics / Coach with Convex connected
 
 ### Day 4 Priorities
-1. [ ] Deploy to Vercel
+1. [ ] Deploy to Vercel (set `NEXT_PUBLIC_CONVEX_URL` env var there)
 2. [ ] End-to-end testing on production
 3. [ ] Performance optimization (Lighthouse)
 4. [ ] README.md
@@ -99,11 +113,12 @@
 
 | # | Issue | Severity | Status | Notes |
 |---|-------|----------|--------|-------|
-| 1 | App not yet tested locally | 🔴 Critical | ⬜ Open | Need to run `bun dev` and verify |
-| 2 | Analytics page not yet built | 🟡 Medium | ⬜ Open | Planned for Day 2 |
-| 3 | No `.env.local` file yet | 🔴 Critical | ⬜ Open | Need Gemini API key |
-| 4 | Dark mode is system-only (no toggle) | 🟢 Low | ⬜ Open | Planned for Day 3 |
-| 5 | No habit editing (only create/delete) | 🟡 Medium | ⬜ Open | Planned for Day 3 |
+| 1 | App not yet tested in browser (`bun dev` manual click-through) | 🔴 Critical | ⬜ Open | Build/lint/smoke tests pass; needs human click-through with Convex |
+| 2 | Gemini AI returns 403 (free tier not available for project) | 🔴 Critical | ⬜ Open | **User action:** billing or new API key — all AI features degrade gracefully meanwhile |
+| 3 | AI report / coach responses untestable until #2 fixed | 🟡 Medium | ⚠️ Blocked by #2 | Error + fallback paths verified via `convex run` |
+| 4 | Dark mode is system-only (no toggle) | 🟢 Low | ⬜ Open | Phase 3 |
+| 5 | No habit editing UI (backend `habits.update` exists) | 🟡 Medium | ⬜ Open | Phase 3 |
+| 6 | Chat history not persisted (session only) | 🟢 Low | ⬜ Open | Could save to localStorage or Convex |
 
 ---
 
@@ -118,12 +133,12 @@
 ### Medium Priority
 - [ ] Implement habit reminders (notification API)
 - [ ] Add habit templates (pre-built habit collections)
-- [ ] Add habit notes/journaling per completion
+- [ ] Add habit notes/journaling per completion (backend `habitLogs.addNote` exists)
 - [ ] Add social sharing of streaks
 
 ### Low Priority (Post-Buildathon)
-- [ ] User authentication (Firebase/NextAuth)
-- [ ] Cloud data sync across devices
+- [ ] User authentication (Convex Auth)
+- [ ] Cross-device sync — **already free via Convex** 🎉
 - [ ] PWA with offline support
 - [ ] Habit categories with custom colors
 - [ ] Integration with Google Calendar
@@ -134,12 +149,15 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| Nov 1 | localStorage over database | Simplicity; no auth needed; sufficient for demo |
-| Nov 1 | Gemini 2.0 Flash over Pro | Faster responses; lower latency; free tier sufficient |
+| Nov 1 | localStorage over database | Simplicity for MVP *(superseded — see Convex row)* |
+| Nov 1 | Gemini 2.0 Flash over Pro | Faster responses; lower latency *(retired by Google — now `gemini-3.8-flash`)* |
 | Nov 1 | No auth/accounts for MVP | Time constraint; focus on core value prop |
 | Nov 1 | CSS-based Tailwind v4 config | Next.js 16 default; no `tailwind.config.ts` needed |
 | Nov 1 | Hook-based state over Redux/Zustand | App is simple enough; no global state library needed |
-| Nov 1 | AI on server-side API routes only | Keep API key secure; never expose to client |
+| Nov 1 | AI on server-side only | Keep API key secure; never expose to client |
+| Nov 1 | **Convex replaces localStorage + API routes** | Real persistence, realtime updates, no separate server; cross-device sync for free; API keys in Convex env |
+| Nov 2* | **CSS-only charts** (no chart.js/recharts) | Zero extra deps, matches Tailwind styling, fast to build; revisit if charts feel limiting |
+| Nov 1 | Gemini model via `GEMINI_MODEL` env var | Swap models without code changes when Google retires one |
 
 ---
 
@@ -147,12 +165,11 @@
 
 | Item | Impact | Effort to Fix |
 |------|--------|---------------|
-| No unit tests | Medium | Medium — add Jest/Vitest for analytics.ts |
-| No input validation on API routes | Low | Low — add Zod schemas |
+| No unit tests | Medium | Medium — add Vitest for streak logic in `useHabits.ts` |
 | No error boundary component | Medium | Low — add React error boundary |
-| localStorage has 5–10MB limit | Low | N/A for demo scale |
-| No loading states on API calls in analytics | Medium | Low — add suspense/loading |
-| Chat history not persisted | Low | Low — save to localStorage |
+| Chat history not persisted | Low | Low — save to localStorage or Convex |
+| Stats computed in hook (duplicated vs lib) | Low | N/A — single source of truth now, keep |
+| AI responses not cached | Low | Low — add Convex caching if rate-limited |
 
 ---
 
@@ -160,9 +177,8 @@
 
 | # | Decision | Options | Deadline |
 |---|----------|---------|----------|
-| 1 | Charting library for analytics | CSS-only bars vs. chart.js vs. recharts | Day 2 |
-| 2 | Deploy URL / custom domain | Default Vercel URL vs. custom domain | Day 4 |
-| 3 | Demo video recording tool | OBS vs. Loom vs. screen recording | Day 5 |
+| 1 | Deploy URL / custom domain | Default Vercel URL vs. custom domain | Day 4 |
+| 2 | Demo video recording tool | OBS vs. Loom vs. screen recording | Day 5 |
 
 ---
 
@@ -184,14 +200,13 @@
 ## 📈 Daily Progress Chart
 
 ```
-Day 1 ████████████████████░░░░░  80% — Foundation built, docs done
-Day 2 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Analytics & AI reports
-Day 3 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Polish & UX
+Day 1 ██████████████████████░░  100% — Foundation + Convex migration verified, build green
+Day 2 ██████████████████████░░  100% — Analytics & AI reports (built early, Nov 1 night)
+Day 3 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Polish & UX (next)
 Day 4 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Deploy & test
 Day 5 ░░░░░░░░░░░░░░░░░░░░░░░░░  0%  — Submit
 ```
 
 ---
 
-*Last updated: November 1, 2026 — 20:05 BST*
-
+*Last updated: November 1, 2026 — 21:15 BST*

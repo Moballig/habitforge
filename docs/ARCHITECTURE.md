@@ -1,46 +1,48 @@
 # HabitForge — System Architecture
 
-**Version:** 1.0 | **Last Updated:** November 1, 2026
+**Version:** 2.0 | **Last Updated:** November 1, 2026
 
 ---
 
 ## 1. System Overview
 
-HabitForge follows a **client-heavy architecture** where the frontend handles all data management (localStorage) and the backend (Next.js API routes) serves exclusively as a secure proxy to the Gemini AI API.
+HabitForge follows a **client-heavy architecture**: the React frontend holds all UI state, while
+**Convex** provides persistence (tables), reactive sync (`useQuery`), and side-effect functions
+(`actions`) that proxy the Google Gemini API. The Next.js server is only a static/SSR shell —
+all data and AI traffic goes through Convex.
 
 ```mermaid
 flowchart TB
     subgraph Client["Browser (Client-Side)"]
         UI["React UI Components"]
         Hook["useHabits Hook"]
-        LS["localStorage"]
-        Analytics["Analytics Engine"]
-        
+        CXP["ConvexProvider / convex/react"]
+        Stats["Stats engine (in hook)"]
+
         UI <--> Hook
-        Hook <--> LS
-        Hook --> Analytics
-        Analytics --> UI
+        Hook --> CXP
+        Hook --> Stats
+        Stats --> UI
     end
-    
-    subgraph Server["Vercel Serverless (Server-Side)"]
-        API_Coach["/api/coach"]
-        API_Analyze["/api/analyze"]
-        API_Suggest["/api/suggest"]
-        Gemini["gemini.ts Client"]
-        
-        API_Coach --> Gemini
-        API_Analyze --> Gemini
-        API_Suggest --> Gemini
+
+    subgraph Convex["Convex Cloud"]
+        Q["queries: habits.list, habitLogs.listAll, ..."]
+        M["mutations: create/update/remove/toggle, ..."]
+        A["actions: ai.chat / ai.suggest / ai.analyze"]
+        DB[(Convex Tables)]
+
+        Q --> DB
+        M --> DB
+        A --> DB
     end
-    
+
     subgraph External["External Services"]
-        GeminiAPI["Google Gemini 2.0 Flash API"]
+        GeminiAPI["Google Gemini API"]
     end
-    
-    UI -- "fetch()" --> API_Coach
-    UI -- "fetch()" --> API_Analyze
-    UI -- "fetch()" --> API_Suggest
-    Gemini -- "HTTPS" --> GeminiAPI
+
+    Hook -- "useQuery / useMutation" --> Q
+    Hook -- "useAction" --> A
+    A -- "HTTPS (GEMINI_API_KEY stays server-side)" --> GeminiAPI
 ```
 
 ---
@@ -49,15 +51,16 @@ flowchart TB
 
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
-| **Framework** | Next.js (App Router) | 16.4.3 | Full-stack React framework |
+| **Framework** | Next.js (App Router) | 16.4.3 | Frontend shell, static prerender, fonts, metadata |
 | **Language** | TypeScript | 5.9.x | Type-safe development |
 | **UI Library** | React | 19.3.0 | Component-based UI |
 | **Styling** | Tailwind CSS | 4.3.x | Utility-first CSS (CSS-based config) |
 | **Icons** | Lucide React | 1.66.x | Consistent icon set |
-| **AI SDK** | @google/generative-ai | 0.24.x | Gemini API client |
+| **Backend/DB** | Convex | 1.49.x | Tables, reactive queries, mutations, actions |
+| **AI SDK** | @google/generative-ai | 0.24.x | Gemini client (runs inside Convex actions) |
 | **Package Manager** | Bun | 1.4.2 | Fast JS package manager & runtime |
-| **Hosting** | Vercel | — | Serverless deployment |
-| **Data Storage** | localStorage | Browser API | Client-side persistence |
+| **Hosting** | Vercel (frontend) + Convex (backend) | — | Serverless deployment |
+| **AI model** | `gemini-3.8-flash` (override via `GEMINI_MODEL`) | — | Default chat/suggest/analyze model |
 
 ---
 
@@ -68,28 +71,32 @@ habitforge/
 ├── docs/                          # 📄 Project documentation
 │   ├── SRS.md                     #    Software Requirements Specification
 │   ├── ARCHITECTURE.md            #    This file
-│   ├── ENDPOINTS.md               #    API endpoint documentation
+│   ├── ENDPOINTS.md               #    Backend functions documentation
 │   ├── IMPLEMENTATION_PLAN.md     #    Full implementation plan
 │   └── CONTEXT.md                 #    Project improvement tracker
+│
+├── convex/                        # ☁️ Convex backend
+│   ├── schema.ts                  #    Tables: habits, habitLogs (+ indexes)
+│   ├── habits.ts                  #    Habit CRUD queries/mutations
+│   ├── habitLogs.ts               #    Completion log queries/mutations
+│   ├── ai.ts                      #    AI actions: chat, suggest, analyze (Gemini)
+│   └── _generated/                #    Auto-generated API types (committed)
 │
 ├── public/                        # 🌐 Static assets
 │   └── favicon.ico
 │
 ├── src/
 │   ├── app/                       # 📱 Next.js App Router pages
-│   │   ├── layout.tsx             #    Root layout (Navbar, fonts, meta)
+│   │   ├── layout.tsx             #    Root layout (ConvexProvider, Navbar, fonts, meta)
 │   │   ├── page.tsx               #    Dashboard (home page)
 │   │   ├── globals.css            #    Global styles & Tailwind config
 │   │   ├── coach/
 │   │   │   └── page.tsx           #    AI Coach chat page
-│   │   ├── analytics/
-│   │   │   └── page.tsx           #    Analytics & reports page (TODO)
-│   │   └── api/                   # 🔌 API Routes (server-side)
-│   │       ├── coach/route.ts     #    AI coaching chat endpoint
-│   │       ├── analyze/route.ts   #    Habit analysis endpoint
-│   │       └── suggest/route.ts   #    Habit suggestion endpoint
+│   │   └── analytics/
+│   │       └── page.tsx           #    Analytics & reports page (Phase 2)
 │   │
 │   ├── components/                # 🧩 Reusable UI components
+│   │   ├── ConvexClientProvider.tsx #  ConvexReactClient + ConvexProvider
 │   │   ├── Navbar.tsx             #    Navigation bar + buildathon sticker
 │   │   ├── HabitCard.tsx          #    Individual habit with toggle
 │   │   ├── HabitGrid.tsx          #    GitHub-style activity grid
@@ -97,40 +104,41 @@ habitforge/
 │   │   └── AddHabitModal.tsx      #    New habit creation modal
 │   │
 │   ├── hooks/                     # 🪝 Custom React hooks
-│   │   └── useHabits.ts           #    Habit CRUD & state management
+│   │   └── useHabits.ts           #    Convex state + streak/stats engine + actions
 │   │
-│   └── lib/                       # 📚 Utility libraries
-│       ├── types.ts               #    TypeScript interfaces & constants
-│       ├── storage.ts             #    localStorage CRUD operations
-│       ├── analytics.ts           #    Streak & stats calculations
-│       └── gemini.ts              #    Gemini API client wrapper
+│   └── lib/                       # 📚 Shared types & constants
+│       └── types.ts               #    HabitCategory, HabitLog, AIMessage, CATEGORY_CONFIG
 │
-├── .env.local                     # 🔐 Environment variables (git-ignored)
-├── next.config.js                 #    Next.js configuration
-├── package.json                   #    Dependencies & scripts
-├── bun.lock                       #    Bun lockfile
-└── tsconfig.json                  #    TypeScript configuration
+├── .env.local                     # 🔐 CONVEX_DEPLOYMENT + NEXT_PUBLIC_CONVEX_URL (git-ignored)
+├── package.json                   # Dependencies & scripts
+├── bun.lock                       # Bun lockfile
+└── tsconfig.json                  # TypeScript configuration
 ```
+
+> **Removed in the Convex migration:** `src/app/api/*` (REST proxy routes),
+> `src/lib/storage.ts` (localStorage), `src/lib/analytics.ts` (moved into the hook),
+> `src/lib/gemini.ts` (moved into `convex/ai.ts`).
 
 ---
 
 ## 4. Data Flow Architecture
 
-### 4.1 Habit CRUD Flow
+### 4.1 Habit CRUD Flow (reactive — no manual refresh)
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant UI as React UI
     participant H as useHabits Hook
-    participant LS as localStorage
+    participant C as Convex (mutation)
+    participant DB as Convex Table
 
     U->>UI: Click "New Habit" / Toggle / Delete
     UI->>H: addHabit() / toggleToday() / deleteHabit()
-    H->>LS: Read current data
-    H->>H: Modify in-memory state
-    H->>LS: Write updated data
-    H->>UI: Return updated state
+    H->>C: useMutation(...)({ ... })
+    C->>DB: insert / patch / delete
+    DB-->>H: reactive update (useQuery re-renders)
+    H-->>UI: new stats computed
     UI->>U: Re-render with new data
 ```
 
@@ -140,38 +148,34 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant UI as Coach Page
-    participant API as /api/coach
+    participant A as Convex action ai.chat
     participant G as Gemini API
 
     U->>UI: Type message & send
     UI->>UI: Add user message to chat
-    UI->>API: POST { message, habitData }
-    API->>API: Build system prompt with habit context
-    API->>G: generateContent(prompt)
-    G-->>API: AI response text
-    API-->>UI: { response: "..." }
+    UI->>A: useAction()({ message, habitData })
+    A->>A: Build system prompt with habit context
+    A->>G: generateContent(prompt)
+    G-->>A: AI response text
+    A-->>UI: { response } | { error }
     UI->>UI: Add assistant message to chat
-    UI->>U: Display AI response
+    UI->>U: Display AI response (or friendly error)
 ```
 
-### 4.3 AI Suggestions Flow
+### 4.3 AI Suggestions & Weekly Report Flow
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant UI as Coach Page
-    participant API as /api/suggest
+    participant UI as Coach / Analytics Page
+    participant A as Convex action ai.suggest / ai.analyze
     participant G as Gemini API
 
-    U->>UI: Enter goal & click "Go"
-    UI->>API: POST { goal, existingHabits }
-    API->>G: generateContent(prompt)
-    G-->>API: JSON array of suggestions
-    API->>API: Parse JSON (with fallback)
-    API-->>UI: { suggestions: [...] }
-    UI->>U: Display suggestion cards
-    U->>UI: Click "+" on a suggestion
-    UI->>UI: Call addHabit() via useHabits
+    UI->>A: { goal, existingHabits } | { habits, logs }
+    A->>G: generateContent(prompt demanding JSON)
+    G-->>A: raw text
+    A->>A: strip code fences, JSON.parse (fallback on failure)
+    A-->>UI: { suggestions } / { analysis } (or fallback)
+    UI->>UI: Render cards / report (add-to-tracker via addHabit)
 ```
 
 ---
@@ -181,8 +185,9 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     Layout["RootLayout"]
-    Layout --> Navbar["Navbar"]
-    Layout --> Pages
+    Layout --> CXP["ConvexClientProvider"]
+    CXP --> Navbar["Navbar"]
+    CXP --> Pages
 
     subgraph Pages["Pages (App Router)"]
         Dashboard["/ — Dashboard"]
@@ -198,42 +203,38 @@ flowchart TD
     Coach --> ChatUI["Chat Messages"]
     Coach --> SuggestionPanel["AI Suggestions Sidebar"]
 
-    Analytics --> AnalyticsCharts["Charts & Reports"]
-    Analytics --> AIAnalysis["AI Weekly Report"]
+    Analytics --> AnalyticsCharts["WeeklyChart / CategoryChart"]
+    Analytics --> HabitAnalyticsCards["HabitAnalyticsCard (×N)"]
+    Analytics --> AIReport["AIReport (ai.analyze)"]
 
     subgraph Hooks["Custom Hooks"]
-        useHabits["useHabits()"]
-    end
-
-    subgraph Lib["Libraries"]
-        types["types.ts"]
-        storage["storage.ts"]
-        analytics_lib["analytics.ts"]
-        gemini["gemini.ts"]
+        useHabits["useHabits() — queries, mutations, stats"]
     end
 
     Dashboard --> useHabits
     Coach --> useHabits
     Analytics --> useHabits
-    useHabits --> storage
-    useHabits --> analytics_lib
-    storage --> types
+    useHabits --> convex["convex/ functions"]
 ```
 
 ---
 
 ## 6. State Management
 
-HabitForge uses a **hook-based state management** pattern — no external state library (Redux, Zustand, etc.) is needed.
+Hook-based state via **Convex reactive queries** — no Redux/Zustand, no manual cache:
 
 | State | Location | Persistence |
 |-------|----------|-------------|
-| Habit definitions | `useHabits` hook → localStorage | Persistent (browser) |
-| Habit completion logs | `useHabits` hook → localStorage | Persistent (browser) |
-| Computed stats | Derived in `useHabits` from habits + logs | Computed on render |
+| Habit definitions | `useQuery(api.habits.list)` inside `useHabits` | Persistent (Convex) |
+| Habit completion logs | `useQuery(api.habitLogs.listAll)` inside `useHabits` | Persistent (Convex) |
+| Computed stats (streaks, rates, 7-day trend) | Derived in `useHabits` on every query update | Recomputed on render |
 | AI chat messages | `useState` in Coach page | Session only |
 | AI suggestions | `useState` in Coach page | Session only |
 | UI state (modals, menus) | `useState` in components | Session only |
+
+**Loading model:** Convex `useQuery` returns `undefined` until data arrives. `useHabits` exposes
+`isLoaded`; before that it returns zeroed stats **without evaluating any date logic** (required
+by Next.js 16 — `new Date()` must not run during static prerender).
 
 ---
 
@@ -241,11 +242,11 @@ HabitForge uses a **hook-based state management** pattern — no external state 
 
 | Concern | Mitigation |
 |---------|-----------|
-| API key exposure | Gemini API key stored in `.env.local`, accessed only via server-side API routes; never sent to client |
-| Input injection | AI prompts use template literals with user input; Gemini handles its own safety filters |
-| Data privacy | All habit data stays in the user's browser (localStorage); only habit names/stats sent to Gemini for coaching |
-| XSS | React's default JSX escaping; no `dangerouslySetInnerHTML` used |
-| CORS | Next.js API routes are same-origin; no CORS configuration needed |
+| API key exposure | `GEMINI_API_KEY` lives in **Convex deployment env vars**, read only inside `convex/ai.ts` actions (`"use node"`); never bundled to the client |
+| Input validation | Convex validators (`v.string()`, `v.id()`, unions) reject bad args before handlers run |
+| Data privacy | Habit data stored in the user's Convex deployment; only habit names/stats are sent to Gemini in prompts |
+| XSS | React's default JSX escaping; no `dangerouslySetInnerHTML` |
+| Secrets in git | `.env*` is git-ignored; no secrets in source |
 
 ---
 
@@ -254,23 +255,22 @@ HabitForge uses a **hook-based state management** pattern — no external state 
 ```mermaid
 flowchart LR
     Dev["Developer (local)"] -->|"git push"| GH["GitHub Repo"]
-    GH -->|"Auto Deploy"| Vercel["Vercel Platform"]
-    
-    subgraph Vercel
-        Edge["Edge Network (CDN)"]
-        SSR["Serverless Functions"]
-        Edge --> SSR
-    end
-    
-    SSR -->|"HTTPS"| Gemini["Gemini API"]
-    User["End User"] -->|"HTTPS"| Edge
+    GH -->|"Auto Deploy"| Vercel["Vercel (Next.js)"]
+    Dev -->|"convex dev --once"| Convex["Convex Cloud"]
+    GH -.->|"CI / manual"| Convex
+
+    Vercel -->|"HTTPS"| User["End User"]
+    User -->|"HTTPS (NEXT_PUBLIC_CONVEX_URL)"| Convex
+    Convex -->|"HTTPS (GEMINI_API_KEY)"| Gemini["Gemini API"]
 ```
 
 | Environment | URL | Purpose |
 |------------|-----|---------|
-| Development | `http://localhost:3000` | Local development |
+| Development | `http://localhost:3000` + Convex dev deployment | Local development |
 | Preview | `https://habitforge-*.vercel.app` | PR preview deployments |
 | Production | `https://habitforge.vercel.app` | Live production app |
+
+**Vercel env vars needed:** `NEXT_PUBLIC_CONVEX_URL` (from `.env.local`).
 
 ---
 
@@ -281,7 +281,7 @@ flowchart LR
 | **Code Splitting** | Next.js App Router automatic route-based splitting |
 | **Client Components** | Only pages and interactive components are `'use client'` |
 | **Font Optimization** | `next/font/google` for Geist fonts (zero layout shift) |
-| **Minimal Dependencies** | Only 3 runtime deps: `next`, `react`, `@google/generative-ai` + `lucide-react` |
-| **No Database Overhead** | localStorage reads are synchronous and near-instant |
-| **AI Caching** | API responses could be cached in future (not MVP) |
-
+| **Indexed Reads** | Convex indexes on `habitId`, `date`, `habitId+date` — no full scans |
+| **Minimal Dependencies** | Runtime deps: `next`, `react`, `convex`, `@google/generative-ai`, `lucide-react` |
+| **Reactive Updates** | Only changed queries re-render — no refetch polling |
+| **Static Prerender** | Dashboard/coach pages prerender as static shells; data streams in client-side |

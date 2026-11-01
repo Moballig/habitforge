@@ -3,7 +3,7 @@
 **Project:** HabitForge — AI Habit Tracker & Accountability Coach
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
 **Timeline:** November 1–5, 2026 (5 days)
-**Stack:** Next.js 16 + Tailwind CSS 4 + Gemini API + Vercel
+**Stack:** Next.js 16 + Tailwind CSS 4 + **Convex** + Gemini API + Vercel
 
 ---
 
@@ -15,6 +15,15 @@ HabitForge is an AI-powered habit tracking web app that goes beyond simple check
 
 ## Phase 1: Foundation (Day 1 — Nov 1) ✅
 
+> **Closed 2026-11-01 21:00 BST.** All tasks done. During closure the storage layer was
+> migrated from localStorage + Next.js API routes to **Convex** (schema, queries/mutations,
+> AI actions). Dead code removed (`src/app/api/*`, `lib/storage.ts`, `lib/analytics.ts`,
+> `lib/gemini.ts`). `bun run build` ✅ · lint 0 errors ✅ · Convex deployed ✅.
+> **Open external issue:** Gemini returns 403 (free tier unavailable for the user's Google
+> project) — needs billing or a new API key; AI degrades gracefully until then.
+> Analytics task 1.5/1.15 files changed: stats now live in `src/hooks/useHabits.ts`,
+> AI in `convex/ai.ts`.
+
 ### Objectives
 Set up the project, build core data layer, and implement the main dashboard.
 
@@ -23,11 +32,11 @@ Set up the project, build core data layer, and implement the main dashboard.
 | # | Task | Status | File(s) |
 |---|------|--------|---------|
 | 1.1 | Initialize Next.js 16 project with Bun | ✅ Done | `package.json` |
-| 1.2 | Install dependencies: `@google/generative-ai`, `lucide-react` | ✅ Done | `package.json` |
+| 1.2 | Install dependencies: `@google/generative-ai`, `lucide-react`, `convex` | ✅ Done | `package.json` |
 | 1.3 | Define TypeScript types & constants | ✅ Done | `src/lib/types.ts` |
-| 1.4 | Build localStorage CRUD utilities | ✅ Done | `src/lib/storage.ts` |
-| 1.5 | Build analytics/stats calculation engine | ✅ Done | `src/lib/analytics.ts` |
-| 1.6 | Build Gemini API client wrapper | ✅ Done | `src/lib/gemini.ts` |
+| 1.4 | Build persistence layer (localStorage CRUD → **Convex tables/mutations**) | ✅ Done | `convex/schema.ts`, `convex/habits.ts`, `convex/habitLogs.ts` |
+| 1.5 | Build analytics/stats calculation engine | ✅ Done | `src/hooks/useHabits.ts` (streaks, rates, 7-day trend) |
+| 1.6 | Build Gemini AI integration (**Convex actions**) | ✅ Done | `convex/ai.ts` (chat, suggest, analyze) |
 | 1.7 | Build `useHabits` custom hook | ✅ Done | `src/hooks/useHabits.ts` |
 | 1.8 | Build Navbar with buildathon sticker | ✅ Done | `src/components/Navbar.tsx` |
 | 1.9 | Build HabitCard component | ✅ Done | `src/components/HabitCard.tsx` |
@@ -35,20 +44,26 @@ Set up the project, build core data layer, and implement the main dashboard.
 | 1.11 | Build HabitGrid (GitHub-style) | ✅ Done | `src/components/HabitGrid.tsx` |
 | 1.12 | Build StatsCards component | ✅ Done | `src/components/StatsCards.tsx` |
 | 1.13 | Build Dashboard page | ✅ Done | `src/app/page.tsx` |
-| 1.14 | Update global styles & layout | ✅ Done | `src/app/globals.css`, `layout.tsx` |
-| 1.15 | Build API routes (coach, analyze, suggest) | ✅ Done | `src/app/api/*/route.ts` |
+| 1.14 | Update global styles & layout | ✅ Done | `src/app/globals.css`, `layout.tsx`, `ConvexClientProvider.tsx` |
+| 1.15 | Build AI endpoints (coach, analyze, suggest) | ✅ Done | `convex/ai.ts` *(was `src/app/api/*/route.ts` — removed in Convex migration)* |
 | 1.16 | Build AI Coach page | ✅ Done | `src/app/coach/page.tsx` |
 | 1.17 | Create project documentation | ✅ Done | `docs/*` |
 
 ### Deliverables
-- ✅ Working dashboard with habit CRUD
-- ✅ AI Coach page with chat and suggestions
-- ✅ All API routes implemented
-- ✅ Complete documentation suite
+- ✅ Working dashboard with habit CRUD (realtime via Convex)
+- ✅ AI Coach page with chat and suggestions (blocked on Google billing for live responses)
+- ✅ All AI functions implemented (`chat`, `suggest`, `analyze`)
+- ✅ Complete documentation suite (updated for Convex architecture)
+- ✅ `bun run build` green, lint clean, Convex functions deployed
 
 ---
 
-## Phase 2: Analytics & AI Reports (Day 2 — Nov 2)
+## Phase 2: Analytics & AI Reports (Day 2 — Nov 2) ✅
+
+> **Closed 2026-11-01 21:15 BST** (completed early, Day 1 night). Charts are CSS-only (no
+> chart library). `bun run build` ✅ with `/analytics` route, lint 0 errors, all pages HTTP 200
+> on `next start`. **Open:** live AI responses still blocked by Gemini 403 (Google billing) —
+> error/fallback paths verified instead.
 
 ### Objectives
 Build the analytics page, implement AI-powered weekly reports, and add the 7-day trend chart.
@@ -57,19 +72,19 @@ Build the analytics page, implement AI-powered weekly reports, and add the 7-day
 
 | # | Task | Status | File(s) |
 |---|------|--------|---------|
-| 2.1 | Build Analytics page layout | ⬜ TODO | `src/app/analytics/page.tsx` |
-| 2.2 | Build per-habit analytics cards | ⬜ TODO | `src/components/HabitAnalyticsCard.tsx` |
-| 2.3 | Build 7-day completion bar chart | ⬜ TODO | `src/components/WeeklyChart.tsx` |
-| 2.4 | Integrate AI weekly report generation | ⬜ TODO | `src/components/AIReport.tsx` |
-| 2.5 | Add category distribution visualization | ⬜ TODO | `src/components/CategoryChart.tsx` |
-| 2.6 | Connect analytics page to useHabits hook | ⬜ TODO | `src/app/analytics/page.tsx` |
-| 2.7 | Test AI Coach with various prompts | ⬜ TODO | Manual |
-| 2.8 | Fix any bugs from Day 1 | ⬜ TODO | Various |
+| 2.1 | Build Analytics page layout | ✅ Done | `src/app/analytics/page.tsx` |
+| 2.2 | Build per-habit analytics cards | ✅ Done | `src/components/HabitAnalyticsCard.tsx` |
+| 2.3 | Build 7-day completion bar chart | ✅ Done | `src/components/WeeklyChart.tsx` |
+| 2.4 | Integrate AI weekly report generation | ✅ Done | `src/components/AIReport.tsx` (via `api.ai.analyze`) |
+| 2.5 | Add category distribution visualization | ✅ Done | `src/components/CategoryChart.tsx` |
+| 2.6 | Connect analytics page to useHabits hook | ✅ Done | `src/app/analytics/page.tsx` |
+| 2.7 | Test AI Coach with various prompts | ⚠️ Blocked | Gemini 403 (Google billing) — needs user key/billing fix |
+| 2.8 | Fix any bugs from Day 1 | ✅ Done | Fixed `HabitCard` import, Next 16 prerender `new Date()`, retired `gemini-2.0-flash` model |
 
 ### Deliverables
-- Analytics page with charts and per-habit stats
-- AI-powered weekly report generation
-- Bug fixes from Day 1
+- ✅ Analytics page with charts and per-habit stats
+- ✅ AI-powered weekly report generation (error/fallback handling verified)
+- ✅ Bug fixes from Day 1
 
 ---
 
@@ -185,7 +200,8 @@ Final polish, create presentation deck, record optional demo video, and submit.
 |------|------------|--------|-----------|
 | Gemini API rate limits hit | Low | Medium | Use free tier wisely; cache responses; fallback defaults |
 | Gemini API downtime | Low | High | App works for tracking without AI; show friendly error |
-| localStorage data loss | Medium | Medium | Document limitation; could add export feature |
+| Convex free tier limits hit | Low | Medium | App is single-user demo scale; well within quota |
+| Convex downtime | Low | High | Rare; AI-independent tracking also depends on it — acceptable for demo |
 | Vercel deployment issues | Low | High | Test deploy early (Day 2); have backup plan |
 | Scope creep | High | High | Stick to priority matrix; nice-to-haves are last |
 | Mobile responsiveness bugs | Medium | Medium | Test on real devices early; use responsive DevTools |

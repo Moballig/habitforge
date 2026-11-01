@@ -2,7 +2,10 @@
 
 import { useMemo } from 'react';
 import { HabitLog } from '@/lib/types';
-import { formatDate } from '@/lib/storage';
+
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
 
 interface HabitGridProps {
   logs: HabitLog[];

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { HabitCategory, CATEGORY_CONFIG } from "@/lib/types";
+import { HabitCategory } from "@/lib/types";
 import { Id } from "../../convex/_generated/dataModel";
 
 // Format date to YYYY-MM-DD
@@ -88,6 +88,65 @@ export function useHabits() {
   const toggleLog = useMutation(api.habitLogs.toggle);
 
   const isLoaded = habits !== undefined && allLogs !== undefined;
+
+  // Actions
+  const addHabit = async (habit: {
+    name: string;
+    description: string;
+    category: HabitCategory;
+    color: string;
+    frequency: "daily" | "weekdays" | "weekends" | "custom";
+  }) => {
+    await createHabit(habit);
+  };
+
+  const editHabit = async (
+    id: Id<"habits">,
+    updates: {
+      name?: string;
+      description?: string;
+      category?: HabitCategory;
+      color?: string;
+      frequency?: "daily" | "weekdays" | "weekends" | "custom";
+      archived?: boolean;
+    }
+  ) => {
+    await updateHabit({ id, ...updates });
+  };
+
+  const deleteHabit = async (id: Id<"habits">) => {
+    await removeHabit({ id });
+  };
+
+  const toggleToday = async (habitId: Id<"habits">) => {
+    const today = getToday();
+    await toggleLog({ habitId, date: today });
+  };
+
+  const actions = { addHabit, updateHabit: editHabit, deleteHabit, toggleToday };
+
+  // Before Convex data arrives (SSR/prerender + initial client load),
+  // skip all date-based computations so `new Date()` isn't evaluated
+  // during static prerendering.
+  if (!isLoaded) {
+    return {
+      habits: [],
+      allHabits: [],
+      logs: [],
+      isLoaded: false,
+      ...actions,
+      overallStats: {
+        totalHabits: 0,
+        todayCompletions: 0,
+        todayTotal: 0,
+        todayRate: 0,
+        totalCompletions: 0,
+        last7Days: [0, 0, 0, 0, 0, 0, 0],
+        bestStreak: 0,
+        bestStreakHabit: "",
+      },
+    };
+  }
 
   // Normalize logs for streak calculation (Convex IDs → string)
   const normalizedLogs = (allLogs ?? []).map((l) => ({
@@ -177,49 +236,12 @@ export function useHabits() {
     bestStreakHabit,
   };
 
-  // Actions
-  const addHabit = async (habit: {
-    name: string;
-    description: string;
-    category: HabitCategory;
-    color: string;
-    frequency: "daily" | "weekdays" | "weekends" | "custom";
-  }) => {
-    await createHabit(habit);
-  };
-
-  const editHabit = async (
-    id: Id<"habits">,
-    updates: {
-      name?: string;
-      description?: string;
-      category?: HabitCategory;
-      color?: string;
-      frequency?: "daily" | "weekdays" | "weekends" | "custom";
-      archived?: boolean;
-    }
-  ) => {
-    await updateHabit({ id, ...updates });
-  };
-
-  const deleteHabit = async (id: Id<"habits">) => {
-    await removeHabit({ id });
-  };
-
-  const toggleToday = async (habitId: Id<"habits">) => {
-    const today = getToday();
-    await toggleLog({ habitId, date: today });
-  };
-
   return {
     habits: habitsWithStats,
     allHabits: habits ?? [],
     logs: allLogs ?? [],
-    isLoaded,
-    addHabit,
-    updateHabit: editHabit,
-    deleteHabit,
-    toggleToday,
+    isLoaded: true,
+    ...actions,
     overallStats,
   };
 }

@@ -37,7 +37,7 @@ HabitForge is a B2C web application that enables users to create, track, and mai
 ## 2. Overall Description
 
 ### 2.1 Product Perspective
-HabitForge is a standalone web application. It operates entirely in the browser for data storage (localStorage) and communicates with the Google Gemini API via Next.js API routes for AI features. No user authentication or backend database is required for the MVP.
+HabitForge is a standalone web application. It stores all data in **Convex** (cloud tables with reactive sync) and communicates with the Google Gemini API through Convex actions, which run server-side. The Next.js app is a static/SSR frontend shell. No user authentication is required for the MVP; data lives in the team's Convex deployment.
 
 ### 2.2 Product Functions (High-Level)
 
@@ -72,16 +72,16 @@ flowchart TD
 - **Min Screen:** 320px width (mobile-first responsive design)
 
 ### 2.5 Design Constraints
-- **No Authentication:** MVP uses localStorage; no accounts or login
-- **No Database:** All data persisted client-side in localStorage
-- **API Key Server-Side:** Gemini API key stored as environment variable, accessed only through API routes
+- **No Authentication:** MVP has no accounts or login; data is stored in a single shared Convex deployment
+- **Cloud Database (Convex):** Habits and logs persist in Convex tables with realtime sync across devices
+- **API Key Server-Side:** `GEMINI_API_KEY` stored in Convex deployment env vars, accessed only inside `convex/ai.ts` actions; never sent to the client
 - **Buildathon Sticker:** Must be visibly displayed in the navbar per buildathon rules
 
 ### 2.6 Assumptions & Dependencies
 - User has a modern web browser with JavaScript enabled
-- User has a stable internet connection (required for AI features only)
-- Google Gemini API is available and the API key has sufficient quota
-- Vercel free tier provides adequate hosting
+- User has a stable internet connection (required — data lives in Convex, AI features need Gemini)
+- Google Gemini API is available and the API key's project can call the model (currently 403 — see CONTEXT.md)
+- Convex free tier and Vercel free tier provide adequate hosting
 
 ---
 
@@ -94,7 +94,7 @@ flowchart TD
 | FR-HAB-01 | User SHALL be able to create a new habit with name, description, category, and frequency | **Must** |
 | FR-HAB-02 | User SHALL be able to delete an existing habit and all its associated logs | **Must** |
 | FR-HAB-03 | User SHALL be able to toggle a habit as complete/incomplete for today | **Must** |
-| FR-HAB-04 | System SHALL persist all habit data in localStorage | **Must** |
+| FR-HAB-04 | System SHALL persist all habit data in Convex | **Must** |
 | FR-HAB-05 | System SHALL assign habits to one of 8 categories: health, fitness, mindfulness, productivity, learning, social, creativity, other | **Must** |
 | FR-HAB-06 | User SHALL be able to set frequency: daily, weekdays, weekends, or custom | **Should** |
 | FR-HAB-07 | User SHALL be able to edit an existing habit's name, description, and category | **Should** |
@@ -159,7 +159,7 @@ flowchart TD
 | NFR-PERF-02 | Habit toggle interaction response | < 100ms |
 | NFR-PERF-03 | AI Coach response time | < 5 seconds |
 | NFR-PERF-04 | Page navigation (client-side) | < 300ms |
-| NFR-PERF-05 | localStorage read/write | < 50ms |
+| NFR-PERF-05 | Convex query/mutation round-trip | < 100ms |
 
 ### 4.2 Usability (NFR-USE)
 
@@ -175,70 +175,79 @@ flowchart TD
 | ID | Requirement |
 |----|------------|
 | NFR-REL-01 | Application SHALL function for habit tracking even if AI API is unavailable |
-| NFR-REL-02 | Data SHALL persist across browser sessions via localStorage |
+| NFR-REL-02 | Data SHALL persist across browser sessions and devices via Convex |
 | NFR-REL-03 | AI API failures SHALL display user-friendly error messages, not crash the app |
 
 ### 4.4 Security (NFR-SEC)
 
 | ID | Requirement |
 |----|------------|
-| NFR-SEC-01 | Gemini API key SHALL be stored server-side only (environment variable) |
-| NFR-SEC-02 | API routes SHALL validate request body structure |
+| NFR-SEC-01 | Gemini API key SHALL be stored server-side only (Convex deployment env vars) |
+| NFR-SEC-02 | Backend functions SHALL validate arguments via Convex validators |
 | NFR-SEC-03 | No sensitive user data SHALL be transmitted to external APIs beyond habit names and stats |
 
 ---
 
 ## 5. Data Models
 
-### 5.1 Habit Entity
+### 5.1 Habit Entity (Convex table `habits`)
 
 ```typescript
-interface Habit {
-  id: string;              // Unique identifier (timestamp+random)
+// Convex document — see convex/schema.ts
+{
+  _id: Id<"habits">;      // Convex-generated unique id
+  _creationTime: number;   // Convex timestamp (ms)
   name: string;            // Habit name (required, max 100 chars)
   description: string;     // Why this habit matters
   category: HabitCategory; // One of 8 categories
   color: string;           // Hex color from category
   frequency: 'daily' | 'weekdays' | 'weekends' | 'custom';
   customDays?: number[];   // 0=Sunday through 6=Saturday
-  createdAt: string;       // ISO 8601 timestamp
   archived: boolean;       // Soft-delete flag
 }
+// Index: by_archived
 ```
 
-### 5.2 HabitLog Entity
+### 5.2 HabitLog Entity (Convex table `habitLogs`)
 
 ```typescript
-interface HabitLog {
-  habitId: string;    // References Habit.id
-  date: string;       // YYYY-MM-DD format
-  completed: boolean; // Completion status
-  note?: string;      // Optional note
+{
+  _id: Id<"habitLogs">;
+  _creationTime: number;
+  habitId: Id<"habits">;  // References habits._id
+  date: string;            // YYYY-MM-DD format
+  completed: boolean;      // Completion status (row deleted when toggled off)
+  note?: string;           // Optional note
 }
+// Indexes: by_habit, by_date, by_habit_date
 ```
 
-### 5.3 Storage Schema (localStorage)
+> A log row exists only on completed days — its presence **is** the completion event.
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `habitforge_habits` | `Habit[]` | Array of all habit definitions |
-| `habitforge_logs` | `HabitLog[]` | Array of all completion logs |
+### 5.3 Storage Schema (Convex)
+
+| Table | Rows | Description |
+|-------|------|-------------|
+| `habits` | one per habit | All habit definitions |
+| `habitLogs` | one per habit per completed day | Completion events |
+
+Client-side `localStorage` is **not** used — all reads go through reactive `useQuery`.
 
 ---
 
 ## 6. Interface Requirements
 
-### 6.1 API Endpoints
+### 6.1 Backend Interface
 
-See [ENDPOINTS.md](file:///media/moballig/exprement/YUNet%20AIgnite%20Buildathon/habitforge/docs/ENDPOINTS.md) for full API documentation.
+See [ENDPOINTS.md](ENDPOINTS.md) for full documentation of Convex queries/mutations/actions.
 
 ### 6.2 External Interfaces
 
 | Interface | Protocol | Description |
 |-----------|----------|-------------|
-| Google Gemini API | HTTPS REST | AI text generation via `@google/generative-ai` SDK |
-| Vercel | HTTPS | Hosting and serverless function runtime |
-| localStorage API | Browser API | Client-side data persistence |
+| Google Gemini API | HTTPS REST | AI text generation via `@google/generative-ai` SDK inside Convex actions |
+| Convex | HTTPS/WSS | Reactive data layer (tables, queries, mutations, actions) |
+| Vercel | HTTPS | Frontend hosting and static/SSR delivery |
 
 ---
 

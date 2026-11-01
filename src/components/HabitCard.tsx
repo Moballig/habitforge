@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Check, Flame, Trash2, MoreVertical } from 'lucide-react';
 import { HabitCategory, CATEGORY_CONFIG } from '@/lib/types';
-import { Id } from '../../../convex/_generated/dataModel';
+import { Id } from '../../convex/_generated/dataModel';
 
 interface HabitData {
   _id: Id<"habits">;
