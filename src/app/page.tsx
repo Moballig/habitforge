@@ -23,6 +23,13 @@ export default function Dashboard() {
     );
   }
 
+  // Normalize logs for HabitGrid
+  const gridLogs = logs.map((l) => ({
+    habitId: (l.habitId ?? l._id) as string,
+    date: l.date,
+    completed: l.completed,
+  }));
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Header */}
@@ -53,7 +60,7 @@ export default function Dashboard() {
       <StatsCards stats={overallStats} />
 
       {/* Habit Grid */}
-      <HabitGrid logs={logs} habitCount={habits.length} />
+      <HabitGrid logs={gridLogs} habitCount={habits.length} />
 
       {/* Habits List */}
       <div>
@@ -74,7 +81,7 @@ export default function Dashboard() {
           <div className="grid gap-3 sm:gap-4">
             {habits.map((habit) => (
               <HabitCard
-                key={habit.id}
+                key={habit._id}
                 habit={habit}
                 onToggle={toggleToday}
                 onDelete={deleteHabit}

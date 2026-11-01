@@ -2,12 +2,26 @@
 
 import { useState } from 'react';
 import { Check, Flame, Trash2, MoreVertical } from 'lucide-react';
-import { HabitWithStats, CATEGORY_CONFIG } from '@/lib/types';
+import { HabitCategory, CATEGORY_CONFIG } from '@/lib/types';
+import { Id } from '../../../convex/_generated/dataModel';
+
+interface HabitData {
+  _id: Id<"habits">;
+  name: string;
+  description: string;
+  category: HabitCategory;
+  color: string;
+  currentStreak: number;
+  longestStreak: number;
+  completionRate: number;
+  todayCompleted: boolean;
+  totalCompletions: number;
+}
 
 interface HabitCardProps {
-  habit: HabitWithStats;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
+  habit: HabitData;
+  onToggle: (id: Id<"habits">) => void;
+  onDelete: (id: Id<"habits">) => void;
 }
 
 export default function HabitCard({ habit, onToggle, onDelete }: HabitCardProps) {
@@ -17,7 +31,7 @@ export default function HabitCard({ habit, onToggle, onDelete }: HabitCardProps)
 
   const handleToggle = () => {
     setIsAnimating(true);
-    onToggle(habit.id);
+    onToggle(habit._id);
     setTimeout(() => setIsAnimating(false), 600);
   };
 
@@ -114,7 +128,7 @@ export default function HabitCard({ habit, onToggle, onDelete }: HabitCardProps)
                 <div className="absolute right-0 top-8 z-20 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 overflow-hidden">
                   <button
                     onClick={() => {
-                      onDelete(habit.id);
+                      onDelete(habit._id);
                       setShowMenu(false);
                     }}
                     className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"

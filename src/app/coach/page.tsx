@@ -2,12 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Lightbulb, Plus } from 'lucide-react';
+import { useAction } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { useHabits } from '@/hooks/useHabits';
-import { AIMessage, HabitCategory, CATEGORY_CONFIG } from '@/lib/types';
-import { generateId } from '@/lib/storage';
+import { HabitCategory, CATEGORY_CONFIG, AIMessage } from '@/lib/types';
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
 
 export default function CoachPage() {
-  const { habits, logs, addHabit } = useHabits();
+  const { habits, addHabit } = useHabits();
+  const chatAction = useAction(api.ai.chat);
+  const suggestAction = useAction(api.ai.suggest);
+
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +24,6 @@ export default function CoachPage() {
   const [goalInput, setGoalInput] = useState('');
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,26 +49,20 @@ export default function CoachPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/coach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: messageText,
-          habitData: {
-            habits: habits.map(h => ({
-              name: h.name,
-              category: h.category,
-              currentStreak: h.currentStreak,
-              completionRate: h.completionRate,
-              todayCompleted: h.todayCompleted,
-            })),
-            totalHabits: habits.length,
-            completedToday: habits.filter(h => h.todayCompleted).length,
-          },
-        }),
+      const data = await chatAction({
+        message: messageText,
+        habitData: {
+          habits: habits.map(h => ({
+            name: h.name,
+            category: h.category,
+            currentStreak: h.currentStreak,
+            completionRate: h.completionRate,
+            todayCompleted: h.todayCompleted,
+          })),
+          totalHabits: habits.length,
+          completedToday: habits.filter(h => h.todayCompleted).length,
+        },
       });
-
-      const data = await res.json();
 
       const assistantMessage: AIMessage = {
         id: generateId(),
@@ -89,16 +90,11 @@ export default function CoachPage() {
     setIsLoadingSuggestions(true);
 
     try {
-      const res = await fetch('/api/suggest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          goal: goalInput,
-          existingHabits: habits.map(h => ({ name: h.name })),
-        }),
+      const data = await suggestAction({
+        goal: goalInput,
+        existingHabits: habits.map(h => ({ name: h.name })),
       });
 
-      const data = await res.json();
       setSuggestions(data.suggestions || []);
       setShowSuggestions(true);
     } catch {
@@ -144,7 +140,7 @@ export default function CoachPage() {
             </div>
             <div>
               <h2 className="font-semibold text-gray-900 dark:text-white">AI Coach</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Powered by Gemini AI</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Powered by Gemini AI · Real-time via Convex</p>
             </div>
           </div>
 
@@ -221,7 +217,6 @@ export default function CoachPage() {
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-end gap-2">
               <textarea
-                ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -301,7 +296,7 @@ export default function CoachPage() {
             ) : (
               <div className="space-y-2">
                 {habits.slice(0, 5).map((h) => (
-                  <div key={h.id} className="flex items-center justify-between">
+                  <div key={h._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
                         className={`w-2 h-2 rounded-full ${h.todayCompleted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
@@ -319,4 +314,3 @@ export default function CoachPage() {
     </div>
   );
 }
-
