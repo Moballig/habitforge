@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 
-const COLORS = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#F97316'];
+const COLORS = ['#D97706', '#B45309', '#F59E0B', '#FBBF24', '#FCD34D', '#92400E'];
 const PIECE_COUNT = 40;
 
 // Deterministic pseudo-random (pure — safe during render, unlike Math.random)

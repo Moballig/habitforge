@@ -21,28 +21,28 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       value: `${stats.todayCompletions}/${stats.todayTotal}`,
       subtitle: `${stats.todayRate}% complete`,
       icon: Target,
-      iconBg: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
+      iconBg: 'bg-primary/10 text-primary',
     },
     {
       label: 'Best Streak',
       value: `${stats.bestStreak}d`,
       subtitle: stats.bestStreakHabit || 'No streaks yet',
       icon: Flame,
-      iconBg: 'bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-primary/10 text-primary',
     },
     {
       label: 'Total Check-ins',
       value: stats.totalCompletions.toString(),
       subtitle: 'All time',
       icon: TrendingUp,
-      iconBg: 'bg-primary/15 text-primary',
+      iconBg: 'bg-primary/10 text-primary',
     },
     {
       label: 'Active Habits',
       value: stats.totalHabits.toString(),
       subtitle: 'Being tracked',
       icon: Award,
-      iconBg: 'bg-rose-100 dark:bg-rose-950/50 text-rose-500 dark:text-rose-400',
+      iconBg: 'bg-primary/10 text-primary',
     },
   ];
 

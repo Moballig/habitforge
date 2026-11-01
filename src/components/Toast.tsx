@@ -33,7 +33,7 @@ export function useToast(): ToastContextValue {
 const typeStyles: Record<ToastType, { icon: typeof CheckCircle2; color: string }> = {
   success: {
     icon: CheckCircle2,
-    color: 'text-emerald-500',
+    color: 'text-primary',
   },
   error: {
     icon: AlertCircle,
@@ -72,21 +72,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
       >
         {toasts.map((t) => {
-          const { icon: Icon, color, ring } = typeStyles[t.type];
+          const { icon: Icon, color } = typeStyles[t.type];
           return (
             <div
               key={t.id}
               role="status"
-              className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border ${ring} shadow-lg animate-toast-in max-w-[calc(100vw-2rem)] sm:max-w-sm`}
+              className={`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl card animate-toast-in max-w-[calc(100vw-2rem)] sm:max-w-sm`}
             >
-              <Icon className={`w-4.5 h-4.5 ${color} flex-shrink-0`} />
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t.message}</p>
+              <Icon className={`w-4.5 h-4.5 ${color} flex-shrink-0`} aria-hidden="true" />
+              <p className="text-sm font-bold text-foreground">{t.message}</p>
               <button
                 onClick={() => removeToast(t.id)}
                 aria-label="Dismiss notification"
-                className="ml-1 p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="ml-1 p-1 rounded-lg text-muted-fg hover:text-foreground hover:bg-muted transition-colors"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
           );

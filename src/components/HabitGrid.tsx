@@ -44,10 +44,10 @@ export default function HabitGrid({ logs, habitCount }: HabitGridProps) {
 
   const levelColors = [
     'bg-muted',
-    'bg-emerald-200 dark:bg-emerald-900',
-    'bg-emerald-300 dark:bg-emerald-700',
-    'bg-emerald-400 dark:bg-emerald-500',
-    'bg-emerald-500 dark:bg-emerald-400',
+    'bg-primary/20',
+    'bg-primary/40',
+    'bg-primary/60',
+    'bg-primary',
   ];
 
   const dayLabels = ['', 'Mon', '', 'Wed', '', 'Fri', ''];

@@ -14,6 +14,7 @@ const nunitoSans = Nunito_Sans({
 const varelaRound = Varela_Round({
   variable: "--font-varela",
   subsets: ["latin"],
+  weight: "400",
   display: "swap",
 });
 

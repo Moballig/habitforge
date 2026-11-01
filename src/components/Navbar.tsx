@@ -22,17 +22,17 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-hi to-primary flex items-center justify-center clay-sm">
+            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center clay-sm">
               <Flame className="w-5 h-5 text-on-primary" aria-hidden="true" />
             </div>
             <span className="text-xl font-heading font-bold text-foreground">
-              Habit<span className="text-primary">Forge</span>
+              HabitForge
             </span>
           </Link>
 
           {/* Buildathon Sticker - Desktop */}
           <div className="hidden md:flex items-center">
-            <div className="pill bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[11px] shadow-lg shadow-orange-500/25 animate-pulse">
+            <div className="pill bg-primary/10 text-primary">
               <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
               Built For Ostad Presents YUNet AIgnite Buildathon 2026
             </div>
@@ -79,7 +79,7 @@ export default function Navbar() {
         <div className="md:hidden border-t border-border bg-card animate-fade-in">
           {/* Mobile Buildathon Sticker */}
           <div className="px-4 py-3">
-            <div className="pill bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[11px] shadow-lg justify-center w-full">
+            <div className="pill bg-primary/10 text-primary text-[11px] justify-center w-full">
               <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
               Built For Ostad Presents YUNet AIgnite Buildathon 2026
             </div>

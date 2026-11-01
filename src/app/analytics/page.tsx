@@ -27,7 +27,7 @@ export default function AnalyticsPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="text-center py-20 card animate-fade-in">
-          <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-3xl flex items-center justify-center mx-auto mb-6 clay-sm">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 clay-sm">
             <BarChart3 className="w-10 h-10 text-primary" aria-hidden="true" />
           </div>
           <h2 className="text-2xl font-heading font-bold text-foreground mb-2">

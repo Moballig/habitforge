@@ -49,8 +49,8 @@ export default function WeeklyChart({ data }: WeeklyChartProps) {
                 <div
                   className={`w-full rounded-t-xl transition-all duration-700 ${
                     label?.isToday
-                      ? 'bg-gradient-to-t from-primary to-primary-hi shadow-md shadow-amber-500/30'
-                      : 'bg-primary/30 dark:bg-primary/25'
+                      ? 'bg-primary'
+                      : 'bg-primary/25 dark:bg-primary/20'
                   }`}
                   style={{ height: `${Math.max(pct, 3)}%` }}
                   title={`${pct}% complete`}

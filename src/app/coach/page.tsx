@@ -140,8 +140,8 @@ export default function CoachPage() {
           style={{ height: 'calc(100vh - 140px)' }}
         >
           {/* Chat Header */}
-          <div className="flex items-center gap-3 p-4 border-b border-border bg-gradient-to-r from-primary/10 to-accent/10">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-hi to-primary flex items-center justify-center clay-sm">
+          <div className="flex items-center gap-3 p-4 border-b border-border bg-muted/40">
+            <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center clay-sm">
               <Bot className="w-5 h-5 text-on-primary" aria-hidden="true" />
             </div>
             <div>
@@ -154,7 +154,7 @@ export default function CoachPage() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-3xl flex items-center justify-center mb-4 clay-sm">
+                <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mb-4 clay-sm">
                   <Sparkles className="w-8 h-8 text-primary" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-heading font-bold text-foreground mb-2">
@@ -168,7 +168,7 @@ export default function CoachPage() {
                     <button
                       key={prompt}
                       onClick={() => sendMessage(prompt)}
-                      className="btn btn-soft text-left text-sm p-3 !justify-start font-medium"
+                      className="btn btn-soft text-left text-sm p-3 justify-start! font-medium"
                     >
                       {prompt}
                     </button>
@@ -184,7 +184,7 @@ export default function CoachPage() {
                   <div className={`flex-shrink-0 w-9 h-9 rounded-2xl flex items-center justify-center clay-sm ${
                     msg.role === 'user'
                       ? 'bg-muted text-muted-fg'
-                      : 'bg-gradient-to-br from-primary-hi to-primary text-on-primary'
+                      : 'bg-primary text-on-primary'
                   }`}>
                     {msg.role === 'user' ? (
                       <User className="w-4 h-4" aria-hidden="true" />
@@ -204,7 +204,7 @@ export default function CoachPage() {
             )}
             {isLoading && (
               <div className="flex gap-3 animate-fade-in">
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-hi to-primary rounded-2xl flex items-center justify-center clay-sm">
+                <div className="w-9 h-9 bg-primary rounded-2xl flex items-center justify-center clay-sm">
                   <Bot className="w-4 h-4 text-on-primary" aria-hidden="true" />
                 </div>
                 <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3 clay-inset">
@@ -299,7 +299,7 @@ export default function CoachPage() {
                     </div>
                     <button
                       onClick={() => addSuggestedHabit(s)}
-                      className="btn btn-soft flex-shrink-0 p-1.5 !rounded-xl text-primary"
+                      className="btn btn-soft flex-shrink-0 p-1.5 rounded-xl! text-primary"
                       title="Add this habit"
                       aria-label={`Add ${s.name} to your habits`}
                     >
@@ -322,12 +322,12 @@ export default function CoachPage() {
                   <div key={h._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${h.todayCompleted ? 'bg-emerald-500' : 'bg-muted-fg/40'}`}
+                        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${h.todayCompleted ? 'bg-primary' : 'bg-muted-fg/40'}`}
                         aria-hidden="true"
                       />
                       <span className="text-sm font-medium text-foreground truncate">{h.name}</span>
                     </div>
-                    <span className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 flex-shrink-0">
+                    <span className="flex items-center gap-1 text-xs font-bold text-primary flex-shrink-0">
                       <Flame className="w-3.5 h-3.5" aria-hidden="true" />
                       {h.currentStreak}d
                     </span>

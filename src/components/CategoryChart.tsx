@@ -28,7 +28,7 @@ export default function CategoryChart({ habits }: CategoryChartProps) {
     <div className="card p-5">
       <div className="flex items-center justify-between mb-1">
         <h3 className="font-heading font-bold text-foreground">Habit Distribution</h3>
-        <span className="pill bg-accent/15 text-accent">{habits.length} total</span>
+        <span className="pill bg-primary/15 text-primary">{habits.length} total</span>
       </div>
       <p className="text-xs text-muted-fg mb-4">
         Your habits grouped by category

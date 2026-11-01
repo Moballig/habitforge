@@ -40,12 +40,12 @@ export default function HabitCard({ habit, onToggle, onDelete, onEdit }: HabitCa
   return (
     <div
       className={`group relative card transition-all duration-300 overflow-hidden ${
-        habit.todayCompleted ? 'ring-2 ring-accent/40' : 'hover:-translate-y-0.5'
+        habit.todayCompleted ? 'ring-2 ring-primary/30' : 'hover:-translate-y-0.5'
       }`}
     >
       {/* Completion tint */}
       {habit.todayCompleted && (
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
       )}
 
       <div className="relative p-4 sm:p-5">
@@ -57,7 +57,7 @@ export default function HabitCard({ habit, onToggle, onDelete, onEdit }: HabitCa
             aria-pressed={habit.todayCompleted}
             className={`mt-0.5 flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 ${
               habit.todayCompleted
-                ? 'bg-gradient-to-b from-emerald-400 to-emerald-500 text-white shadow-[0_3px_0_var(--accent),0_6px_12px_rgba(5,150,105,0.35)]'
+                ? 'bg-primary text-on-primary shadow-[0_3px_0_var(--primary-edge),0_6px_12px_var(--clay-md)]'
                 : 'bg-muted text-muted-fg clay-inset hover:text-primary'
             } ${isAnimating ? 'animate-bounce' : ''}`}
           >
@@ -91,12 +91,12 @@ export default function HabitCard({ habit, onToggle, onDelete, onEdit }: HabitCa
               {/* Streak */}
               <div className="flex items-center gap-1 text-sm">
                 <Flame
-                  className={`w-4 h-4 ${habit.currentStreak > 0 ? 'text-amber-500' : 'text-muted-fg'}`}
+                  className={`w-4 h-4 ${habit.currentStreak > 0 ? 'text-primary' : 'text-muted-fg'}`}
                   aria-hidden="true"
                 />
                 <span
                   className={`font-semibold ${
-                    habit.currentStreak > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-fg'
+                    habit.currentStreak > 0 ? 'text-primary' : 'text-muted-fg'
                   }`}
                 >
                   {habit.currentStreak}d streak

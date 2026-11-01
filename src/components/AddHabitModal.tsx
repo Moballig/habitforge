@@ -64,7 +64,7 @@ export default function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalP
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-hi to-primary flex items-center justify-center clay-sm">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center clay-sm">
               <Sparkles className="w-4.5 h-4.5 text-on-primary" aria-hidden="true" />
             </div>
             <h2 id="add-habit-title" className="text-lg font-heading font-bold text-foreground">

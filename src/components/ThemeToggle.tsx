@@ -38,11 +38,11 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label="Toggle dark mode"
       title="Toggle dark mode"
-      className="p-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+      className="p-2.5 rounded-2xl text-muted-fg hover:bg-muted hover:text-foreground transition-colors clay-sm"
     >
       {/* Icon swaps via CSS — no JS state, no hydration mismatch */}
-      <Sun className="w-5 h-5 hidden dark:block" />
-      <Moon className="w-5 h-5 block dark:hidden" />
+      <Sun className="w-5 h-5 hidden dark:block" aria-hidden="true" />
+      <Moon className="w-5 h-5 block dark:hidden" aria-hidden="true" />
     </button>
   );
 }

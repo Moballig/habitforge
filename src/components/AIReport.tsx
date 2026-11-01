@@ -51,19 +51,14 @@ export default function AIReport({ habits, logs }: AIReportProps) {
     }
   };
 
-  const scoreColor =
-    report && report.overallScore >= 70
-      ? '#10B981'
-      : report && report.overallScore >= 40
-        ? '#F59E0B'
-        : '#EF4444';
+  const scoreColor = 'var(--primary)';
 
   return (
     <div className="card overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 border-b border-border bg-gradient-to-r from-primary/10 to-accent/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 border-b border-border bg-muted/40">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-hi to-primary flex items-center justify-center clay-sm">
+          <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center clay-sm">
             <Sparkles className="w-5 h-5 text-on-primary" aria-hidden="true" />
           </div>
           <div>
@@ -97,8 +92,8 @@ export default function AIReport({ habits, logs }: AIReportProps) {
           <div className="flex flex-col items-center py-10 gap-4">
             <div className="flex gap-1.5">
               <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="w-2.5 h-2.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2.5 h-2.5 bg-primary/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
             <p className="text-sm text-muted-fg">
               Reading your habit data and writing your report...
@@ -120,7 +115,7 @@ export default function AIReport({ habits, logs }: AIReportProps) {
 
         {!report && !loading && !error && (
           <div className="text-center py-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-2xl flex items-center justify-center mx-auto mb-4 clay-sm">
+            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 clay-sm">
               <Sparkles className="w-7 h-7 text-primary" aria-hidden="true" />
             </div>
             <p className="text-sm font-bold text-foreground mb-1">
@@ -158,33 +153,33 @@ export default function AIReport({ habits, logs }: AIReportProps) {
 
             {/* Strengths & Improvements */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-emerald-100/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+              <div className="p-4 rounded-2xl bg-muted/60 border border-border">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                  <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                  <TrendingUp className="w-4 h-4 text-primary" aria-hidden="true" />
+                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">
                     Strengths
                   </h4>
                 </div>
                 <ul className="space-y-1.5">
                   {report.strengths.map((s, i) => (
-                    <li key={i} className="text-xs text-emerald-800 dark:text-emerald-300 flex gap-1.5">
-                      <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-emerald-500" aria-hidden="true" />
+                    <li key={i} className="text-xs text-foreground flex gap-1.5">
+                      <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-primary" aria-hidden="true" />
                       {s}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="p-4 rounded-2xl bg-amber-100/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
+              <div className="p-4 rounded-2xl bg-muted/60 border border-border">
                 <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-                  <h4 className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                  <AlertTriangle className="w-4 h-4 text-primary" aria-hidden="true" />
+                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">
                     Focus Areas
                   </h4>
                 </div>
                 <ul className="space-y-1.5">
                   {report.improvements.map((s, i) => (
-                    <li key={i} className="text-xs text-amber-800 dark:text-amber-300 flex gap-1.5">
-                      <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-500" aria-hidden="true" />
+                    <li key={i} className="text-xs text-foreground flex gap-1.5">
+                      <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-primary" aria-hidden="true" />
                       {s}
                     </li>
                   ))}
@@ -205,7 +200,7 @@ export default function AIReport({ habits, logs }: AIReportProps) {
 
             {/* Motivation */}
             <div className="flex items-center gap-2 text-center justify-center pt-1">
-              <Heart className="w-4 h-4 text-rose-500" aria-hidden="true" />
+              <Heart className="w-4 h-4 text-primary" aria-hidden="true" />
               <p className="text-sm text-muted-fg italic">{report.motivation}</p>
             </div>
           </div>

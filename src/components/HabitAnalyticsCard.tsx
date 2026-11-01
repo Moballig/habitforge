@@ -84,8 +84,8 @@ export default function HabitAnalyticsCard({ habit, logs, habitId }: HabitAnalyt
 
       {/* Stats rows */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="text-center p-2.5 rounded-2xl bg-amber-100/70 dark:bg-amber-950/30 clay-sm">
-          <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mx-auto mb-1" aria-hidden="true" />
+        <div className="text-center p-2.5 rounded-2xl bg-primary/10 clay-sm">
+          <Flame className="w-3.5 h-3.5 text-primary mx-auto mb-1" aria-hidden="true" />
           <p className="text-sm font-heading font-bold text-foreground">{habit.currentStreak}d</p>
           <p className="text-[10px] text-muted-fg">current</p>
         </div>
@@ -94,8 +94,8 @@ export default function HabitAnalyticsCard({ habit, logs, habitId }: HabitAnalyt
           <p className="text-sm font-heading font-bold text-foreground">{habit.longestStreak}d</p>
           <p className="text-[10px] text-muted-fg">longest</p>
         </div>
-        <div className="text-center p-2.5 rounded-2xl bg-emerald-100/70 dark:bg-emerald-950/30 clay-sm">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" aria-hidden="true" />
+        <div className="text-center p-2.5 rounded-2xl bg-primary/10 clay-sm">
+          <CheckCircle2 className="w-3.5 h-3.5 text-primary mx-auto mb-1" aria-hidden="true" />
           <p className="text-sm font-heading font-bold text-foreground">
             {habit.totalCompletions}
           </p>
@@ -113,9 +113,9 @@ export default function HabitAnalyticsCard({ habit, logs, habitId }: HabitAnalyt
               title={`${d.done ? 'Done' : 'Missed'}${d.isToday ? ' (today)' : ''}`}
               className={`w-4 h-4 rounded-md ${
                 d.done
-                  ? 'bg-emerald-500'
+                  ? 'bg-primary'
                   : 'bg-muted'
-              } ${d.isToday && d.done ? 'ring-2 ring-emerald-300 dark:ring-emerald-700' : ''}`}
+              } ${d.isToday && d.done ? 'ring-2 ring-primary/40' : ''}`}
             />
           ))}
         </div>

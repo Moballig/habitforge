@@ -91,7 +91,7 @@ export default function Dashboard() {
             Today&apos;s Habits
           </h2>
           {habits.length > 0 && (
-            <span className="pill bg-accent/15 text-accent">
+            <span className="pill bg-primary/15 text-primary">
               {habits.filter((h) => h.todayCompleted).length}/{habits.length} done
             </span>
           )}
@@ -190,7 +190,7 @@ function DashboardSkeleton() {
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="text-center py-16 px-6 card animate-fade-in">
-      <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-3xl flex items-center justify-center mx-auto mb-6 clay-sm">
+      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 clay-sm">
         <Sparkles className="w-10 h-10 text-primary" aria-hidden="true" />
       </div>
       <h3 className="text-2xl font-heading font-bold text-foreground mb-2">
