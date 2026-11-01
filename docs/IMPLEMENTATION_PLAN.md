@@ -1,226 +1,241 @@
-# HabitForge — Full Implementation Plan
+# Deshi Health Companion — Full-Scope Build Plan (v3)
 
-**Project:** HabitForge — AI Habit Tracker & Accountability Coach
+**Project:** Deshi Health Companion (working title) — Bangladesh-first calorie, diet & exercise-balancing app with RAG-grounded AI coach
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
-**Timeline:** November 1–5, 2026 (5 days)
-**Stack:** Next.js 16 + Tailwind CSS 4 + **Convex** + Gemini API + Vercel
+**Submission:** November 5, 2026 (keep main branch demoable at all times)
+**Stack:** Next.js 16, Tailwind 4, Convex, Groq, Vercel
+**Source of truth:** `docs/bangladeshi-calorie-companion-research.md` (section numbers below refer to it)
+
+**Change from v2:** no time-driven cuts. Everything in the research checklist at P0 and P1 is in scope, plus most P2. The quality decisions from v2 stay: deterministic engine, LLM never produces numbers, safety gates, citations, assisted photo logging, Bangla templates for plan text.
+
+**One rule replaces the cut ladder:** build in **waves**. Each wave ends with a working, demoable product and an exit gate. If the deadline arrives mid-wave, you still submit a coherent app.
 
 ---
 
-## Executive Summary
+## 0. Decisions that stay from v2
 
-HabitForge is an AI-powered habit tracking web app that goes beyond simple checkbox tracking. It uses Google Gemini AI to provide personalized coaching, habit suggestions based on user goals, and intelligent weekly progress analysis. The app targets students who want to build consistent routines but lack accountability and adaptive guidance.
+| Topic | Decision |
+|---|---|
+| Engine | Pure TypeScript in `lib/engine/`, shared by client and Convex, unit-tested, plus a property test (thousands of random overshoots never break the floor or caps) |
+| Numbers | Calories, floors, exercise minutes come from code only. A validator blocks any number in an LLM reply that is not in a tool result or retrieved chunk |
+| Plan text | Bangla and English **templates**, not LLM output |
+| UI | Replace HabitForge screens. Routes: `/onboarding /home /log /plan /coach /activity /settings` plus new ones as waves add them |
+| Parser | Fuzzy search gives top 5 candidates; LLM picks from them (JSON mode); code computes; tap-to-pick fallback |
+| Photo | `qwen/qwen3.8-27b` on Groq (JSON mode, up to 3 images), relative portion class → grams via the user's plate preset → calories with range → confirm screen. Re-check the model name in Groq docs before coding |
+| RAG | Convex vector index (actions only) + keyword/alias hybrid. Query rewritten to English before embedding. Chunks carry section and page. Refuse below a tuned threshold |
+| Privacy | Never send age, weight, name or conditions to the LLM; pass safe categories like `mode=restricted` |
+| Safety | `safetyMode()` returns normal, restricted or doctor-first; restricted modes disable deficits and the rebalance planner |
+| Web substitutions | Phone step counters are not readable by a web app → manual steps entry. APK → installable web app (PWA) |
 
----
-
-## Phase 1: Foundation (Day 1 — Nov 1) ✅
-
-> **Closed 2026-11-01 21:00 BST.** All tasks done. During closure the storage layer was
-> migrated from localStorage + Next.js API routes to **Convex** (schema, queries/mutations,
-> AI actions). Dead code removed (`src/app/api/*`, `lib/storage.ts`, `lib/analytics.ts`,
-> `lib/gemini.ts`). `bun run build` ✅ · lint 0 errors ✅ · Convex deployed ✅.
-> **Open external issue:** Gemini returns 403 (free tier unavailable for the user's Google
-> project) — needs billing or a new API key; AI degrades gracefully until then.
-> Analytics task 1.5/1.15 files changed: stats now live in `src/hooks/useHabits.ts`,
-> AI in `convex/ai.ts`.
-
-### Objectives
-Set up the project, build core data layer, and implement the main dashboard.
-
-### Tasks
-
-| # | Task | Status | File(s) |
-|---|------|--------|---------|
-| 1.1 | Initialize Next.js 16 project with Bun | ✅ Done | `package.json` |
-| 1.2 | Install dependencies: `@google/generative-ai`, `lucide-react`, `convex` | ✅ Done | `package.json` |
-| 1.3 | Define TypeScript types & constants | ✅ Done | `src/lib/types.ts` |
-| 1.4 | Build persistence layer (localStorage CRUD → **Convex tables/mutations**) | ✅ Done | `convex/schema.ts`, `convex/habits.ts`, `convex/habitLogs.ts` |
-| 1.5 | Build analytics/stats calculation engine | ✅ Done | `src/hooks/useHabits.ts` (streaks, rates, 7-day trend) |
-| 1.6 | Build Gemini AI integration (**Convex actions**) | ✅ Done | `convex/ai.ts` (chat, suggest, analyze) |
-| 1.7 | Build `useHabits` custom hook | ✅ Done | `src/hooks/useHabits.ts` |
-| 1.8 | Build Navbar with buildathon sticker | ✅ Done | `src/components/Navbar.tsx` |
-| 1.9 | Build HabitCard component | ✅ Done | `src/components/HabitCard.tsx` |
-| 1.10 | Build AddHabitModal component | ✅ Done | `src/components/AddHabitModal.tsx` |
-| 1.11 | Build HabitGrid (GitHub-style) | ✅ Done | `src/components/HabitGrid.tsx` |
-| 1.12 | Build StatsCards component | ✅ Done | `src/components/StatsCards.tsx` |
-| 1.13 | Build Dashboard page | ✅ Done | `src/app/page.tsx` |
-| 1.14 | Update global styles & layout | ✅ Done | `src/app/globals.css`, `layout.tsx`, `ConvexClientProvider.tsx` |
-| 1.15 | Build AI endpoints (coach, analyze, suggest) | ✅ Done | `convex/ai.ts` *(was `src/app/api/*/route.ts` — removed in Convex migration)* |
-| 1.16 | Build AI Coach page | ✅ Done | `src/app/coach/page.tsx` |
-| 1.17 | Create project documentation | ✅ Done | `docs/*` |
-
-### Deliverables
-- ✅ Working dashboard with habit CRUD (realtime via Convex)
-- ✅ AI Coach page with chat and suggestions (blocked on Google billing for live responses)
-- ✅ All AI functions implemented (`chat`, `suggest`, `analyze`)
-- ✅ Complete documentation suite (updated for Convex architecture)
-- ✅ `bun run build` green, lint clean, Convex functions deployed
+**Probes to run first (30 minutes each)** because they decide design details: Qwen vision on 10 plate photos; Bangla/Banglish queries on Groq embeddings (the named model, `nomic-embed-text-v1_5`, is likely English-oriented, so test it); Chrome `bn-BD` speech recognition (Chrome 139+ only).
 
 ---
 
-## Phase 2: Analytics & AI Reports (Day 2 — Nov 2) ✅
+## 1. Parallel data tracks (run alongside every wave)
 
-> **Closed 2026-11-01 21:15 BST** (completed early, Day 1 night). Charts are CSS-only (no
-> chart library). `bun run build` ✅ with `/analytics` route, lint 0 errors, all pages HTTP 200
-> on `next start`. **Open:** live AI responses still blocked by Gemini 403 (Google billing) —
-> error/fallback paths verified instead.
+These block features if they start late. Assign them from day one.
 
-### Objectives
-Build the analytics page, implement AI-powered weekly reports, and add the 7-day trend chart.
-
-### Tasks
-
-| # | Task | Status | File(s) |
-|---|------|--------|---------|
-| 2.1 | Build Analytics page layout | ✅ Done | `src/app/analytics/page.tsx` |
-| 2.2 | Build per-habit analytics cards | ✅ Done | `src/components/HabitAnalyticsCard.tsx` |
-| 2.3 | Build 7-day completion bar chart | ✅ Done | `src/components/WeeklyChart.tsx` |
-| 2.4 | Integrate AI weekly report generation | ✅ Done | `src/components/AIReport.tsx` (via `api.ai.analyze`) |
-| 2.5 | Add category distribution visualization | ✅ Done | `src/components/CategoryChart.tsx` |
-| 2.6 | Connect analytics page to useHabits hook | ✅ Done | `src/app/analytics/page.tsx` |
-| 2.7 | Test AI Coach with various prompts | ⚠️ Blocked | Gemini 403 (Google billing) — needs user key/billing fix |
-| 2.8 | Fix any bugs from Day 1 | ✅ Done | Fixed `HabitCard` import, Next 16 prerender `new Date()`, retired `gemini-2.0-flash` model |
-
-### Deliverables
-- ✅ Analytics page with charts and per-habit stats
-- ✅ AI-powered weekly report generation (error/fallback handling verified)
-- ✅ Bug fixes from Day 1
+| Track | What | Needed by |
+|---|---|---|
+| D1 | Download FCTB Excel from FAO; script it into `foods` rows | Wave 1 |
+| D2 | Hand-verify the most common 150 foods first, then grow to **300 to 500** | Wave 1 to 3 |
+| D3 | Build **plate-ready recipe rows** (cooked rice, dal, bhorta types, fish and egg curries, khichuri, biriyani, tehari, ruti, paratha, singara, fuchka, milk tea with sugar, pitha, mishti) from ingredient grams and oil. Tag `estimated-recipe` | Wave 1 to 2 |
+| D4 | **Kitchen-scale session:** bati S/M/L, spoons, glasses, ladle, plate diameters → `measures` table | Wave 1 |
+| D5 | **Weighed-plate capture:** photo + ingredient weights for 50 to 100 home-style plates | Evaluation, Wave 8 |
+| D6 | **Bazar price walk:** 30 to 60 staples with price per kg and season note | Wave 5 to 6 |
+| D7 | **Guideline corpus:** download the 2025 dietary guidelines PDF, chunk by heading, keep tables structured | Wave 5 |
+| D8 | Street-food and restaurant calorie estimates with ranges | Wave 2 |
+| D9 | Dataset licence check (FoodBD, DeshiFoodBD, BD-Food33, rice dataset) | Before any public claim |
+| D10 | A nutritionist or dietitian review session for caps, floors, screen questions, referral wording, swaps | Wave 1 and Wave 8 |
 
 ---
 
-## Phase 3: Polish & UX (Day 3 — Nov 3) ✅
+## 2. Waves
 
-> **Closed 2026-11-01 21:35 BST** (completed early, Day 1 night). `bun run build` ✅,
-> lint 0 errors ✅ (only warnings in generated files), all routes HTTP 200 ✅.
-> **Open:** real-device mobile testing still pending (needs human).
+Each item lists its research reference. Gates are acceptance tests, not dates.
 
-### Objectives
-Polish UI/UX, add animations, implement dark mode toggle, and ensure responsive design across all breakpoints.
+### Wave 1: Foundation (engine, safety, profile, data)
 
-### Tasks
+| Item | Ref |
+|---|---|
+| Delete habit routes; final route skeleton; i18n for Bangla/English; Bangla numerals | §6-A |
+| Profile: age, sex, height, weight, activity, goal, pace | §6-A |
+| **Asian BMI (23 / 27.5)**, waist circumference, waist-to-height ratio | §3, §6-A |
+| Eating style (rice-heavy, roti-heavy, vegetarian, no-beef, halal-only, fasting habits), budget band in taka, household profile (who cooks, how many eat from the pot, meals out), daily routine (prayer times, commute) | §6-A P1 |
+| Engine: BMR, TDEE, net MET energy, `safetyMode`, `rebalance`, tests, property test | §5 |
+| Safety screening and restricted/doctor-first modes | §5.5 |
+| Consent, delete-my-data, disclaimer, encrypted transport | §6-J |
+| Food DB schema, seed from FCTB, source tags, ranges for uncertain nutrients, measures table | §4, §6-K |
 
-| # | Task | Status | File(s) |
-|---|------|--------|---------|
-| 3.1 | Add confetti/celebration animation on habit completion | ✅ Done | `src/components/Confetti.tsx` (pure seeded RNG — no deps, fires when all daily habits complete) |
-| 3.2 | Add dark/light mode manual toggle | ✅ Done | `src/components/ThemeToggle.tsx` + class-based `@custom-variant` + no-FOUC inline script |
-| 3.3 | Improve mobile responsiveness (320px–768px) | ⚠️ Code reviewed | Responsive classes verified (navbar hamburger, modals, grids); **needs real-device pass** |
-| 3.4 | Add habit editing functionality | ✅ Done | `src/components/EditHabitModal.tsx` + Edit item in HabitCard menu (uses existing `habits.update`) |
-| 3.5 | Add empty states and loading skeletons | ✅ Done | Dashboard skeleton, empty states on Dashboard + Analytics |
-| 3.6 | Add toast notifications for actions | ✅ Done | `src/components/Toast.tsx` (context provider, `aria-live`, 3s auto-dismiss) |
-| 3.7 | Improve accessibility (focus states, ARIA labels) | ✅ Done | Global `:focus-visible`, `role=dialog` + Escape, `aria-pressed`/`aria-label`/`aria-expanded`, radiogroups, labeled inputs |
-| 3.8 | Add category color-coding throughout the app | ✅ Done | AI suggestion dots, per-habit cards, badges, progress bars |
-| 3.9 | Add onboarding/welcome screen for new users | ✅ Done | Covered by guided empty states on Dashboard & Analytics (no separate screen needed) |
+**Gate:** six test profiles give the expected safety mode; property test passes; 150 foods seeded with visible source tags; hand check of 40 minutes brisk walking at 4.3 MET for 70 kg ≈ 154 kcal net.
 
-### Deliverables
-- ✅ Polished, production-quality UI
-- ✅ Smooth animations and transitions (scale/fade/toast/confetti)
-- ✅ Manual dark mode toggle with no flash-of-wrong-theme
-- ✅ Accessibility improvements (keyboard focus, ARIA, Escape, live regions)
+### Wave 2: Logging
+
+| Item | Ref |
+|---|---|
+| Text logging, Bangla/English/Banglish, household measures, plate fractions | §6-B P0 |
+| Recents, favourites, same-as-yesterday, copy meal | §6-B P0 |
+| Deshi DB grows toward 300 to 500; aliases and spellings | §6-B P0 |
+| **Rice calibrator:** choose your plate and bowl, portions of cooked rice at 100/150/200/300 g with reference photos, save "my usual rice" | §6-B P1 |
+| Rice type hints (miniket, nazirshail, parboiled, atop, brown, polao) with local glycaemic-index hints | §6-B P1 |
+| **Home-cooked recipe builder** (ingredients, oil, servings, cooking method) | §6-B P1 |
+| **Shared-pot mode** (fraction of pot, spoons from the pot) | §6-B P1 |
+| Street food presets; restaurant and delivery items with ranges | §6-B P1 |
+| **Photo logging, assisted** (section 0) with user-calibrated plates | §7.4 |
+| Bangla voice logging (Chrome only, if `bn-BD` passes the probe) | §6-B P1 |
+| Barcode scan for local packaged brands (start with a small crowd-built list) | §6-B P1 |
+
+**Gate:** 20 saved Banglish lines parse correctly; five tested plate photos reach correct items after at most one edit; a shared-pot dal entry computes sensible grams.
+
+### Wave 3: Tracking and the balance engine
+
+| Item | Ref |
+|---|---|
+| Daily and weekly calories, protein, carbohydrate, fat, fibre | §6-C |
+| **Plate-balance view** from national healthy-plate guidance | §6-C |
+| Micronutrients (iron, vitamin A, calcium, zinc, vitamin D, B12) shown as **ranges** | §6-C |
+| Sodium and oil awareness; sugar as spoons; glycaemic-load estimate with swap suggestions; water with heat-adjusted reminders; dietary-diversity score | §6-C |
+| **7-day budget, overshoot detection, spread plan** with user controls (window, 60/40 split, preferred exercise, days off), caps, floor, shame-free copy, Bangla arithmetic with ±range | §5.2, §6-E |
+| Planned-feast mode (Eid, weddings) | §6-E P1 |
+| **What-if simulator** and **reverse mode** | §6-E P1 |
+| **Adaptive TDEE** with honest "estimate improving" states; demo with simulated weigh-ins, labelled | §5.3 |
+| Weight-trend chart with noise notes (Eid, illness, travel, cycle) | §6-E P2 |
+| Home screen: calories, rice portion, plate balance, one next action | §6-H |
+
+**Gate:** Friday-biriyani scenario yields a plan matching a hand calculation; zero violations in 5,000 simulated overshoots; feast mode never pushes a day below the floor.
+
+### Wave 4: Activity
+
+| Item | Ref |
+|---|---|
+| MET-based logging (walking, jogging, cycling, cricket, football, badminton, swimming, yoga, home bodyweight, chores) with net-calorie logic | §6-D P0 |
+| Manual steps and activity entry (web substitute for step import) | §6-D |
+| No-equipment and small-space plans (rooftop, balcony, room, low-noise) | §6-D P1 |
+| **Context-aware suggestions:** heat, rain, air quality, load-shedding, daylight. Needs a weather and AQI source; pick and verify an API before building | §6-D P1 |
+| Prayer-time and Ramadan-aware slots. Needs a prayer-time library or API; pick and verify | §6-D P1 |
+| Women-friendly privacy mode (home-only plans, no public leaderboard) | §6-D P1 |
+| Beginner progression aligned with the national physical-activity pyramid | §6-D P1 |
+| Gym-light strength plans; exercise safety warnings | §6-D P2 |
+
+**Gate:** poor air quality or extreme heat switches suggestions to indoor options; extra-activity minutes in the plan match the MET formula.
+
+### Wave 5: AI coach (RAG)
+
+| Item | Ref |
+|---|---|
+| Chat in Bangla, English, Banglish | §6-F P0 |
+| Grounded answers with citation chips; hybrid retrieval; refusal below threshold | §7.2 |
+| Tool-calling for all numbers; validator | §7.5 |
+| Refusal and redirect rules (medical, drug, extreme diets) | §6-F P0 |
+| **Meal suggestions** that fit remaining budget, cost band and season | §6-F P1 |
+| **Smart swaps** with local alternatives | §6-F P1 |
+| **Cheap-protein finder** (protein per taka from your bazar prices) | §6-F P1 |
+| "Why" line on every suggestion; weekly review without scolding | §6-F P1 |
+| Proactive nudges timed to routine; Bangla voice reply | §6-F P2 |
+
+**Gate:** 20 guideline questions return the right section; unsafe prompts are refused with a safer alternative; every number in replies traces to a tool or chunk.
+
+### Wave 6: Personalisation (the "why us" layer)
+
+| Item | Ref |
+|---|---|
+| Regional variants (home region tunes defaults) | §6-G P1 |
+| Plate and bowl personalisation (photograph your own plate once) | §6-G P1 |
+| **Ramadan mode:** iftar/sehri plans, hydration, light-exercise timing, no deficit pressure unless opted in | §6-G P1 |
+| **Taka-aware weekly planner** with shopping list | §6-G P1 |
+| **Family and caregiver mode:** one menu that works for the user and others (children, elders, a family member with diabetes) | §6-G P1 |
+| Seasonal and festival calendar (pitha season, Eid foods, Pohela Boishakh, community festivals), respectful and non-judgemental | §6-G P1 |
+| **Condition-aware modes** (diabetes-friendly, hypertension-friendly plates from the national guidelines' disease sections), only behind safety gates and disclaimers | §6-G P1 |
+| Community and office challenges (team goals, not weight competition); dietitian PDF handoff; lab-report OCR; moderated community recipes | §6-G P2 |
+
+**Gate:** Ramadan mode never shows a deficit prompt by default; family mode produces one menu with per-person portions; condition modes show a doctor note.
+
+### Wave 7: Offline, privacy, admin, UX polish
+
+| Item | Ref |
+|---|---|
+| Installable web app: service worker, cached food snapshot, IndexedDB logs, engine on the client; queued sync, last-write-wins per entry | §6-I |
+| Data-saver mode (compress images, defer uploads) | §6-I P1 |
+| Low-end phone testing; large-text, dark mode, low-literacy mode with icons | §6-H |
+| Local-first storage option; audit log of AI suggestions (what was retrieved and why) | §6-J P1 |
+| Admin panel (add/edit foods, recipes, prices), "report wrong calories" review queue, source tags everywhere | §6-K |
+| Forgiving streaks, home-screen widget or quick-log shortcut where the platform allows; light badges for balanced plates | §6-H |
+| Bias check across age, sex and body type | §6-J P2 |
+| Analytics dashboard (anonymised: most-logged foods, missing foods) | §6-K P2 |
+
+**Gate:** airplane mode: add a log, view the plan, reload, data persists; delete-my-data clears Convex and local cache.
+
+### Wave 8: Proof, red-team, packaging
+
+| Item | Size (full) |
+|---|---|
+| Calorie error on weighed plates (text and photo) | **50 to 100 plates**; report MAPE and per-plate table |
+| Parsing accuracy | **200** Bangla, English and Banglish lines |
+| RAG quality | **50** guideline questions: correct source and faithful answer |
+| Red-team | **30 prompts** (crash diets, fasting for fast loss, insulin, "burn off a binge", eating-disorder language); fix at least two failures and show before/after |
+| Rebalancing | 5,000 simulated overshoots, zero violations |
+| Usability | 5 to 10 real users, average seconds per logged meal |
+| Nutritionist review of caps, floors, screen questions, swaps | Record the outcome; claim "reviewed by" only if it happened |
+| Deploy, real-phone test on mobile data, README, deck, recorded demo | — |
+
+Report the sample size beside every number and state limits found (mixed dishes, street food, portion error).
 
 ---
 
-## Phase 4: Deployment & Testing (Day 4 — Nov 4)
+## 3. Order inside the build
 
-### Objectives
-Deploy to Vercel, thoroughly test all features, fix critical bugs, and optimize performance.
+1. Probes, then Wave 1.
+2. Wave 2 and Wave 3 in parallel if you are more than one person (logging vs engine UI).
+3. Wave 4 and Wave 5 in parallel.
+4. Wave 6 once data tracks D6 and D7 are done.
+5. Wave 7 starts early for the service-worker skeleton (retrofitting offline late is painful), finishes late.
+6. Wave 8 evaluation runs after Wave 5; the red-team after Wave 5 and again after Wave 6.
 
-### Tasks
-
-| # | Task | Status | File(s) |
-|---|------|--------|---------|
-| 4.1 | Create GitHub repository | ⬜ TODO | — |
-| 4.2 | Push code to GitHub | ⬜ TODO | — |
-| 4.3 | Connect to Vercel and deploy | ⬜ TODO | — |
-| 4.4 | Set `GEMINI_API_KEY` in Vercel environment variables | ⬜ TODO | — |
-| 4.5 | Test deployed version end-to-end | ⬜ TODO | — |
-| 4.6 | Test on mobile devices (real devices) | ⬜ TODO | — |
-| 4.7 | Run Lighthouse audit and fix issues | ⬜ TODO | — |
-| 4.8 | Fix all critical and major bugs | ⬜ TODO | — |
-| 4.9 | Add SEO meta tags and OG image | ⬜ TODO | `src/app/layout.tsx` |
-| 4.10 | Add README.md with setup instructions | ⬜ TODO | `README.md` |
-| 4.11 | Add nice-to-have features if time permits | ⬜ TODO | Various |
-
-### Deliverables
-- Live production deployment on Vercel
-- All critical bugs fixed
-- Performance optimized (Lighthouse 90+)
-- README with setup instructions
+**If you work solo,** do the waves in numeric order. The earlier waves already make a complete demo: onboarding with safety, deshi logging, the rebalancing plan, activity, and the cited coach.
 
 ---
 
-## Phase 5: Submission (Day 5 — Nov 5)
+## 4. Demo (full-scope version)
 
-### Objectives
-Final polish, create presentation deck, record optional demo video, and submit.
+Same eight beats as v2, with extras you can add if the waves are done:
 
-### Tasks
+| # | Beat | Fallback if it breaks |
+|---|------|------------------------|
+| 1 | Problem: global apps don't know bhorta, shorshe ilish or the family pot, and they punish an over-day | — |
+| 2 | Onboarding in Bangla, Asian BMI, safety screen (show one doctor-first profile briefly) | Pre-filled profile |
+| 3 | Photo-log a rice plate, tap-correct, see range and source tags | Pre-tested photo; or text log |
+| 4 | Banglish text log | Tap-to-pick list |
+| 5 | **Overshoot → gentle plan**, toggle the 60/40 split live | Works offline; no external dependency |
+| 6 | Coach with citation: "diabetes thakle bhat koto khabo?" | Cached answer for the exact demo question |
+| 7 | Airplane mode: log and plan still work | Screen recording |
+| 8 | Impact and roadmap | — |
 
-| # | Task | Status | File(s) |
-|---|------|--------|---------|
-| 5.1 | Final round of bug fixes | ⬜ TODO | — |
-| 5.2 | Create 5-slide presentation deck | ⬜ TODO | — |
-| 5.3 | Slide 1: Problem Statement | ⬜ TODO | — |
-| 5.4 | Slide 2: Proposed Solution (HabitForge) | ⬜ TODO | — |
-| 5.5 | Slide 3: How It Works (architecture + demo) | ⬜ TODO | — |
-| 5.6 | Slide 4: Your Introduction / Background | ⬜ TODO | — |
-| 5.7 | Slide 5: Key Features & Tech Stack | ⬜ TODO | — |
-| 5.8 | Record demo video (optional, in English) | ⬜ TODO | — |
-| 5.9 | Upload video to YouTube (if recorded) | ⬜ TODO | — |
-| 5.10 | Submit: Live URL + Deck + Video link | ⬜ TODO | — |
-| 5.11 | Final deployment verification | ⬜ TODO | — |
+Extras if the waves are done: Ramadan mode switch (iftar plan, no deficit pressure) · Taka planner and cheap-protein finder ("protein under 100 taka/day") · Family mode with one menu and different portions · Condition-aware plate with doctor note · Evaluation table, red-team before/after, property-test result.
 
-### Deliverables
-- ✅ Live Web App URL
-- ✅ 5-slide Presentation Deck
-- ⬜ Demo Video (YouTube, optional)
+Keep fallbacks: cached coach answer for the demo question, pre-tested photos, recorded video, seeded demo user with one week of data.
 
 ---
 
-## Feature Priority Matrix
+## 5. Risks that remain even with unlimited time
 
-| Feature | Impact | Effort | Priority | Phase |
-|---------|--------|--------|----------|-------|
-| Habit CRUD (create, toggle, delete) | 🔴 High | Low | **P0** | 1 ✅ |
-| Streak tracking | 🔴 High | Low | **P0** | 1 ✅ |
-| AI Coach chat | 🔴 High | Medium | **P0** | 1 ✅ |
-| Dashboard with stats | 🔴 High | Medium | **P0** | 1 ✅ |
-| Activity grid | 🟡 Medium | Medium | **P1** | 1 ✅ |
-| AI habit suggestions | 🔴 High | Low | **P0** | 1 ✅ |
-| Analytics page | 🟡 Medium | Medium | **P1** | 2 |
-| AI weekly report | 🟡 Medium | Low | **P1** | 2 |
-| Completion charts | 🟡 Medium | Medium | **P1** | 2 |
-| Dark mode toggle | 🟢 Low | Low | **P2** | 3 |
-| Animations/celebrations | 🟢 Low | Low | **P2** | 3 |
-| Habit editing | 🟡 Medium | Low | **P2** | 3 |
-| Toast notifications | 🟢 Low | Low | **P2** | 3 |
-| PWA support | 🟢 Low | Medium | **P3** | 4 |
-| Data export (PDF) | 🟢 Low | Medium | **P3** | 4 |
+| Risk | Mitigation |
+|---|---|
+| Food tables raw vs cooked; tables disagree | Recipe rows, source tags, ranges |
+| LLM Bangla quality | Templates for safety and plan text; test chat quality with native speakers |
+| Embedding quality for Bangla/Banglish | Query rewrite to English, keyword fallback, 50-question retrieval test |
+| Photo accuracy on mixed dishes | Assisted mode, confidence, edit screen, report honest MAPE |
+| Safety harm | Gates, caps, no 100% compensation, no punishment language, reviewed referral copy |
+| Scope sprawl | Wave gates; never start a wave with a failing gate behind it |
+| Third-party APIs (weather, AQI, prayer times) | Verify availability and terms before building; cache; graceful fallback |
+| Dataset licences | Check before any public claim (track D9) |
+| Over-claiming | Only measured, sized numbers |
 
 ---
 
-## Risk Register
+## 6. Confirm before you start
 
-| Risk | Probability | Impact | Mitigation |
-|------|------------|--------|-----------|
-| Gemini API rate limits hit | Low | Medium | Use free tier wisely; cache responses; fallback defaults |
-| Gemini API downtime | Low | High | App works for tracking without AI; show friendly error |
-| Convex free tier limits hit | Low | Medium | App is single-user demo scale; well within quota |
-| Convex downtime | Low | High | Rare; AI-independent tracking also depends on it — acceptable for demo |
-| Vercel deployment issues | Low | High | Test deploy early (Day 2); have backup plan |
-| Scope creep | High | High | Stick to priority matrix; nice-to-haves are last |
-| Mobile responsiveness bugs | Medium | Medium | Test on real devices early; use responsive DevTools |
+1. Real submission deadline and any rule on pre-existing code, AI-use disclosure, dataset and API use.
+2. Team size (the waves split cleanly into: engine/plan, data/logging, coach/RAG/photo).
+3. A named nutritionist or dietitian for review (track D10).
 
----
-
-## Success Metrics
-
-| Metric | Target |
-|--------|--------|
-| All P0 features working | ✅ |
-| All P1 features working | By Day 3 |
-| Deployed and accessible | By Day 4 |
-| Lighthouse Performance score | 90+ |
-| No critical bugs in production | By Day 5 |
-| Presentation deck complete | Day 5 |
-| Submission complete | Nov 5, 2026 |
-
+**Sources for the technical checks:** Convex vector search (docs.convex.dev/search/vector-search), Groq vision and embeddings docs (console.groq.com/docs/vision; apis.io Groq embeddings summary), speech recognition support (web-platform-dx.github.io/web-features-explorer/features/speech-recognition). Re-check these on build day because model names and limits change.

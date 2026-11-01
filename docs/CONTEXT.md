@@ -1,11 +1,12 @@
-# HabitForge — Project Context & Improvement Tracker
+# Deshi Health Companion — Project Context & Improvement Tracker
 
-**Project:** HabitForge — AI Habit Tracker & Accountability Coach
+**Project:** Deshi Health Companion (working title) — Bangladesh-first calorie, diet & exercise-balancing app with RAG-grounded AI coach
+**Pivot:** Formerly HabitForge (AI Habit Tracker). Platform carries over; product scope now follows `docs/bangladeshi-calorie-companion-research.md` (sole source of truth — no invented features)
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
 **Timeline:** November 1–5, 2026
 
 > [!IMPORTANT]
-> This document is the **living tracker** for the project. Update it as decisions are made, bugs are found, features are completed, and improvements are identified.
+> This document is the **living tracker** for the project. Update it as decisions are made, bugs are found, features are completed, and improvements are identified. Session history below is preserved as-is.
 
 ---
 
@@ -13,14 +14,24 @@
 
 | Item | Status |
 |------|--------|
-| **Current Phase** | Phase 4 — Deployment & Testing |
-| **Day** | Day 1 (Nov 1, 2026) — Phases 1–3 all closed |
+| **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
+| **Current Phase** | **Build Plan v3 — Waves** (no time-driven cuts; exit gates per wave) |
+| **Day** | Day 2 (Nov 2, 2026) |
 | **Build Status** | ✅ `bun run build` passes, lint 0 errors, all routes HTTP 200 |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`) |
-| **AI (Gemini)** | 🟡 Key set, but Google returns **403 — free tier unavailable for this project** (needs billing or a new key from [AI Studio](https://aistudio.google.com/apikey)) |
+| **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat model `openai/gpt-oss-120b`; vision plan `qwen/qwen3.8-27b` (probe); embeddings `nomic-embed-text-v1_5` (probe Bangla) |
+| **P0 product surface** | ⬜ Not started — Wave 1 (engine, safety, profile, data) + probes first |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-01 21:35 BST |
+| **Last Updated** | 2026-11-02 (Plan v3 adopted — full scope in waves) |
+
+### Pivot banner (Nov 2, 2026)
+
+- **New spec:** `docs/bangladeshi-calorie-companion-research.md` — market/gaps (§1–2), health context (§3), data sources (§4), rebalance engine (§5), P0/P1/P2 checklist (§6), RAG architecture (§7), evaluation (§8), demo (§9), build order (§10)
+- **Build plan:** `docs/IMPLEMENTATION_PLAN.md` **v3** — full scope (all P0/P1 + most P2) in **8 waves with exit gates**; v2 quality decisions kept (deterministic `lib/engine/`, LLM never numbers, safety gates, citations, assisted photo, Bangla plan templates); Convex vector search + Qwen vision + PWA substitutions verified
+- **Docs rewritten:** SRS (FR IDs + §1.1a web deviations), ARCHITECTURE (v3.1), ENDPOINTS (v3.1), IMPLEMENTATION_PLAN (v3 waves), CONTEXT
+- **Platform kept:** Convex, Groq AI, Claymorphism design system, build/lint green
+- **Never cut:** safety gates · citations · rebalancing engine (wave gates enforce this)
 
 ---
 
@@ -97,21 +108,28 @@
 
 ## 🔮 What's Next
 
-### Current — Phase 4 (Day 4): Deployment & Testing
+### Pivot plan — Deshi Health Companion (Plan v3 waves — see IMPLEMENTATION_PLAN.md)
+
+**Probes first (30 min each):** Qwen vision on 10 plate photos · Bangla/Banglish on Groq embeddings · Chrome `bn-BD` speech.
+
+**Wave 1 (foundation):** delete habit routes + final route skeleton + i18n · profile + Asian BMI + waist · eating style/budget/household/routine · `lib/engine/` (BMR/TDEE/MET/safetyMode/rebalance + property test) · safety screening modes · consent/delete-data · food DB schema + FCTB seed (150 tagged) + measures table
+
+**Then waves in order (parallel if team >1):** W2 logging (parser, recipes, photo assisted, rice calibrator) → W3 tracking + balance engine UI → W4 activity → W5 RAG coach → W6 personalisation (Ramadan, taka, family) → W7 offline/PWA/admin/polish → W8 proof (eval 50–100 plates, 200 parse lines, 50 RAG Qs, 30 red-team, deploy, deck)
+
+**Never cut:** safety gates · citations · rebalancing engine. **Gate rule:** never start a wave with a failing gate behind it. Main branch stays demoable.
+
+### Platform carry-over (from old Phase 4 — still needed)
 1. [ ] Push code to GitHub
 2. [ ] Connect to Vercel, set `NEXT_PUBLIC_CONVEX_URL` env var
-3. [ ] Deploy + verify production (all routes, Convex connection)
+3. [ ] Deploy + verify production
 4. [ ] Real-device mobile testing (320px–768px) — **pending human**
-5. [ ] Browser click-through of all features (`bun dev`) — **pending human**
+5. [ ] Browser click-through (`bun dev`) — **pending human**
 6. [ ] Lighthouse audit
 7. [ ] README.md with setup instructions
 
-### Blocked on user
-- [ ] **Gemini 403 billing issue** — either enable billing at https://aistudio.google.com/billing or generate a fresh key at https://aistudio.google.com/apikey and run `bunx convex env set GEMINI_API_KEY=<new_key>`
-
 ### Day 5 Priorities
-1. [ ] Presentation deck (5 slides)
-2. [ ] Demo video (optional)
+1. [ ] Presentation deck (5 slides, §9.2 judging map)
+2. [ ] Demo video backup (optional)
 3. [ ] Final submission
 
 ---
@@ -121,12 +139,10 @@
 | # | Issue | Severity | Status | Notes |
 |---|-------|----------|--------|-------|
 | 1 | App not yet tested in browser (`bun dev` manual click-through) | 🔴 Critical | ⬜ Open | Build/lint/smoke tests pass; needs human click-through with Convex |
-| 2 | Gemini AI returns 403 (free tier not available for project) | 🔴 Critical | ⬜ Open | **User action:** billing or new API key — all AI features degrade gracefully meanwhile |
-| 3 | AI report / coach responses untestable until #2 fixed | 🟡 Medium | ⚠️ Blocked by #2 | Error + fallback paths verified via `convex run` |
-| 4 | Real-device mobile testing not done | 🟡 Medium | ⬜ Open | Phase 4 — code reviewed for responsive, needs human devices |
-| 5 | Chat history not persisted (session only) | 🟢 Low | ⬜ Open | Could save to localStorage or Convex |
+| 2 | Real-device mobile testing not done | 🟡 Medium | ⬜ Open | Code reviewed for responsive, needs human devices |
+| 3 | Chat history not persisted (session only) | 🟢 Low | ⬜ Open | Could save to localStorage or Convex |
 
-*Resolved: dark mode toggle (3.2), habit editing (3.4), toasts (3.6), confetti (3.1), a11y pass (3.7) — Phase 3.*
+*Resolved: Gemini 403 → migrated to Groq (Nov 2, chat/suggest/analyze live-tested); dark mode toggle (3.2), habit editing (3.4), toasts (3.6), confetti (3.1), a11y pass (3.7) — Phase 3.*
 
 ---
 
@@ -217,4 +233,4 @@ Day 5 ░░░░░░░░░░░░░░░░░░░░░░░░�
 
 ---
 
-*Last updated: November 1, 2026 — 21:35 BST*
+*Last updated: November 2, 2026 — Build Plan v3 (full-scope waves) adopted across all docs*

@@ -1,49 +1,66 @@
-# HabitForge — System Architecture
+# Deshi Health Companion — System Architecture
 
-**Version:** 2.0 | **Last Updated:** November 1, 2026
+**Version:** 3.1 (aligned with Build Plan v3 — `docs/IMPLEMENTATION_PLAN.md`)
+**Last Updated:** November 2, 2026
+**Source of truth:** `docs/bangladeshi-calorie-companion-research.md` §4, §7
+**Base platform:** existing Next.js 16 + Convex + Groq repo (formerly HabitForge — platform carries over, product pivots)
 
 ---
 
 ## 1. System Overview
 
-HabitForge follows a **client-heavy architecture**: the React frontend holds all UI state, while
-**Convex** provides persistence (tables), reactive sync (`useQuery`), and side-effect functions
-(`actions`) that proxy the Google Gemini API. The Next.js server is only a static/SSR shell —
-all data and AI traffic goes through Convex.
+Architecture follows the research's core principle (§7.1): **structured data for numbers, RAG for knowledge, LLM for language**.
 
 ```mermaid
 flowchart TB
-    subgraph Client["Browser (Client-Side)"]
-        UI["React UI Components"]
-        Hook["useHabits Hook"]
-        CXP["ConvexProvider / convex/react"]
-        Stats["Stats engine (in hook)"]
-
-        UI <--> Hook
-        Hook --> CXP
-        Hook --> Stats
-        Stats --> UI
+    subgraph Client["Browser (PWA)"]
+        UI["React UI (Claymorphism, Bangla/English)"]
+        SW["Service worker: app shell + food JSON snapshot"]
+        IDB["IndexedDB: logs, profile (queued sync)"]
+        Eng["lib/engine/ (pure TS)"]
+        UI <--> SW
+        UI <--> IDB
+        UI <--> Eng
     end
 
     subgraph Convex["Convex Cloud"]
-        Q["queries: habits.list, habitLogs.listAll, ..."]
-        M["mutations: create/update/remove/toggle, ..."]
-        A["actions: ai.chat / ai.suggest / ai.analyze"]
-        DB[(Convex Tables)]
-
-        Q --> DB
-        M --> DB
-        A --> DB
+        Q["queries: foods, mealLogs, profile, ..."]
+        M["mutations: log meal, save profile, ..."]
+        A["actions: ai.*, rag.search (vectorSearch), parse/photo"]
+        Tables[(Convex Tables)]
+        VI[("vectorIndex: ragChunks")]
+        Q --> Tables
+        M --> Tables
+        A --> Tables
+        A --> VI
     end
 
     subgraph External["External Services"]
-        GeminiAPI["Google Gemini API"]
+        GroqAPI["Groq: chat + vision + embeddings"]
     end
 
-    Hook -- "useQuery / useMutation" --> Q
-    Hook -- "useAction" --> A
-    A -- "HTTPS (GEMINI_API_KEY stays server-side)" --> GeminiAPI
+    UI -- "useQuery / useMutation" --> Q
+    UI -- "useAction" --> A
+    A -- "ctx.vectorSearch (actions only) + keyword merge" --> VI
+    A -- "tool-calling; numbers only from engine/tools" --> GroqAPI
+    A -- "GROQ_API_KEY server-side" --> GroqAPI
+    IDB -. "last-write-wins queue" .-> M
 ```
+
+**Layer responsibilities (Research §7.1 + Plan v3 §0):**
+
+| Layer | Used for | Notes | Repo status |
+|-------|----------|-------|-------------|
+| **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | Planned — Convex `foods` + bundled JSON snapshot (§5) |
+| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | Planned (§4.1) |
+| **Vector store (RAG)** | National dietary guidelines text, FCTB notes, cooking/portion guidance, exercise guidance, curated FAQs | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, cosine, dim 2–4096, ≤256 results) **merged with keyword/alias match**; chunks carry section + page; refuse below tuned threshold | Planned (§4.4) |
+| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Existing — Groq via `convex/ai.ts` `groqChat()` |
+| **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — re-check Groq docs before coding; assisted flow with confirm screen | Planned (§4.3) |
+
+> **Hard rules (§5.5, §7.1, Plan v3 §0):**
+> 1. The LLM never sets calories, floors, or exercise minutes — code does.
+> 2. Plan explanations are **Bangla/English templates**, not LLM output.
+> 3. `safetyMode()` returns `normal | restricted | doctor_first`; restricted modes **disable deficits and the rebalance planner** (logging and general guidance still work).
 
 ---
 
@@ -54,214 +71,279 @@ flowchart TB
 | **Framework** | Next.js (App Router) | 16.4.3 | Frontend shell, static prerender, fonts, metadata |
 | **Language** | TypeScript | 5.9.x | Type-safe development |
 | **UI Library** | React | 19.3.0 | Component-based UI |
-| **Styling** | Tailwind CSS | 4.3.x | Utility-first CSS (CSS-based config) |
+| **Styling** | Tailwind CSS | 4.3.x | Utility-first CSS (CSS-based config) + clay utilities |
 | **Icons** | Lucide React | 1.66.x | Consistent icon set |
-| **Backend/DB** | Convex | 1.49.x | Tables, reactive queries, mutations, actions |
-| **AI SDK** | @google/generative-ai | 0.24.x | Gemini client (runs inside Convex actions) |
+| **Backend/DB** | Convex | 1.49.x | Tables, reactive queries, mutations, actions, **vector index** |
+| **LLM / Vision / Embeddings** | Groq OpenAI-compatible REST | — | Chat: `openai/gpt-oss-120b` (override `GROQ_MODEL`); Vision: `qwen/qwen3.8-27b`; Embeddings: `nomic-embed-text-v1_5` (**test Bangla early** — likely English-oriented; fallback: LLM rewrites query to English, chunks stored English + Bangla alias keywords) via `groqChat()` in `convex/ai.ts` |
+| **Engine** | `lib/engine/` pure TS | — | Shared client + Convex; `bun test` + property test |
+| **Offline** | Service worker + IndexedDB | — | PWA: app shell + food snapshot cached; logs queued, last-write-wins per entry |
 | **Package Manager** | Bun | 1.4.2 | Fast JS package manager & runtime |
 | **Hosting** | Vercel (frontend) + Convex (backend) | — | Serverless deployment |
-| **AI model** | `gemini-3.8-flash` (override via `GEMINI_MODEL`) | — | Default chat/suggest/analyze model |
+
+> `@google/generative-ai` was removed after the Gemini 403 billing block; AI runs on Groq with the key in Convex env vars.
 
 ---
 
-## 3. Directory Structure
+## 3. Data Sources (Research §4 + Plan v3 data tracks D1–D10)
 
-```
-habitforge/
-├── docs/                          # 📄 Project documentation
-│   ├── SRS.md                     #    Software Requirements Specification
-│   ├── ARCHITECTURE.md            #    This file
-│   ├── ENDPOINTS.md               #    Backend functions documentation
-│   ├── IMPLEMENTATION_PLAN.md     #    Full implementation plan
-│   └── CONTEXT.md                 #    Project improvement tracker
-│
-├── convex/                        # ☁️ Convex backend
-│   ├── schema.ts                  #    Tables: habits, habitLogs (+ indexes)
-│   ├── habits.ts                  #    Habit CRUD queries/mutations
-│   ├── habitLogs.ts               #    Completion log queries/mutations
-│   ├── ai.ts                      #    AI actions: chat, suggest, analyze (Gemini)
-│   └── _generated/                #    Auto-generated API types (committed)
-│
-├── public/                        # 🌐 Static assets
-│   └── favicon.ico
-│
-├── src/
-│   ├── app/                       # 📱 Next.js App Router pages
-│   │   ├── layout.tsx             #    Root layout (ConvexProvider, Navbar, fonts, meta)
-│   │   ├── page.tsx               #    Dashboard (home page)
-│   │   ├── globals.css            #    Global styles & Tailwind config
-│   │   ├── coach/
-│   │   │   └── page.tsx           #    AI Coach chat page
-│   │   └── analytics/
-│   │       └── page.tsx           #    Analytics & reports page (Phase 2)
-│   │
-│   ├── components/                # 🧩 Reusable UI components
-│   │   ├── ConvexClientProvider.tsx #  ConvexReactClient + ConvexProvider
-│   │   ├── Navbar.tsx             #    Navigation bar + buildathon sticker
-│   │   ├── HabitCard.tsx          #    Individual habit with toggle
-│   │   ├── HabitGrid.tsx          #    GitHub-style activity grid
-│   │   ├── StatsCards.tsx         #    Overview statistics cards
-│   │   └── AddHabitModal.tsx      #    New habit creation modal
-│   │
-│   ├── hooks/                     # 🪝 Custom React hooks
-│   │   └── useHabits.ts           #    Convex state + streak/stats engine + actions
-│   │
-│   └── lib/                       # 📚 Shared types & constants
-│       └── types.ts               #    HabitCategory, HabitLog, AIMessage, CATEGORY_CONFIG
-│
-├── .env.local                     # 🔐 CONVEX_DEPLOYMENT + NEXT_PUBLIC_CONVEX_URL (git-ignored)
-├── package.json                   # Dependencies & scripts
-├── bun.lock                       # Bun lockfile
-└── tsconfig.json                  # TypeScript configuration
-```
+### 3.1 Food composition (structured DB seed — tracks D1, D2, D3)
 
-> **Removed in the Convex migration:** `src/app/api/*` (REST proxy routes),
-> `src/lib/storage.ts` (localStorage), `src/lib/analytics.ts` (moved into the hook),
-> `src/lib/gemini.ts` (moved into `convex/ai.ts`).
+| Source | What it gives | Handling rule |
+|--------|---------------|---------------|
+| **FCTB 2013** (INFS / Univ. of Dhaka / FAO) — free PDF + Excel | Primary calories & macros | Track D1: download Excel, script into `foods` rows; hand-verify the most common **150** first, grow to **300–500** (D2) |
+| **FCT 2012 ethnic foods** (INFS) | ~388 items incl. regional foods | Adds regional items |
+| **Ali & Amin 2020** | Two BD FCTs diverge on some nutrients | **`rangeLow/rangeHigh` on uncertain nutrients** |
+| **Mondol & Rahim 2025** + own recipe work | Lab-analysed home-cooked recipes | **Track D3:** 40+ plate-ready recipe rows from ingredient grams + oil, tag `estimated-recipe` |
+| **FAO/INFOODS regional tables** | Gap-fill | Mark borrowed rows (`sourceTag`) |
+
+### 3.2 Image datasets (photo support — track D9 licence check before public claims)
+
+| Dataset | Size / labels | Use |
+|---------|---------------|-----|
+| **FoodBD** (Dec 2025) | 3,523 meal images, 67 classes, polygon segmentation | Whole meals + segmentation reference |
+| **BD-Food33** (Mendeley, DIU) | 1,200+ images, 33 local categories | Classifier baseline reference |
+| **DeshiFoodBD** (2021) | 5,425 images, 19 famous foods | Restaurant/festival dishes |
+| **Aruzz22.5K** (Jahangirnagar Univ.) | 4,730 images, 20 rice varieties | Rice-type recognition |
+
+> Photo logging itself uses **Groq Qwen vision** (Plan v3 §0), not a locally trained model. Datasets inform the supported-food list and test photos.
+
+### 3.3 RAG knowledge corpus (§4.3, track D7)
+
+1. *National Dietary Guidelines for Bangladesh* (Aug 2025) — **primary corpus**: chunk by heading 300–600 tokens; keep tables (exchange lists, weights/measures) structured; each chunk stores **section name and page**
+2. Earlier *Dietary Guidelines for Bangladesh* (FAO/BIRDEM, 2013 rev.)
+3. WHO 2004 Asian BMI consultation
+4. Compendium of Physical Activities (MET values)
+5. BIRDEM/DAB patient education material **where licence allows**
+6. Curated "deshi swaps" / cooking notes (nutritionist-reviewed — track D10)
+7. Seasonal and price notes (track D6 — bazar walk)
+
+### 3.4 Collected ourselves (tracks D4–D6, D8)
+
+- **D4 Kitchen-scale session:** bati S/M/L, spoons, glasses, ladle, plate diameters → `measures` table
+- **D5 Weighed-plate capture:** photo + ingredient weights for 50–100 home-style plates (Wave 8 eval)
+- **D6 Bazar prices:** 30–60 staples, price/kg + season (Wave 5–6 taka features)
+- **D8** Street-food/restaurant estimates with ranges (Wave 2)
 
 ---
 
-## 4. Data Flow Architecture
+## 4. Pipelines (Research §7 + Plan v3 §0)
 
-### 4.1 Habit CRUD Flow (reactive — no manual refresh)
+### 4.1 Deterministic engine (`lib/engine/`)
+
+Pure functions shared by client and Convex: `bmr`, `tdee`, `metNetKcal`, `safetyMode`, `rebalance`, `adaptiveTdee`.
+
+- Unit tests with `bun test`.
+- **Property test:** thousands of random overshoot scenarios never drop a day below the floor, never exceed the exercise cap, never compensate 100%.
+- Hand check: 70 kg × 40 min brisk walk @ 4.3 MET ≈ **154 kcal net**.
+- Plan text rendered from **Bangla/English templates**, not LLM output.
+
+### 4.2 Food-name parsing (LLM chooses, code computes)
+
+1. Client fuzzy search over names + aliases → **top 5 candidates** per phrase
+2. Groq (JSON mode) receives user text + candidate IDs only → `[{foodId, quantity, unit}]` — **may not invent foods or numbers**
+3. Code converts units to grams via `measures` and computes calories
+4. Groq rate-limited/failed → **tap-to-pick list** (no LLM)
+5. At most **one** clarifying question, only when the top two candidates differ a lot in calories
+6. Show an **editable** result; save corrections with consent (training data)
+
+### 4.3 Photo logging (assisted)
+
+1. Qwen vision gets the image + compact list of supported food names/IDs → JSON: items + **relative portion class** (small/medium/large vs plate)
+2. Code maps portion class → grams using the user's **plate preset** (rice calibrator / plate size), computes calories **with a range**
+3. Confirm screen: edit items and portions
+4. **Gate:** test 10 real plate photos early; if most items are wrong, ship "assisted" with pre-tested demo photos and say so honestly
+
+### 4.4 RAG coach
+
+| Aspect | Spec |
+|--------|------|
+| **Corpus** | National Dietary Guidelines 2025 (D7): heading chunks 300–600 tokens, tables structured, section + page metadata |
+| **Retrieval** | **Convex `.vectorIndex()`** (call `ctx.vectorSearch` from an **action**, then load full docs with a query; cosine; ≤256 results) **merged with keyword + alias match** |
+| **Query path** | User message → **LLM rewrites to short English query** (also extracts food names) → retrieval → answer with `Source: <section>` |
+| **Embeddings** | `nomic-embed-text-v1_5` (Groq) — **probe Bangla/Banglish first**; fallback is the English rewrite path |
+| **Refusal** | Best match below tuned similarity threshold → "I'm not sure…" + suggest a professional |
+| **Number validator** | Any number in the final reply must appear in a tool result or retrieved chunk; else regenerate once, then template fallback |
+| **Privacy** | Send Groq only food text + question — **never age, weight, name, or conditions**; pass safe categories (`mode=restricted`) set by code |
+
+**Answer format:** short answer, then `Source: section name`.
+
+### 4.5 Guardrails (§7.5)
+
+- **System rules:** never diagnose, never prescribe medication, never recommend extreme restriction, always follow `safetyMode`
+- **Output checks:** numbers must match tool outputs; block unsourced numbers
+- **Red-team prompts:** crash diets, fasting for fast weight loss, diabetes medication questions, eating-disorder language, "burn off a binge" → calm refusal + safer alternative + referral
+- **Language rules:** no "burn off", no red "over" labels, no 100% compensation, forgiving streaks
+
+### 4.6 Voice (optional S5)
+
+Browser `SpeechRecognition` is **Chrome-only (139+)**; Firefox/Safari unsupported. `bn-BD` unconfirmed — 10-minute probe; drop if it fails. Never blocks the logging path.
+
+### 4.7 Offline (honest version — Wave 7)
+
+- Service worker caches app shell + **food JSON snapshot**
+- IndexedDB stores log entries + profile; **engine runs in the browser**
+- Writes queue → sync to Convex when online (**last-write-wins per entry ID**)
+- **Online-only:** coach, photo, parser's LLM step — offline parser falls back to tap-to-pick
+- Demo claim: *"logging, plan and engine work with no internet"*, not "the whole app"
+- Web substitutions: **manual steps entry** (no phone step-counter access); **PWA** instead of APK
+
+---
+
+## 5. Data Model (Convex tables)
+
+| Table | Key content | Source |
+|-------|-------------|--------|
+| `foods` | `nameBn`, `nameEn`, `aliases[]`, per-100g values, **`measures[{label, grams}]`**, `sourceTag`, `isCooked`, optional `rangeLow/rangeHigh`, region tags | §4.1, §6-B/K, Plan v3 §0 |
+| `measures` | Household standards from kitchen-scale session (bati S/M/L, spoons, glasses, ladle, plate diameters) | Track D4 |
+| `recipes` | Ingredients, oil, servings, method; per-serving values; tag `estimated-recipe`; owner label | Track D3 |
+| `mealLogs` | Date/time, items + quantities, method (text/voice/photo/preset), editable result, confidence, source | §6-B |
+| `profiles` | Demographics, goal/pace, eating style, budget band, household, routine, **safetyScreen + safetyMode**, homeRegion, calibrated plate/rice portion | §6-A/G |
+| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height; Asian BMI display | §3, §5.3 |
+| `activityLogs` | Type, duration, MET energy, net energy; **manual steps entry** | §6-D, Plan v3 §0 |
+| `budgetState` | 7-day rolling budget, target, overshoot, recovery plan, floor, caps | §5.2 |
+| `priceRecords` | Bazar price/kg by season | Track D6 |
+| `ragChunks` | Guidelines/FCTB/FAQ text + metadata (**section, page**, language, date) — vector-indexed | §7.2 |
+| `auditLogs` | AI suggestion audit: what was retrieved and why | §6-J |
+| `habits`, `habitLogs` | ⚠️ **Legacy HabitForge** — routes deleted in Wave 1; tables may remain briefly then be dropped | Plan v3 §0 |
+
+**Indexes:** every hot path (by date, by user, by food). Vector search only via actions.
+
+---
+
+## 6. Flows
+
+### 6.1 Reactive CRUD (existing pattern)
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant UI as React UI
-    participant H as useHabits Hook
+    participant H as Domain hook
     participant C as Convex (mutation)
     participant DB as Convex Table
 
-    U->>UI: Click "New Habit" / Toggle / Delete
-    UI->>H: addHabit() / toggleToday() / deleteHabit()
+    U->>UI: Action
+    UI->>H: handler()
     H->>C: useMutation(...)({ ... })
     C->>DB: insert / patch / delete
     DB-->>H: reactive update (useQuery re-renders)
-    H-->>UI: new stats computed
-    UI->>U: Re-render with new data
+    H-->>UI: recomputed state
 ```
 
-### 4.2 AI Coach Flow
+### 6.2 AI chat flow (RAG — Wave 5)
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant UI as Coach Page
     participant A as Convex action ai.chat
-    participant G as Gemini API
+    participant E as rag.search (vector + keyword)
+    participant G as Groq API
 
-    U->>UI: Type message & send
-    UI->>UI: Add user message to chat
-    UI->>A: useAction()({ message, habitData })
-    A->>A: Build system prompt with habit context
-    A->>G: generateContent(prompt)
-    G-->>A: AI response text
-    A-->>UI: { response } | { error }
-    UI->>UI: Add assistant message to chat
-    UI->>U: Display AI response (or friendly error)
+    U->>UI: Type message (BN/EN/Banglish)
+    UI->>A: useAction()({ message, safeCategories })
+    A->>A: LLM rewrites query to English
+    A->>E: ctx.vectorSearch + keyword merge
+    E-->>A: chunks + scores (+ section/page)
+    A->>G: chat.completions (chunks + tools + safe categories only)
+    G-->>A: answer (numbers only via tools)
+    A->>A: number validator (tool/chunk match or template fallback)
+    A-->>UI: { response, sources } | { error }
+    UI->>U: Answer + citation chip "Source: <section>"
 ```
 
-### 4.3 AI Suggestions & Weekly Report Flow
+### 6.3 Parse flow (Wave 2)
 
 ```mermaid
 sequenceDiagram
-    participant UI as Coach / Analytics Page
-    participant A as Convex action ai.suggest / ai.analyze
-    participant G as Gemini API
+    participant U as User
+    participant UI as Log Page
+    participant F as Client fuzzy search
+    participant A as Convex action ai.parseMeal
+    participant G as Groq (JSON mode)
 
-    UI->>A: { goal, existingHabits } | { habits, logs }
-    A->>G: generateContent(prompt demanding JSON)
-    G-->>A: raw text
-    A->>A: strip code fences, JSON.parse (fallback on failure)
-    A-->>UI: { suggestions } / { analysis } (or fallback)
-    UI->>UI: Render cards / report (add-to-tracker via addHabit)
+    U->>UI: "dupure bhat, dal, alu bhorta, mach"
+    UI->>F: top 5 candidates per phrase
+    F-->>UI: candidates
+    UI->>A: { text, candidateIds }
+    A->>G: pick [{foodId, quantity, unit}]
+    G-->>A: JSON (or fail)
+    alt Groq OK
+        A->>A: units → grams via measures; compute kcal
+        A-->>UI: structured items (editable)
+    else Groq fail / rate limit
+        A-->>UI: tap-to-pick candidate list
+    end
+    UI->>U: Confirm / edit → mealLogs.create
 ```
 
+### 6.4 Offline queue (Wave 7)
+
+Local write → IndexedDB → when online, flush queue to Convex mutations (last-write-wins by entry ID). Engine and plan view always local.
+
 ---
 
-## 5. Component Architecture
+## 7. Directory Structure
 
-```mermaid
-flowchart TD
-    Layout["RootLayout"]
-    Layout --> CXP["ConvexClientProvider"]
-    CXP --> Navbar["Navbar"]
-    CXP --> Pages
-
-    subgraph Pages["Pages (App Router)"]
-        Dashboard["/ — Dashboard"]
-        Coach["/coach — AI Coach"]
-        Analytics["/analytics — Analytics"]
-    end
-
-    Dashboard --> StatsCards["StatsCards"]
-    Dashboard --> HabitGrid["HabitGrid"]
-    Dashboard --> HabitCard["HabitCard (×N)"]
-    Dashboard --> AddHabitModal["AddHabitModal"]
-
-    Coach --> ChatUI["Chat Messages"]
-    Coach --> SuggestionPanel["AI Suggestions Sidebar"]
-
-    Analytics --> AnalyticsCharts["WeeklyChart / CategoryChart"]
-    Analytics --> HabitAnalyticsCards["HabitAnalyticsCard (×N)"]
-    Analytics --> AIReport["AIReport (ai.analyze)"]
-
-    subgraph Hooks["Custom Hooks"]
-        useHabits["useHabits() — queries, mutations, stats"]
-    end
-
-    Dashboard --> useHabits
-    Coach --> useHabits
-    Analytics --> useHabits
-    useHabits --> convex["convex/ functions"]
+```
+habitforge/
+├── docs/                          # 📄 Documentation
+│   ├── bangladeshi-calorie-companion-research.md  # ← product source of truth
+│   ├── IMPLEMENTATION_PLAN.md     #    Build Plan v3 (waves) ← build source of truth
+│   ├── SRS.md / ARCHITECTURE.md / ENDPOINTS.md / CONTEXT.md
+│
+├── lib/engine/                    # ⚙️ Pure TS: bmr, tdee, metNetKcal, safetyMode, rebalance, adaptiveTdee (+ tests)
+├── convex/                        # ☁️ Convex backend
+│   ├── schema.ts                  #    foods, measures, mealLogs, profiles, ragChunks + vectorIndex, ...
+│   ├── ai.ts                      #    ✅ groqChat() + actions (chat/parse/photo/...)
+│   ├── rag.ts                     #    ctx.vectorSearch + keyword merge (action)
+│   ├── foods.ts / mealLogs.ts / profile.ts / ...
+│   ├── habits.ts / habitLogs.ts   #    ⚠️ legacy — delete routes first (Wave 1)
+│   └── _generated/
+│
+├── design-system/                 # 🎨 Claymorphism MASTER.md (untracked)
+├── public/                        # 🌐 food JSON snapshot, service worker, manifest (PWA)
+├── src/
+│   ├── app/
+│   │   ├── onboarding/  home/  log/  plan/  coach/  activity/  settings/
+│   │   ├── layout.tsx  page.tsx (→ redirect /home)  globals.css
+│   │   └── (habit routes deleted in Wave 1)
+│   ├── components/
+│   ├── hooks/
+│   └── lib/                       #    types, i18n (Bangla/EN + numerals)
+│
+├── .env.local                     # 🔐 CONVEX_DEPLOYMENT + NEXT_PUBLIC_CONVEX_URL
+└── (AI key: Convex env GROQ_API_KEY — never in repo)
 ```
 
----
-
-## 6. State Management
-
-Hook-based state via **Convex reactive queries** — no Redux/Zustand, no manual cache:
-
-| State | Location | Persistence |
-|-------|----------|-------------|
-| Habit definitions | `useQuery(api.habits.list)` inside `useHabits` | Persistent (Convex) |
-| Habit completion logs | `useQuery(api.habitLogs.listAll)` inside `useHabits` | Persistent (Convex) |
-| Computed stats (streaks, rates, 7-day trend) | Derived in `useHabits` on every query update | Recomputed on render |
-| AI chat messages | `useState` in Coach page | Session only |
-| AI suggestions | `useState` in Coach page | Session only |
-| UI state (modals, menus) | `useState` in components | Session only |
-
-**Loading model:** Convex `useQuery` returns `undefined` until data arrives. `useHabits` exposes
-`isLoaded`; before that it returns zeroed stats **without evaluating any date logic** (required
-by Next.js 16 — `new Date()` must not run during static prerender).
+**Final routes (Plan v3 §0):** `/onboarding` `/home` `/log` `/plan` `/coach` `/activity` `/settings` (+ new ones as waves add them). HabitForge screens are **replaced**, not kept alongside.
 
 ---
 
-## 7. Security Considerations
+## 8. Security & Privacy
 
 | Concern | Mitigation |
 |---------|-----------|
-| API key exposure | `GEMINI_API_KEY` lives in **Convex deployment env vars**, read only inside `convex/ai.ts` actions (`"use node"`); never bundled to the client |
-| Input validation | Convex validators (`v.string()`, `v.id()`, unions) reject bad args before handlers run |
-| Data privacy | Habit data stored in the user's Convex deployment; only habit names/stats are sent to Gemini in prompts |
-| XSS | React's default JSX escaping; no `dangerouslySetInnerHTML` |
-| Secrets in git | `.env*` is git-ignored; no secrets in source |
+| API key exposure | `GROQ_API_KEY` in **Convex deployment env vars**, read only inside actions (`"use node"`); never bundled to client |
+| Input validation | Convex validators reject bad args before handlers |
+| **LLM privacy (hard rule)** | Never send age, weight, name, or health conditions to Groq — only food text, question, and safe categories (`mode=restricted`) set by code |
+| LLM hallucinated numbers | Tool-calling + **number validator** (§4.4) |
+| Health data | Consent screen, delete-my-data (Convex + local cache), encrypted transport; audit log of retrievals (§6-J) |
+| XSS | React default escaping; no `dangerouslySetInnerHTML` |
+| Secrets in git | `.env*` git-ignored; no secrets in source |
 
 ---
 
-## 8. Deployment Architecture
+## 9. Deployment Architecture
 
 ```mermaid
 flowchart LR
     Dev["Developer (local)"] -->|"git push"| GH["GitHub Repo"]
-    GH -->|"Auto Deploy"| Vercel["Vercel (Next.js)"]
+    GH -->|"Auto Deploy"| Vercel["Vercel (Next.js + PWA)"]
     Dev -->|"convex dev --once"| Convex["Convex Cloud"]
-    GH -.->|"CI / manual"| Convex
-
     Vercel -->|"HTTPS"| User["End User"]
-    User -->|"HTTPS (NEXT_PUBLIC_CONVEX_URL)"| Convex
-    Convex -->|"HTTPS (GEMINI_API_KEY)"| Gemini["Gemini API"]
+    User -->|"NEXT_PUBLIC_CONVEX_URL"| Convex
+    Convex -->|"HTTPS (GROQ_API_KEY)"| Groq["Groq API"]
 ```
 
 | Environment | URL | Purpose |
@@ -270,18 +352,21 @@ flowchart LR
 | Preview | `https://habitforge-*.vercel.app` | PR preview deployments |
 | Production | `https://habitforge.vercel.app` | Live production app |
 
-**Vercel env vars needed:** `NEXT_PUBLIC_CONVEX_URL` (from `.env.local`).
+**Vercel env:** `NEXT_PUBLIC_CONVEX_URL`. **Convex env:** `GROQ_API_KEY` (+ optional `GROQ_MODEL`).
 
 ---
 
-## 9. Performance Strategy
+## 10. Performance & Offline Strategy
 
-| Strategy | Implementation |
-|----------|---------------|
-| **Code Splitting** | Next.js App Router automatic route-based splitting |
-| **Client Components** | Only pages and interactive components are `'use client'` |
-| **Font Optimization** | `next/font/google` for Geist fonts (zero layout shift) |
-| **Indexed Reads** | Convex indexes on `habitId`, `date`, `habitId+date` — no full scans |
-| **Minimal Dependencies** | Runtime deps: `next`, `react`, `convex`, `@google/generative-ai`, `lucide-react` |
-| **Reactive Updates** | Only changed queries re-render — no refetch polling |
-| **Static Prerender** | Dashboard/coach pages prerender as static shells; data streams in client-side |
+| Strategy | Implementation | Ref |
+|----------|---------------|-----|
+| Code splitting | App Router route-based splitting | — |
+| Client components | Only interactive pages `'use client'` | — |
+| Fonts | `next/font/google` — Varela Round + Nunito Sans, zero layout shift | — |
+| Indexed reads | Convex indexes on hot paths; vector search in actions only | §5 |
+| Minimal deps | Runtime: `next`, `react`, `convex`, `lucide-react` | — |
+| Reactive updates | Only changed queries re-render | — |
+| Static prerender | Static shells; gate date logic on `isLoaded` (Next 16 rule) | — |
+| **Offline (PWA)** | Service worker: shell + food JSON; IndexedDB logs; engine client-side; queued sync last-write-wins | §4.7, Wave 7 |
+| Small footprint | Low-RAM friendly; test on low-end phone (real device, mobile data) | §6-I |
+| Photo/model size | **No on-device model** — Qwen cloud vision; photo online-only; data-saver compresses images | §6-I, Plan v3 §0 |
