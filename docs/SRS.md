@@ -1,6 +1,6 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
-**Version:** 2.0 (rewritten from `bangladeshi-calorie-companion-research.md`)
+**Version:** 2.1 (Wave 1 live; SRS traceability table added)
 **Date:** November 2, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
@@ -9,6 +9,9 @@
 
 > **Rule for this document:** every requirement traces to a section of the research doc.
 > No features are added beyond it. Priority tags map the research's checklist: **[P0]** = Must work in the live demo, **[P1]** = strong differentiator, **[P2]** = stretch/roadmap (Research §6).
+>
+> **Live SRS table:** see [§9 SRS Traceability Table](#9-srs-traceability-table) for a compact per-ID status view.
+> **Diagrams:** see `docs/DIAGRAMS.md` for DFD (Levels 0–2) and sequence diagrams.
 
 ---
 
@@ -321,21 +324,20 @@ Global apps (MyFitnessPal, Cronometer, MacroFactor, photo-first apps) and Indian
 ## 6. Data Model (entities derived from Research §4, §5, §6)
 
 > Fields listed are those the checklist and engine require; exact schemas are implementation detail.
+> Live Convex tables (schema v2) are documented in `docs/ARCHITECTURE.md` §5.
 
-| Entity | Key content | Source |
-|--------|-------------|--------|
-| **FoodItem** | Bangla/English names, aliases, region tags, per-100g and per-serving macros/micros, **source tag** (measured/FCTB/borrowed/user/estimated), household-measure conversions, confidence range, season/price references | §4.1, §6-B/K |
-| **Recipe** | Ingredients, oil, servings, cooking method; per-serving values; owner label ("Amma's dal") | §6-B |
-| **MealLog** | Date/time, items + quantities (household measures or grams), method (text/voice/photo/preset), editable result, confidence, source | §6-B, §7.3–7.4 |
-| **Profile** | Age, sex, height, weight, activity, goal, pace, eating style, budget band (taka), household, routine (work/prayer/commute), **safety-screen results**, home region, calibrated plate/rice portion | §6-A, §6-G |
-| **HealthMeasure** | Weight trend entries (with notes: Eid, illness, travel, cycle), waist circumference, waist-to-height ratio; Asian BMI display (23/27.5) | §3, §5.3, §6-A |
-| **ActivityLog** | Activity type, duration, MET energy, net energy; steps import | §5.1, §6-D |
-| **BudgetState** | 7-day rolling budget, today's target, overshoot, recovery plan (window, split, daily trims/minutes), personal floor, caps | §5.2 |
-| **PriceRecord** | Bazar price per kg for common foods, by season | §4.4 |
-| **RAGChunk** | Text from guidelines/FCTB notes/FAQs + metadata (source, section, language, date) | §7.2 |
-| **AuditLog** | AI suggestion audit: what was retrieved and why | §6-J |
-
-> Existing repo tables `habits`/`habitLogs` remain available for activity/habit-style logging; the product's core entities above are additive (see ENDPOINTS.md status column).
+| Entity | Key content | Convex table | Source |
+|--------|-------------|--------------|--------|
+| **FoodItem** | Bangla/English names, aliases, region tags, per-100g and per-serving macros/micros, **source tag** (measured/FCTB/borrowed/user/estimated), household-measure conversions, confidence range, season/price references | `foods` (171 rows) | §4.1, §6-B/K |
+| **Recipe** | Ingredients, oil, servings, cooking method; per-serving values; owner label ("Amma's dal") | ⬜ W2 | §6-B |
+| **MealLog** | Date/time, items + quantities (household measures or grams), method (text/voice/photo/preset), editable result, confidence, source | `mealLogs` (schema ready) | §6-B, §7.3–7.4 |
+| **Profile** | Age, sex, height, weight, activity, goal, pace, eating style, budget band (taka), household, routine (work/prayer/commute), **safety-screen results**, home region, calibrated plate/rice portion | `profiles` (live) | §6-A, §6-G |
+| **HealthMeasure** | Weight trend entries (with notes: Eid, illness, travel, cycle), waist circumference, waist-to-height ratio; Asian BMI display (23/27.5) | `weighIns` (live) | §3, §5.3, §6-A |
+| **ActivityLog** | Activity type, duration, MET energy, net energy; steps import | `activityLogs` (schema ready) | §5.1, §6-D |
+| **BudgetState** | 7-day rolling budget, today's target, overshoot, recovery plan (window, split, daily trims/minutes), personal floor, caps | `budgetState` (schema ready) | §5.2 |
+| **PriceRecord** | Bazar price per kg for common foods, by season | ⬜ W5–6 | §4.4 |
+| **RAGChunk** | Text from guidelines/FCTB notes/FAQs + metadata (source, section, language, date) | ⬜ W5 | §7.2 |
+| **AuditLog** | AI suggestion audit: what was retrieved and why | `auditLogs` (live) | §6-J |
 
 ---
 
@@ -368,3 +370,250 @@ Global apps (MyFitnessPal, Cronometer, MacroFactor, photo-first apps) and Indian
 | AC-10 | App deploys and runs without errors | Deployment test |
 
 **Never cut (§10.2):** safety gates, citations, rebalancing engine.
+
+---
+
+## 9. SRS Traceability Table
+
+Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄 Partial / scaffold · ⬜ Planned · — N/A
+
+### 9.1 Engine (FR-ENG-*, FR-REBAL-*, FR-ATDEE-*, FR-SAFETY-*)
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-ENG-01 | BMR via Mifflin-St Jeor | P0 | W1 | ✅ | `src/lib/engine/energy.ts` `bmr()` |
+| FR-ENG-02 | TDEE = BMR × activity factor | P0 | W1 | ✅ | `energy.ts` `tdee()` |
+| FR-ENG-03 | MET energy: gross & net | P0 | W1 | ✅ | `energy.ts` `metNetKcal()`, `metNetKcalMinutes()` |
+| FR-ENG-04 | 7,700 kcal per kg | P0 | W1 | ✅ | `energy.ts` `KCAL_PER_KG` |
+| FR-ENG-05 | Rate of loss ~0.5–1 kg/week | P0 | W3 | ⬜ | Will use in budget.plan |
+| FR-ENG-06 | Protein band 1.6–2.2 g/kg | P1 | W1 | ✅ | `energy.ts` `proteinBandGPerKg()` |
+| FR-ENG-07 | Exercise ±15% uncertainty note | P0 | W1 | ✅ | UI shows `Range` with ±15% |
+| FR-REBAL-01 | 7-day rolling energy budget | P0 | W3 | 🔄 | `rebalance.ts` ready; `budgetState` table ready |
+| FR-REBAL-02 | Overshoot when intake−target > 100 | P0 | W3 | ✅ | `rebalance.ts` tolerance logic |
+| FR-REBAL-03 | Recovery plan 3–7 days | P0 | W3 | ✅ | `rebalance.ts` windowDays clamp |
+| FR-REBAL-04 | 60/40 split (intake/activity) | P0 | W3 | ✅ | `rebalance.ts` intakeShare |
+| FR-REBAL-05 | Never 100% compensation (50–70%) | P0 | W3 | ✅ | `rebalance.ts` coverShare clamp; property test |
+| FR-REBAL-06 | Cap activity net 200 kcal/day | P0 | W3 | ✅ | `rebalance.ts` activityCapNet |
+| FR-REBAL-07 | Never below floor (BMR) | P0 | W3 | ✅ | `rebalance.ts` floor clamp; property test |
+| FR-REBAL-08 | Forgive / re-spread silently | P0 | W3 | ⬜ | UX copy + rebalance re-run |
+| FR-REBAL-09 | Planned feast mode | P1 | W3 | ✅ | `rebalance.ts` `feastPreBank()` |
+| FR-REBAL-10 | Plain Bangla with ±range | P0 | W3 | ⬜ | Templates in plan UI |
+| FR-REBAL-11 | User controls (window, split, days off) | P0 | W3 | ✅ | `RebalanceControls` type |
+| FR-ATDEE-01 | Start from formula estimate | P1 | W3 | ✅ | `adaptive.ts` `adaptiveTdee()` |
+| FR-ATDEE-02 | Weekly compare weight vs intake | P1 | W3 | ✅ | `adaptive.ts` formula |
+| FR-ATDEE-03 | Blend + honesty states | P1 | W3 | ✅ | `adaptive.ts` confidence/status |
+| FR-ATDEE-04 | Warn Eid/sodium/cycle noise | P1 | W3 | ⬜ | UI notes |
+| FR-SAFETY-01 | Onboarding screen (6 flags) | P0 | W1 | ✅ | `safety.ts` `screenFromAnswers()` |
+| FR-SAFETY-02 | High-risk → deficits off + referral | P0 | W1 | ✅ | `safetyMode()`; `allowsDeficit()` |
+| FR-SAFETY-03 | ED guardrails (no shaming) | P0 | W1 | ✅ | `safetyMode()` + UI tone |
+| FR-SAFETY-04 | Diabetes mode (no fasting/intense) | P0 | W5 | ⬜ | Condition-aware mode |
+| FR-SAFETY-05 | "Not a medical device" visible | P0 | W1 | ✅ | `SafetyBanner`, settings |
+| FR-SAFETY-06 | LLM never sets numbers | P0 | W1 | ✅ | Engine pure TS; AI scaffold sends safeContext only |
+| FR-SAFETY-07 | Red-flag → stop-and-seek-care | P0 | W5 | ⬜ | Coach refusal rules |
+
+### 9.2 Functional by Area (FR-A…FR-K)
+
+#### A. Onboarding & Profile
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-A-01 | Bangla/EN toggle + numerals | P0 | W1 | ✅ | `src/lib/i18n.tsx`, `messages/{en,bn}.json` |
+| FR-A-02 | Profile: age/sex/height/weight/activity/goal/pace | P0 | W1 | ✅ | `onboarding/page.tsx` → `profile.save` |
+| FR-A-03 | Asian BMI 23/27.5 + waist + WHtR | P0 | W1 | ✅ | `energy.ts`; `profile.save` |
+| FR-A-04 | Safety screening → restricted/doctor-first | P0 | W1 | ✅ | `safety.ts`; onboarding screen |
+| FR-A-05 | Eating style (rice-heavy, veg, etc.) | P1 | W1 | ✅ | Onboarding step |
+| FR-A-06 | Budget band taka/day | P1 | W1 | ✅ | Onboarding step |
+| FR-A-07 | Household profile | P1 | W1 | ✅ | Onboarding (optional) |
+| FR-A-08 | Routine: prayer, commute | P1 | W1 | ✅ | Onboarding (optional) |
+| FR-A-09 | Family accounts | P2 | W6 | ⬜ | Later |
+
+#### B. Food Logging
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-B-01 | Bangla/Banglish text logging | P0 | W2 | 🔄 | `ai.parseMeal` scaffold; UI fixtures |
+| FR-B-02 | Photo logging | P0 | W2 | 🔄 | UI fixtures; `analyzePhoto` planned |
+| FR-B-03 | Deshi food DB (BN/EN/aliases) | P0 | W1 | ✅ | 171 rows; `foods.search` |
+| FR-B-04 | Household measures | P0 | W1 | ✅ | `measures[]` in seed |
+| FR-B-05 | Recents, favourites, copy meal | P0 | W2 | ⬜ | Planned |
+| FR-B-06 | Bangla voice (Chrome-only) | P1 | W2 | ⬜ | Probe-gated |
+| FR-B-07 | Rice calibrator | P1 | W2 | 🔄 | UI route exists; not wired |
+| FR-B-08 | Rice type hints | P1 | W2 | ⬜ | GI data in seed |
+| FR-B-09 | Recipe builder | P1 | W2 | 🔄 | UI route exists; not wired |
+| FR-B-10 | Shared-pot mode | P1 | W2 | ⬜ | Planned |
+| FR-B-11 | Street food presets | P1 | W2 | 🔄 | UI route exists; not wired |
+| FR-B-12 | Restaurant/delivery items | P1 | W2 | ⬜ | Planned |
+| FR-B-13 | Barcode scan | P1 | W7 | ⬜ | Later |
+| FR-B-14 | Messenger/Telegram bot | P2 | — | ⬜ | Out of scope |
+| FR-B-15 | Receipt/screenshot import | P2 | — | ⬜ | Out of scope |
+
+#### C. Tracking
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-C-01 | Daily/weekly calories + macros | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
+| FR-C-02 | Plate-balance view | P0 | W3 | 🔄 | `PlateBalance` chart exists |
+| FR-C-03 | Micronutrients as ranges | P1 | W3 | ⬜ | FCTB ranges in seed |
+| FR-C-04 | Sodium/oil awareness | P1 | W3 | ⬜ | Planned |
+| FR-C-05 | Sugar as spoons | P1 | W3 | ⬜ | Planned |
+| FR-C-06 | Glycaemic load estimate | P1 | W3 | ⬜ | Planned |
+| FR-C-07 | Water intake | P1 | W4 | ⬜ | Planned |
+| FR-C-08 | Dietary diversity score | P2 | W3 | ⬜ | Planned |
+
+#### D. Exercise & Activity
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-D-01 | MET-based activity logging | P0 | W4 | 🔄 | Engine ready; UI on fixtures |
+| FR-D-02 | Manual steps entry | P0 | W4 | ⬜ | Web substitute |
+| FR-D-03 | Net-calorie logic | P0 | W4 | ✅ | `metNetKcal()` |
+| FR-D-04 | No-equipment plans | P1 | W4 | ⬜ | Planned |
+| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | ⬜ | Planned |
+| FR-D-06 | Prayer/Ramadan scheduling | P1 | W4/W6 | ⬜ | Planned |
+| FR-D-07 | Women-friendly privacy | P1 | W4 | ⬜ | Planned |
+| FR-D-08 | Beginner progression | P1 | W4 | ⬜ | Planned |
+| FR-D-09 | Gym-light strength | P2 | W4 | ⬜ | Planned |
+| FR-D-10 | Exercise safety warnings | P2 | W4 | ⬜ | Planned |
+
+#### E. Balance Engine
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-E-01 | 7-day rolling budget | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
+| FR-E-02 | Overshoot detection + gentle message | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
+| FR-E-03 | Spread plan with maths ± range | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
+| FR-E-04 | User controls | P0 | W3 | ✅ | `RebalanceControls` |
+| FR-E-05 | Hard safety floors/caps | P0 | W1 | ✅ | Property test |
+| FR-E-06 | Planned feast mode | P1 | W3 | ✅ | `feastPreBank()` |
+| FR-E-07 | Adaptive TDEE + confidence | P1 | W3 | ✅ | `adaptiveTdee()` |
+| FR-E-08 | What-if simulator | P1 | W3 | ⬜ | Planned |
+| FR-E-09 | Reverse mode | P1 | W3 | ⬜ | Planned |
+| FR-E-10 | Weight trend chart | P2 | W3 | ⬜ | `weighIns` table ready |
+
+#### F. AI Coach
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-F-01 | Chat BN/EN/Banglish | P0 | W5 | 🔄 | `ai.chat` scaffold |
+| FR-F-02 | Grounded answers + citations | P0 | W5 | ⬜ | RAG planned |
+| FR-F-03 | Deterministic numbers | P0 | W1 | ✅ | Engine pure TS |
+| FR-F-04 | Refusal/redirect rules | P0 | W5 | ⬜ | Planned |
+| FR-F-05 | Meal suggestions (budget/season) | P1 | W5 | ⬜ | Planned |
+| FR-F-06 | Smart swaps | P1 | W5 | ⬜ | Planned |
+| FR-F-07 | Cheap-protein finder | P1 | W5 | ⬜ | Planned |
+| FR-F-08 | Explain "why" | P1 | W5 | ⬜ | Templates |
+| FR-F-09 | Weekly review | P1 | W5 | ⬜ | Planned |
+| FR-F-10 | Proactive nudges | P2 | W5 | ⬜ | Planned |
+| FR-F-11 | Voice reply | P2 | W5 | ⬜ | Planned |
+
+#### G. Personalisation
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-G-01 | Deshi-first food intelligence | P0 | W1 | ✅ | 171-row seed |
+| FR-G-02 | Regional variants | P1 | W6 | ⬜ | `regionTags` in seed |
+| FR-G-03 | Plate personalisation | P1 | W6 | ⬜ | `calibratedPlate` in profile |
+| FR-G-04 | Ramadan mode | P1 | W6 | ⬜ | Planned |
+| FR-G-05 | Taka weekly planner | P1 | W6 | ⬜ | Planned |
+| FR-G-06 | Family/caregiver mode | P1 | W6 | ⬜ | Planned |
+| FR-G-07 | Festival calendar | P1 | W6 | ⬜ | Planned |
+| FR-G-08 | Condition-aware modes | P1 | W6 | ⬜ | Planned |
+| FR-G-09 | Para/office challenges | P2 | W6 | ⬜ | Planned |
+| FR-G-10 | Dietitian PDF export | P2 | W6 | ⬜ | Planned |
+| FR-G-11 | Lab-report OCR | P2 | W6 | ⬜ | Planned |
+| FR-G-12 | Community recipes | P2 | W6 | ⬜ | Planned |
+
+#### H. Habits / UX
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-H-01 | Fast home screen | P0 | W1 | ✅ | `/home` on fixtures |
+| FR-H-02 | Non-judgemental language | P0 | W1 | ✅ | Design system + copy |
+| FR-H-03 | Forgiving streaks | P1 | W7 | ⬜ | Planned |
+| FR-H-04 | Widget / quick-log | P1 | W7 | ⬜ | PWA |
+| FR-H-05 | Dark mode + large text | P1 | W1 | ✅ | ThemeToggle, a11y |
+| FR-H-06 | Light gamification | P2 | W7 | ⬜ | Planned |
+
+#### I. Offline / Performance
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-I-01 | Offline core via PWA | P0 | W7 | 🔄 | manifest exists; no SW yet |
+| FR-I-02 | Installable + low-end | P0 | W7 | 🔄 | manifest exists |
+| FR-I-03 | On-device photo model | P1 | — | ⬜ | Not in scope (cloud only) |
+| FR-I-04 | Sync when online | P1 | W7 | ⬜ | Last-write-wins planned |
+| FR-I-05 | Data-saver mode | P1 | W7 | ⬜ | Planned |
+| FR-I-06 | MFS payment | P2 | — | ⬜ | Out of scope |
+
+#### J. Privacy / Safety
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-J-01 | Consent + delete-my-data | P0 | W1 | ✅ | `privacy.deleteMyData` |
+| FR-J-02 | Encryption at rest/in transit | P0 | W1 | ✅ | Convex HTTPS + encrypted storage |
+| FR-J-03 | Medical disclaimer + screening | P0 | W1 | ✅ | Onboarding + SafetyBanner |
+| FR-J-04 | Local-first option | P1 | W7 | ⬜ | PWA |
+| FR-J-05 | AI audit log | P1 | W5 | 🔄 | `auditLogs` table; AI audit planned |
+| FR-J-06 | Nutritionist review | P1 | W8 | ⬜ | Evaluation |
+| FR-J-07 | Bias check | P2 | W8 | ⬜ | Evaluation |
+
+#### K. Admin / Data Ops
+
+| ID | Requirement (short) | P | Wave | Status | Implementation |
+|----|---------------------|---|------|--------|----------------|
+| FR-K-01 | Admin CRUD foods/recipes | P1 | W7 | ⬜ | `foods.upsert` exists |
+| FR-K-02 | Report wrong button | P1 | W7 | ⬜ | Planned |
+| FR-K-03 | Source tag on every row | P1 | W1 | ✅ | `sourceTag` on all 171 rows |
+| FR-K-04 | Analytics dashboard | P2 | W7 | ⬜ | Planned |
+
+### 9.3 Non-Functional (NFR-01…10)
+
+| ID | Requirement (short) | Wave | Status |
+|----|---------------------|------|--------|
+| NFR-01 | Offline core via PWA | W7 | 🔄 |
+| NFR-02 | Installable, low-end friendly | W7 | 🔄 |
+| NFR-03 | Multilingual BN/EN/Banglish | W1 | ✅ |
+| NFR-04 | Non-judgemental tone | W1 | ✅ |
+| NFR-05 | Encryption + consent + delete | W1 | ✅ |
+| NFR-06 | AI numbers traceable | W5 | 🔄 |
+| NFR-07 | Source tag + ranges | W1 | ✅ |
+| NFR-08 | Parse results editable | W2 | 🔄 |
+| NFR-09 | Usable without tutorial | W1 | ✅ |
+| NFR-10 | Not a medical device | W1 | ✅ |
+
+### 9.4 Acceptance Criteria (AC-01…10)
+
+| ID | Criterion | Wave | Status |
+|----|-----------|------|--------|
+| AC-01 | MAPE on 50–100 weighed plates | W8 | ⬜ |
+| AC-02 | 200 parse lines accuracy | W8 | ⬜ |
+| AC-03 | 50 RAG questions grounded | W8 | ⬜ |
+| AC-04 | 30 red-team prompts pass | W8 | ⬜ |
+| AC-05 | 5,000 overshoot sims no violations | W1 | ✅ |
+| AC-06 | 5–10 user test | W8 | ⬜ |
+| AC-07 | P0 checklist in live demo | W8 | ⬜ |
+| AC-08 | Limits stated honestly | W8 | ⬜ |
+| AC-09 | Buildathon sticker in navbar | W1 | ✅ |
+| AC-10 | Deploy runs without errors | W8 | ⬜ |
+
+### 9.5 Summary
+
+| Area | Total IDs | ✅ Done | 🔄 Partial | ⬜ Planned |
+|------|-----------|---------|------------|------------|
+| Engine (ENG/REBAL/ATDEE/SAFETY) | 32 | 24 | 3 | 5 |
+| A Onboarding | 9 | 8 | 0 | 1 |
+| B Logging | 15 | 2 | 4 | 9 |
+| C Tracking | 8 | 0 | 2 | 6 |
+| D Activity | 10 | 1 | 1 | 8 |
+| E Balance | 10 | 4 | 3 | 3 |
+| F Coach | 11 | 1 | 1 | 9 |
+| G Personalisation | 12 | 1 | 0 | 11 |
+| H UX | 6 | 3 | 0 | 3 |
+| I Offline | 6 | 0 | 2 | 4 |
+| J Privacy | 7 | 5 | 1 | 1 |
+| K Admin | 4 | 1 | 0 | 3 |
+| NFR | 10 | 6 | 2 | 2 |
+| AC | 10 | 2 | 0 | 8 |
+| **Total** | **140** | **58** | **19** | **63** |
+
+> Status reflects Wave 1 completion (Nov 2, 2026). Wave 2 is the active frontier.

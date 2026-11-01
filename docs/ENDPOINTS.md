@@ -1,6 +1,6 @@
 # Deshi Health Companion — Backend Functions Documentation
 
-**Version:** 3.1 (aligned with Build Plan v3)
+**Version:** 3.2 (aligned with Build Plan v3 — Wave 1 live)
 **Last Updated:** November 2, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
@@ -20,20 +20,19 @@
 
 | Module | Status | Purpose | Wave |
 |--------|--------|---------|------|
-| `lib/engine` | ⬜ Planned | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee | W1 |
-| `convex/schema` | ⬜ Planned (v2 base exists) | foods, measures, mealLogs, profiles, activityLogs, budgetState, ragChunks (+ vectorIndex), … | W1 |
-| `convex/profile` | ⬜ Planned | Onboarding, safety screen, Asian BMI, consent | W1 |
-| `convex/foods` | ⬜ Planned | Deshi food DB search/get, recents, report-wrong | W1–2 |
-| `convex/mealLogs` | ⬜ Planned | Text/photo/preset logging | W2 |
+| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee — 27 tests, property-tested | W1 |
+| `convex/schema` | ✅ Done (v2 live) | profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs | W1 |
+| `convex/profile` | ✅ Done | `get`, `save`, `energy` — engine computes safetyMode server-side | W1 |
+| `convex/foods` | ✅ Done | `seed`, `seedAll`, `count`, `search`, `getById`, `upsert` — 171 rows live | W1 |
+| `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
+| `convex/ai` | ✅ Base scaffold | `chat` (privacy-safe), `parseMeal` (top-5 candidate pick) | W2/5 |
+| `convex/mealLogs` | ⬜ Planned | Text/photo/preset logging mutations | W2 |
 | `convex/budget` | ⬜ Planned | 7-day budget, overshoot, spread plan (engine-backed) | W3 |
 | `convex/activity` | ⬜ Planned | MET logging, manual steps | W4 |
-| `convex/ai` | ✅ Base exists → rework | chat (RAG), parseMeal, analyzePhoto, suggest… | W2/5 |
 | `convex/rag` | ⬜ Planned | `ctx.vectorSearch` + keyword merge (action only) | W5 |
 | `convex/weights` | ⬜ Planned | Weigh-ins, adaptive TDEE inputs | W3 |
 | `convex/prices` | ⬜ Planned | Bazar prices, taka queries | W5–6 |
 | `convex/admin` | ⬜ Planned | Foods/recipes/prices CRUD, report queue | W7 |
-| `convex/privacy` | ⬜ Planned | delete-my-data, audit log | W1/7 |
-| `convex/habits`, `habitLogs` | ⚠️ Legacy | **Routes deleted Wave 1**; drop tables when UI no longer reads them | W1 |
 
 ---
 
@@ -105,19 +104,36 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Queries & mutations (planned)
+## 3. Convex Queries & Mutations (current — Wave 1 live)
 
-### `foods`
+### `profile` (Wave 1 — ✅ live)
 
-| Function | Type | Args | Notes |
-|----------|------|------|-------|
-| `foods.search` | query | `q`, `limit?` | Fuzzy + alias; client also searches bundled JSON offline |
-| `foods.getByName` | query | `id` | Single food |
-| `foods.listRecents` / `listFavorites` | query | — | §6-B |
-| `foods.upsert` | mutation | row | Admin/seed; `sourceTag` required |
-| `foods.reportWrong` | mutation | `foodId`, `note` | Review queue (§6-K) |
+| Function | Type | Args | Returns | Notes |
+|----------|------|------|---------|-------|
+| `profile.get` | query | `key?` | Profile row or null | Key defaults to `"default"` |
+| `profile.save` | mutation | demographics + screening + consent | `{ id, safetyMode, asianBmiBand }` | Engine computes `safetyMode` server-side |
+| `profile.energy` | query | `key?` | `{ bmrKcal, tdeeKcal, floorKcal, allowsDeficit, ... }` | Deterministic; no LLM |
 
-### `mealLogs` (Wave 2)
+### `foods` (Wave 1 — ✅ live, 171 rows)
+
+| Function | Type | Args | Returns | Notes |
+|----------|------|------|---------|-------|
+| `foods.seed` | mutation | — | `{ inserted, total, skipped }` | Idempotent; public for demo |
+| `foods.seedAll` | internalMutation | — | `{ inserted, total, skipped }` | Internal use |
+| `foods.count` | query | — | `{ total, byTag }` | Source-tag breakdown |
+| `foods.search` | query | `q`, `limit?` | Food[] | Alias + name matching |
+| `foods.getById` | query | `id` | Food row | |
+| `foods.upsert` | mutation | food row | id | Admin/seed |
+
+### `privacy` (Wave 1 — ✅ live)
+
+| Function | Type | Args | Returns | Notes |
+|----------|------|------|---------|-------|
+| `privacy.recordConsent` | mutation | `key?`, `accepted` | `{ ok }` | Writes audit log |
+| `privacy.deleteMyData` | mutation | `key?`, `confirm: "DELETE"` | `{ ok, deleted }` | Purges all user tables |
+| `privacy.auditTrail` | query | `key?` | AuditLog[] | Last 50 entries |
+
+### `mealLogs` (Wave 2 — ⬜ planned)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
@@ -126,43 +142,33 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `mealLogs.update` / `remove` | mutation | id | Always editable |
 | `mealLogs.copyMeal` | mutation | sourceId, date | "Same as yesterday" |
 
-### `profile` (Wave 1)
-
-| Function | Type | Args | Notes |
-|----------|------|------|-------|
-| `profile.get` | query | — | Current profile |
-| `profile.upsert` | mutation | demographics, goal, pace, eatingStyle?, budgetBand?, household?, routine?, homeRegion? | Onboarding |
-| `profile.safetyScreen` | mutation | answers | → `safetyMode` via **engine** (not LLM) |
-| `profile.saveRiceCalibration` | mutation | plate/bowl, rice portion | Rice calibrator |
-| `profile.asianBmi` | query | — | 23/27.5 + waist + WHtR |
-
-### `budget` / plan (Wave 3 — engine-backed)
+### `budget` / plan (Wave 3 — ⬜ planned)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
 | `budget.state` | query | date | 7-day rolling state |
-| `budget.plan` | mutation | controls (window, split, exercise prefs) | Calls `engine.rebalance`; **templates** for Bangla/EN text |
+| `budget.plan` | mutation | controls | Calls `engine.rebalance`; Bangla/EN templates |
 | `budget.whatIf` | query | proposedIntake | Simulator (P1) |
 | `weights.add` / `weights.trend` | mutation/query | — | Adaptive TDEE inputs |
 
-### `activity` (Wave 4)
+### `activity` (Wave 4 — ⬜ planned)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
 | `activity.create` | mutation | type, duration | MET via engine; net-calorie logic |
 | `activity.listByDate` | query | `date` | |
-| `activity.addSteps` | mutation | count | **Manual steps** (web substitute — no phone sensor access) |
+| `activity.addSteps` | mutation | count | Manual steps (web substitute) |
 
-### `rag` (Wave 5)
+### `rag` (Wave 5 — ⬜ planned)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `rag.search` | **action** | `query`, `lang?` | Rewrite → embed → **`ctx.vectorSearch`** + keyword/alias merge → chunks + scores |
-| `rag.ingest` | mutation | source doc | Chunk 300–600 tokens; metadata section + page |
+| `rag.search` | **action** | `query`, `lang?` | Embed + `ctx.vectorSearch` + keyword merge |
+| `rag.ingest` | mutation | source doc | Chunk 300–600 tokens; section + page metadata |
 
 ---
 
-## 4. AI actions (`convex/ai.ts` — base exists, reworked per wave)
+## 4. AI Actions (`convex/ai.ts` — base scaffold)
 
 All run in Convex actions (`"use node"`) via `groqChat()`. **Privacy hard rule:** never send age/weight/name/conditions to Groq — only food text, question, and safe categories (`mode=restricted`) set by code.
 
@@ -171,21 +177,23 @@ All run in Convex actions (`"use node"`) via `groqChat()`. **Privacy hard rule:*
 ```ts
 await chatAction({
   message: "diabetes thakle bhat koto khabo?",
-  safeCategories: { mode: "normal" },  // set by code from safetyMode — NOT raw profile
+  safeContext: { mode: "normal", goal: "gentle-change", lang: "bn" },
 });
-// → { response, sources: [{ section, page }] } | { error }
+// → { response } | { error }
 ```
 
-Pipeline: rewrite query to English → `rag.search` → Groq with chunks + tools → **number validator** (every number must appear in tool result or chunk; else regenerate once → template fallback) → answer + `Source: <section>`. Refuse below similarity threshold.
+Pipeline (Wave 5): rewrite → embed → `ctx.vectorSearch` + keyword merge → Groq with chunks + tools → **number validator** → answer + `Source: <section>`. Refuse below similarity threshold.
+
+**Current (W1 scaffold):** privacy-safe system prompt only; no RAG, no sources yet.
 
 ### 4.2 `ai.parseMeal` (Wave 2 — LLM chooses, code computes)
 
 ```ts
 await parseMealAction({
-  text: "dupure bhat, dal, alu bhorta, mach",
-  candidates: [{ foodId, nameEn, nameBn }, ...],  // top-5 per phrase from client fuzzy search
+  line: "dupure bhat, dal, alu bhorta, mach",
+  candidates: [{ id, nameBn, nameEn, aliases }, ...],  // top-5 per phrase from client fuzzy search
 });
-// → { items: [{ foodId, quantity, unit }] } | { error }
+// → { picks: [{ id, qty, unit }], notes? } | { error }
 ```
 
 JSON mode; **may not invent foods or numbers**. Code converts units → grams via `measures` and computes kcal. On failure → client shows **tap-to-pick** list. ≤1 clarifying question when top-2 candidates differ a lot in calories.
@@ -211,10 +219,6 @@ Code maps portionClass → grams via plate preset → kcal **with range** → co
 | `ai.swaps` | W5 | Smart swaps + one-line why (templates + chunks) |
 | `ai.cheapProtein` | W5 | Protein per taka from `priceRecords` |
 | `ai.weeklyReview` | W5 | Friendly review, no scolding |
-
-### 4.5 Legacy (existing, to rework/delete)
-
-`ai.chat` (habit coach), `ai.suggest`, `ai.analyze` — Groq REST works; prompts/scope change with the pivot.
 
 ---
 

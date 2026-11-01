@@ -5,7 +5,10 @@ import { v } from "convex/values";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-async function groqChat(prompt: string): Promise<string> {
+async function groqChat(
+  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  opts: { temperature?: number; maxTokens?: number } = {},
+): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) {
     throw new Error("GROQ_API_KEY is not set on the Convex deployment");
@@ -19,9 +22,9 @@ async function groqChat(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1024,
+      messages,
+      temperature: opts.temperature ?? 0.7,
+      max_tokens: opts.maxTokens ?? 1024,
     }),
   });
   if (!res.ok) {
@@ -36,172 +39,114 @@ async function groqChat(prompt: string): Promise<string> {
   return text;
 }
 
-// ─── AI Coach Chat ────────────────────────────────────────
-
+/**
+ * Deshi Health coach chat (W2 scaffold).
+ * Privacy: never send age, weight, name or medical conditions to the LLM.
+ * Numbers come from the deterministic engine / tool results only.
+ */
 export const chat = action({
   args: {
     message: v.string(),
-    habitData: v.optional(v.any()),
+    /** Safe, coarse context only — e.g. { mode: "normal", goal: "gentle-change" } */
+    safeContext: v.optional(
+      v.object({
+        mode: v.union(
+          v.literal("normal"),
+          v.literal("restricted"),
+          v.literal("doctor-first"),
+        ),
+        goal: v.optional(
+          v.union(
+            v.literal("maintain"),
+            v.literal("gentle-change"),
+            v.literal("build-strength"),
+          ),
+        ),
+        lang: v.optional(v.string()),
+      }),
+    ),
   },
   handler: async (_ctx, args) => {
-    const systemPrompt = `You are HabitForge AI Coach — a friendly, motivating, and insightful habit coach. You help users build and maintain positive habits.
-
-Your personality:
-- Warm, encouraging, but honest
-- Use emojis sparingly but effectively
-- Give practical, actionable advice
-- Keep responses concise (2-4 paragraphs max)
-- Reference the user's actual habit data when available
-
-User's current habit data:
-${args.habitData ? JSON.stringify(args.habitData, null, 2) : "No habits tracked yet."}
-
-Respond to the user's message helpfully. If they ask for habit suggestions, give specific, actionable ones. If they're struggling, be empathetic but solutions-focused. If they're doing well, celebrate their progress genuinely.`;
-
-    const fullPrompt = `${systemPrompt}\n\nUser: ${args.message}`;
+    const mode = args.safeContext?.mode ?? "normal";
+    const goal = args.safeContext?.goal ?? "maintain";
+    const system = `You are Deshi Health Companion's nutrition coach for Bangladesh.
+Rules:
+- Be warm, practical, shame-free. Never say "cheat day", "burn off", or "bad food".
+- Ground answers in Bangladeshi foods (bhat, dal, mach, dim, ruti, khichuri).
+- If safetyMode is doctor-first or restricted: no calorie targets, deficits, or exercise compensation; suggest talking to a doctor or registered dietitian.
+- Never invent precise calorie numbers. If you must mention numbers, keep them approximate and clearly labelled as rough.
+- Not a medical device. No diagnosis, no medication advice.
+- Answer in the user's language (Bangla, English, or Banglish).
+Current mode: ${mode}. Goal category: ${goal}.`;
 
     try {
-      const response = await groqChat(fullPrompt);
+      const response = await groqChat([
+        { role: "system", content: system },
+        { role: "user", content: args.message },
+      ]);
       return { response };
     } catch (error) {
       console.error("Coach action error:", error);
       const message = error instanceof Error ? error.message : String(error);
       return {
         error: message.includes("401")
-          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>` (get one at https://console.groq.com/keys)."
+          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>`."
           : `AI request failed: ${message.slice(0, 300)}`,
       };
     }
   },
 });
 
-// ─── AI Habit Suggestions ─────────────────────────────────
-
-export const suggest = action({
+/**
+ * Meal-line parser scaffold (W2): LLM picks from top candidates; code computes.
+ * Input candidates come from the client food search — LLM never invents foods.
+ */
+export const parseMeal = action({
   args: {
-    goal: v.string(),
-    existingHabits: v.optional(v.array(v.object({ name: v.string() }))),
+    line: v.string(),
+    candidates: v.array(
+      v.object({
+        id: v.string(),
+        nameBn: v.string(),
+        nameEn: v.string(),
+        aliases: v.array(v.string()),
+      }),
+    ),
   },
   handler: async (_ctx, args) => {
-    const prompt = `You are an AI habit coach. The user wants to achieve this goal: "${args.goal}"
-
-Their existing habits: ${
-      args.existingHabits && args.existingHabits.length > 0
-        ? args.existingHabits.map((h) => h.name).join(", ")
-        : "None yet"
+    if (args.candidates.length === 0) {
+      return { error: "No candidates provided" };
     }
-
-Suggest 3-5 specific, actionable daily habits that will help them reach their goal. For each habit, suggest the most appropriate category from: health, fitness, mindfulness, productivity, learning, social, creativity, other.
-
-Return ONLY a JSON array (no markdown, no code blocks) with this structure:
-[
-  {
-    "name": "<specific habit name>",
-    "description": "<why this habit helps>",
-    "category": "<category>"
-  }
-]`;
+    const list = args.candidates
+      .map(
+        (c, i) =>
+          `${i}: id=${c.id} bn=${c.nameBn} en=${c.nameEn} aliases=${c.aliases.join("/")}`,
+      )
+      .join("\n");
+    const system = `Pick foods from the candidate list that match the user's meal line.
+Return ONLY JSON: { "picks": [{ "id": string, "qty": number, "unit": string }], "notes"?: string }
+Do not invent food ids. Prefer Banglish/Bangla aliases. Default qty=1 if unsure.`;
 
     try {
-      const text = await groqChat(prompt);
-
-      try {
-        const cleaned = text
-          .replace(/```json\n?/g, "")
-          .replace(/```\n?/g, "")
-          .trim();
-        const suggestions = JSON.parse(cleaned);
-        return { suggestions };
-      } catch {
-        return {
-          suggestions: [
-            {
-              name: "Start small with your goal",
-              description: "Begin with just 5 minutes a day",
-              category: "productivity",
-            },
-            {
-              name: "Track your progress daily",
-              description: "Reflection helps build consistency",
-              category: "mindfulness",
-            },
-            {
-              name: "Stay hydrated",
-              description: "Water improves focus and energy",
-              category: "health",
-            },
-          ],
-        };
-      }
-    } catch (error) {
-      console.error("Suggest action error:", error);
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        error: message.includes("401")
-          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>`."
-          : `Suggestion request failed: ${message.slice(0, 300)}`,
-      };
-    }
-  },
-});
-
-// ─── AI Habit Analysis ────────────────────────────────────
-
-export const analyze = action({
-  args: {
-    habits: v.any(),
-    logs: v.any(),
-  },
-  handler: async (_ctx, args) => {
-    const prompt = `You are an AI habit analyst. Analyze the following habit tracking data and provide a concise weekly report.
-
-Habit Data:
-${JSON.stringify(args.habits, null, 2)}
-
-Completion Logs:
-${JSON.stringify(args.logs, null, 2)}
-
-Provide a JSON response with exactly this structure (no markdown, no code blocks, just pure JSON):
-{
-  "overallScore": <number 0-100>,
-  "summary": "<2-3 sentence overall summary>",
-  "strengths": ["<strength 1>", "<strength 2>"],
-  "improvements": ["<area 1>", "<area 2>"],
-  "tip": "<one actionable tip for next week>",
-  "motivation": "<a short motivational message>"
-}`;
-
-    try {
-      const text = await groqChat(prompt);
-
-      try {
-        const cleaned = text
-          .replace(/```json\n?/g, "")
-          .replace(/```\n?/g, "")
-          .trim();
-        const analysis = JSON.parse(cleaned);
-        return { analysis };
-      } catch {
-        return {
-          analysis: {
-            overallScore: 50,
-            summary: text,
-            strengths: ["Getting started with tracking"],
-            improvements: ["Keep building consistency"],
-            tip: "Try to complete your habits at the same time each day.",
-            motivation: "Every day is a new opportunity to grow! 🌱",
+      const text = await groqChat(
+        [
+          { role: "system", content: system },
+          {
+            role: "user",
+            content: `Candidates:\n${list}\n\nMeal line: ${args.line}`,
           },
-        };
-      }
-    } catch (error) {
-      console.error("Analyze action error:", error);
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        error: message.includes("401")
-          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>`."
-          : `Analysis request failed: ${message.slice(0, 300)}`,
+        ],
+        { temperature: 0.1, maxTokens: 400 },
+      );
+      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const parsed = JSON.parse(cleaned) as {
+        picks?: { id: string; qty: number; unit: string }[];
+        notes?: string;
       };
+      return { picks: parsed.picks ?? [], notes: parsed.notes };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { error: `parse failed: ${message.slice(0, 200)}` };
     }
   },
 });
-

@@ -1,35 +1,31 @@
 "use client";
 
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { api } from "../../../../convex/_generated/api";
 import { Button, Field, SegmentedControl, Select, StepperInput } from "@/components/forms/Forms";
 import { SegmentedProgress } from "@/components/data/Charts";
 import { SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
-import type { SafetyMode } from "@/lib/types";
-
-// Lightweight client-side screeners — UI only; engine owns final safetyMode in Wave 1.
-function screenSafety(answers: {
-  under18: boolean;
-  pregnancy: boolean;
-  lowBmi: boolean;
-  insulin: boolean;
-  heartKidney: boolean;
-  edHistory: boolean;
-}): SafetyMode {
-  if (answers.edHistory || answers.insulin || answers.heartKidney || answers.under18 || answers.pregnancy) {
-    return "doctor-first";
-  }
-  if (answers.lowBmi) return "restricted";
-  return "normal";
-}
+import {
+  allowsDeficit,
+  allowsExerciseCompensation,
+  asianBmiBand,
+  bmi,
+  safetyMode,
+  screenFromAnswers,
+} from "@/lib/engine";
 
 export default function OnboardingPage() {
   const { t } = useI18n();
   const router = useRouter();
+  const saveProfile = useMutation(api.profile.save);
   const [step, setStep] = useState(0);
   const total = 10;
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [age, setAge] = useState(28);
   const [sex, setSex] = useState<"male" | "female">("female");
@@ -46,22 +42,59 @@ export default function OnboardingPage() {
   const [budget, setBudget] = useState(250);
   const [consent, setConsent] = useState(false);
 
-  const bmi = useMemo(() => {
-    const m = heightCm / 100;
-    return weightKg / (m * m);
-  }, [heightCm, weightKg]);
+  const bmiVal = bmi(weightKg, heightCm);
+  const band = asianBmiBand(weightKg, heightCm);
+  const screen = screenFromAnswers({
+    age,
+    weightKg,
+    heightCm,
+    under18,
+    pregnancy,
+    insulinOrSulfonylurea: insulin,
+    heartOrKidneyDisease: heartKidney,
+    eatingDisorderHistory: edHistory,
+  });
+  // Deterministic engine owns safetyMode — UI only reads it.
+  const mode = safetyMode(screen);
+  const mayDeficit = allowsDeficit(mode);
+  const mayExerciseComp = allowsExerciseCompensation(mode);
 
-  const safetyMode = useMemo(
-    () => screenSafety({ under18: age < 18 || under18, pregnancy, lowBmi: bmi < 18.5, insulin, heartKidney, edHistory }),
-    [age, under18, pregnancy, bmi, insulin, heartKidney, edHistory],
-  );
-
-  // Asian cut-offs 23 / 27.5
-  const bmiCategory = bmi >= 27.5 ? "obese-range" : bmi >= 23 ? "overweight-range" : "healthy-range";
   const bmiLabel =
-    bmiCategory === "obese-range" ? "Above 27.5 — higher risk band (Asian cut-off)" :
-    bmiCategory === "overweight-range" ? "23–27.5 — watch band (Asian cut-off)" :
+    band === "obese" ? "Above 27.5 — higher risk band (Asian cut-off)" :
+    band === "overweight" ? "23–27.5 — watch band (Asian cut-off)" :
+    band === "under" ? "Below 18.5 — underweight band" :
     "Below 23 — healthy band (Asian cut-off)";
+
+  async function finish() {
+    if (saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await saveProfile({
+        name: undefined,
+        age,
+        sex,
+        heightCm,
+        weightKg,
+        activity: activity as "sedentary" | "light" | "moderate" | "active",
+        goal: goal as "maintain" | "gentle-change" | "build-strength",
+        pace: "steady",
+        under18,
+        pregnancy,
+        insulinOrSulfonylurea: insulin,
+        heartOrKidneyDisease: heartKidney,
+        eatingDisorderHistory: edHistory,
+        eatingStyle,
+        budgetBandTaka: budget,
+        consent,
+      });
+      router.push("/home");
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message.slice(0, 200) : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const steps = [
     // 0 language handled by TopBar-like switch; use text size
@@ -140,7 +173,7 @@ export default function OnboardingPage() {
           <div className="tile flex items-center justify-between p-4">
             <div>
               <p className="text-xs font-semibold text-ink/50">Asian BMI</p>
-              <p className="font-num text-3xl font-extrabold tabular">{bmi.toFixed(1)}</p>
+              <p className="font-num text-3xl font-extrabold tabular">{bmiVal.toFixed(1)}</p>
               <p className="mt-1 text-sm text-ink/60">{bmiLabel}</p>
             </div>
             <div className="text-right text-xs text-ink/50">
@@ -157,7 +190,7 @@ export default function OnboardingPage() {
     {
       title: t("onboarding.goalTitle"),
       body:
-        safetyMode === "doctor-first" ? (
+        mode === "doctor-first" ? (
           <NoticeCard
             tone="info"
             title={t("onboarding.doctorFirst")}
@@ -175,7 +208,7 @@ export default function OnboardingPage() {
               value={goal}
               onChange={setGoal}
             />
-            {safetyMode === "restricted" && (
+            {!mayDeficit && (
               <p className="text-sm text-ink/60">{t("onboarding.restrictedNote")}</p>
             )}
           </div>
@@ -204,8 +237,11 @@ export default function OnboardingPage() {
               />
             </label>
           ))}
-          {safetyMode !== "normal" && (
-            <SafetyBanner mode={safetyMode} />
+          {mode !== "normal" && (
+            <SafetyBanner mode={mode} />
+          )}
+          {!mayExerciseComp && mode !== "doctor-first" && (
+            <p className="text-xs text-ink/50">Exercise-compensation plans are off in this mode.</p>
           )}
         </div>
       ),
@@ -266,12 +302,12 @@ export default function OnboardingPage() {
     {
       title: t("onboarding.summaryTitle"),
       body:
-        safetyMode === "doctor-first" ? (
+        mode === "doctor-first" ? (
           <NoticeCard tone="info" title={t("onboarding.doctorFirst")} body={t("safety.referral")} />
         ) : (
           <div className="space-y-3">
             <div className="tile p-4 text-sm">
-              <p className="font-bold">{weightKg} kg · {heightCm} cm · BMI {bmi.toFixed(1)}</p>
+              <p className="font-bold">{weightKg} kg · {heightCm} cm · BMI {bmiVal.toFixed(1)}</p>
               <p className="mt-1 text-ink/60">Goal: {goal.replace("-", " ")}</p>
               <p className="text-ink/60">Style: {eatingStyle.join(", ") || "—"}</p>
               <p className="mt-2 flex gap-2">
@@ -279,7 +315,12 @@ export default function OnboardingPage() {
                 <SourceTag tag="fctb" />
               </p>
             </div>
-            <SafetyBanner mode={safetyMode} />
+            <SafetyBanner mode={mode} />
+            {saveError && (
+              <p className="text-sm text-red-600" role="alert">
+                {saveError}
+              </p>
+            )}
           </div>
         ),
     },
@@ -309,13 +350,13 @@ export default function OnboardingPage() {
         </Button>
         <Button
           full
-          disabled={!canNext}
+          disabled={!canNext || saving}
           onClick={() => {
-            if (step === total - 1) router.push("/home");
+            if (step === total - 1) void finish();
             else setStep(step + 1);
           }}
         >
-          {step === total - 1 ? t("onboarding.looksRight") : t("common.next")}
+          {saving ? "Saving…" : step === total - 1 ? t("onboarding.looksRight") : t("common.next")}
         </Button>
       </div>
     </div>

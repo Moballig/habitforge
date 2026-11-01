@@ -1,6 +1,6 @@
 # Deshi Health Companion — System Architecture
 
-**Version:** 3.1 (aligned with Build Plan v3 — `docs/IMPLEMENTATION_PLAN.md`)
+**Version:** 3.2 (aligned with Build Plan v3 — Wave 1 live)
 **Last Updated:** November 2, 2026
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md` §4, §7
 **Base platform:** existing Next.js 16 + Convex + Groq repo (formerly HabitForge — platform carries over, product pivots)
@@ -51,11 +51,11 @@ flowchart TB
 
 | Layer | Used for | Notes | Repo status |
 |-------|----------|-------|-------------|
-| **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | Planned — Convex `foods` + bundled JSON snapshot (§5) |
-| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | Planned (§4.1) |
-| **Vector store (RAG)** | National dietary guidelines text, FCTB notes, cooking/portion guidance, exercise guidance, curated FAQs | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, cosine, dim 2–4096, ≤256 results) **merged with keyword/alias match**; chunks carry section + page; refuse below tuned threshold | Planned (§4.4) |
-| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Existing — Groq via `convex/ai.ts` `groqChat()` |
-| **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — re-check Groq docs before coding; assisted flow with confirm screen | Planned (§4.3) |
+| **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled JSON snapshot (171 rows live) |
+| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 27 tests, property-tested |
+| **Vector store (RAG)** | National dietary guidelines text, FCTB notes, cooking/portion guidance, exercise guidance, curated FAQs | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, cosine, dim 2–4096, ≤256 results) **merged with keyword/alias match**; chunks carry section + page; refuse below tuned threshold | ⬜ Wave 5 |
+| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Scaffold — Groq via `convex/ai.ts` `groqChat()`; `chat` + `parseMeal` live |
+| **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — re-check Groq docs before coding; assisted flow with confirm screen | ⬜ Wave 2 |
 
 > **Hard rules (§5.5, §7.1, Plan v3 §0):**
 > 1. The LLM never sets calories, floors, or exercise minutes — code does.
@@ -189,22 +189,29 @@ Browser `SpeechRecognition` is **Chrome-only (139+)**; Firefox/Safari unsupporte
 
 ---
 
-## 5. Data Model (Convex tables)
+## 5. Data Model (Convex tables — schema v2 live)
 
-| Table | Key content | Source |
-|-------|-------------|--------|
-| `foods` | `nameBn`, `nameEn`, `aliases[]`, per-100g values, **`measures[{label, grams}]`**, `sourceTag`, `isCooked`, optional `rangeLow/rangeHigh`, region tags | §4.1, §6-B/K, Plan v3 §0 |
-| `measures` | Household standards from kitchen-scale session (bati S/M/L, spoons, glasses, ladle, plate diameters) | Track D4 |
-| `recipes` | Ingredients, oil, servings, method; per-serving values; tag `estimated-recipe`; owner label | Track D3 |
-| `mealLogs` | Date/time, items + quantities, method (text/voice/photo/preset), editable result, confidence, source | §6-B |
-| `profiles` | Demographics, goal/pace, eating style, budget band, household, routine, **safetyScreen + safetyMode**, homeRegion, calibrated plate/rice portion | §6-A/G |
-| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height; Asian BMI display | §3, §5.3 |
-| `activityLogs` | Type, duration, MET energy, net energy; **manual steps entry** | §6-D, Plan v3 §0 |
-| `budgetState` | 7-day rolling budget, target, overshoot, recovery plan, floor, caps | §5.2 |
-| `priceRecords` | Bazar price/kg by season | Track D6 |
-| `ragChunks` | Guidelines/FCTB/FAQ text + metadata (**section, page**, language, date) — vector-indexed | §7.2 |
-| `auditLogs` | AI suggestion audit: what was retrieved and why | §6-J |
-| `habits`, `habitLogs` | ⚠️ **Legacy HabitForge** — routes deleted in Wave 1; tables may remain briefly then be dropped | Plan v3 §0 |
+### 5.1 Existing tables (Wave 1 — ✅ live)
+
+| Table | Key content | Indexes | Source |
+|-------|-------------|---------|--------|
+| `profiles` | Demographics, goal/pace, eating style, budget band, household, routine, **safetyScreen + safetyMode** (engine-derived), Asian BMI/band, waist/WHtR, homeRegion, calibrated plate/rice portion, consent | `by_key` | §6-A/G |
+| `foods` | `nameBn`, `nameEn`, `aliases[]`, per-100g values, `measures[{label, grams}]`, `sourceTag`, `isCooked`, optional `rangeLow/rangeHigh`, region tags | `by_name_en`, `by_source` | §4.1, §6-B/K |
+| `mealLogs` | Date/time, items + quantities, method (text/voice/photo/preset), editable result, confidence, source | `by_profile_and_date`, `by_date` | §6-B |
+| `activityLogs` | Type, duration, MET energy, net energy, source (manual/steps/preset) | `by_profile_and_date` | §6-D |
+| `budgetState` | 7-day rolling budget, target, overshoot, recovery plan, floor, caps, safetyMode | `by_profile_and_week` | §5.2 |
+| `weighIns` | Weight trend entries | `by_profile_and_date` | §3, §5.3 |
+| `auditLogs` | Consent/AI audit trail | `by_profile` | §6-J |
+
+### 5.2 Planned tables (later waves)
+
+| Table | Key content | Wave | Source |
+|-------|-------------|------|--------|
+| `measures` | Household standards from kitchen-scale session (bati S/M/L, spoons, glasses, ladle, plate diameters) | W2 | Track D4 |
+| `recipes` | Ingredients, oil, servings, method; per-serving values; tag `estimated-recipe`; owner label | W2 | Track D3 |
+| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height | W3 | §3, §5.3 |
+| `priceRecords` | Bazar price/kg by season | W5–6 | Track D6 |
+| `ragChunks` | Guidelines/FCTB/FAQ text + metadata (**section, page**, language, date) — vector-indexed | W5 | §7.2 |
 
 **Indexes:** every hot path (by date, by user, by food). Vector search only via actions.
 
@@ -290,33 +297,57 @@ habitforge/
 ├── docs/                          # 📄 Documentation
 │   ├── bangladeshi-calorie-companion-research.md  # ← product source of truth
 │   ├── IMPLEMENTATION_PLAN.md     #    Build Plan v3 (waves) ← build source of truth
+│   ├── DIAGRAMS.md                #    DFD (L0–L2) + sequence diagrams
 │   ├── SRS.md / ARCHITECTURE.md / ENDPOINTS.md / CONTEXT.md
 │
-├── lib/engine/                    # ⚙️ Pure TS: bmr, tdee, metNetKcal, safetyMode, rebalance, adaptiveTdee (+ tests)
-├── convex/                        # ☁️ Convex backend
-│   ├── schema.ts                  #    foods, measures, mealLogs, profiles, ragChunks + vectorIndex, ...
-│   ├── ai.ts                      #    ✅ groqChat() + actions (chat/parse/photo/...)
-│   ├── rag.ts                     #    ctx.vectorSearch + keyword merge (action)
-│   ├── foods.ts / mealLogs.ts / profile.ts / ...
-│   ├── habits.ts / habitLogs.ts   #    ⚠️ legacy — delete routes first (Wave 1)
-│   └── _generated/
-│
-├── design-system/                 # 🎨 Claymorphism MASTER.md (untracked)
-├── public/                        # 🌐 food JSON snapshot, service worker, manifest (PWA)
 ├── src/
-│   ├── app/
-│   │   ├── onboarding/  home/  log/  plan/  coach/  activity/  settings/
-│   │   ├── layout.tsx  page.tsx (→ redirect /home)  globals.css
-│   │   └── (habit routes deleted in Wave 1)
+│   ├── lib/
+│   │   ├── engine/                # ⚙️ Pure TS: energy, safety, rebalance, adaptive (+ tests)
+│   │   │   ├── energy.ts          #    bmr, tdee, metNetKcal, bmi, asianBmiBand
+│   │   │   ├── safety.ts          #    safetyMode, screenFromAnswers, allowsDeficit
+│   │   │   ├── rebalance.ts       #    rebalance, feastPreBank
+│   │   │   ├── adaptive.ts        #    adaptiveTdee
+│   │   │   ├── types.ts           #    Engine types
+│   │   │   └── engine.test.ts     #    27 tests, property-tested
+│   │   ├── foods/seed.ts          #    171-row seed with source tags
+│   │   ├── i18n.tsx               #    Bangla/English + numerals
+│   │   ├── types.ts               #    UI types (SafetyMode, Profile, FoodItem)
+│   │   ├── mock/index.ts          #    Demo fixtures (until W2+ wiring)
+│   │   ├── format.ts / nav.ts
+│   │   └── ConvexClientProvider.tsx
 │   ├── components/
-│   ├── hooks/
-│   └── lib/                       #    types, i18n (Bangla/EN + numerals)
+│   │   ├── shell/                 #    AppFrame, NavRail, SideNav, BottomTabs, TopBar, RightPanel, Banners
+│   │   ├── data/                  #    Primitives (Num, Range, SourceTag), Cards, Charts (SVG)
+│   │   ├── forms/                 #    Button, PillInput, Field, Select, SegmentedControl, StepperInput, Sheet
+│   │   ├── chat/                  #    MessageBubble, SuggestionChips, RefusalCard, MealSuggestionCard
+│   │   └── ConvexClientProvider.tsx / ThemeToggle.tsx / Toast.tsx
+│   ├── app/
+│   │   ├── (auth)/login/ signup/
+│   │   ├── (app)/onboarding/ home/ log/ plan/ coach/ activity/ settings/ insights/
+│   │   │   └── log/ photo/ rice/ recipe/ street/    # sub-routes
+│   │   ├── dev/components/        #    Gallery
+│   │   ├── layout.tsx  page.tsx (→ redirect /home)  globals.css
+│   │   └── (habit routes deleted Wave 1)
+│   └── convex/_generated/         #    Auto-generated Convex bindings
 │
+├── convex/                        # ☁️ Convex backend
+│   ├── schema.ts                  #    profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs
+│   ├── profile.ts                 #    ✅ get, save, energy
+│   ├── foods.ts                   #    ✅ seed, count, search, getById, upsert
+│   ├── privacy.ts                 #    ✅ recordConsent, deleteMyData, auditTrail
+│   ├── ai.ts                      #    ✅ groqChat() + chat, parseMeal
+│   ├── _generated/                #    Auto-generated
+│   └── tsconfig.json
+│
+├── messages/                      # 🌐 en.json, bn.json (i18n strings)
+├── public/                        # 🌐 icon.svg, manifest.webmanifest, food JSON snapshot (PWA)
 ├── .env.local                     # 🔐 CONVEX_DEPLOYMENT + NEXT_PUBLIC_CONVEX_URL
 └── (AI key: Convex env GROQ_API_KEY — never in repo)
 ```
 
-**Final routes (Plan v3 §0):** `/onboarding` `/home` `/log` `/plan` `/coach` `/activity` `/settings` (+ new ones as waves add them). HabitForge screens are **replaced**, not kept alongside.
+**Routes (current):** `/login` `/signup` `/onboarding` `/home` `/log` `/log/photo` `/log/rice` `/log/recipe` `/log/street` `/plan` `/coach` `/activity` `/settings` `/insights` `/dev/components`
+
+**Later-wave routes (from ui_prompt §5):** `/ramadan` `/family` `/planner` `/calendar` `/conditions` `/admin` `/privacy` `/about` `/sources` — stub as waves land.
 
 ---
 
@@ -362,7 +393,7 @@ flowchart LR
 |----------|---------------|-----|
 | Code splitting | App Router route-based splitting | — |
 | Client components | Only interactive pages `'use client'` | — |
-| Fonts | `next/font/google` — Varela Round + Nunito Sans, zero layout shift | — |
+| Fonts | `next/font/google` — Manrope (latin) + Hind Siliguri (bengali), zero layout shift | — |
 | Indexed reads | Convex indexes on hot paths; vector search in actions only | §5 |
 | Minimal deps | Runtime: `next`, `react`, `convex`, `lucide-react` | — |
 | Reactive updates | Only changed queries re-render | — |

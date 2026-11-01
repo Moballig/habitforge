@@ -20,6 +20,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["./**/*"],
-  "exclude": ["./_generated"]
+  "include": ["./**/*", "../src/lib/engine/**/*.ts", "../src/lib/foods/**/*.ts"],
+  "exclude": ["./_generated", "../src/lib/engine/**/*.test.ts"]
 }

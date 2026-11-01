@@ -15,16 +15,41 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **UI complete (mock fixtures)** → Wave 1 (engine, safety, profile, data) + probes |
+| **Current Phase** | **Wave 1 gate met** (engine + safety + profile + 171-food seed) → Wave 2 (meal logging, LLM parser, photo) |
 | **Day** | Day 2 (Nov 2, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, all routes HTTP 200 |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, `bun test` 27/27 green, all routes HTTP 200 |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
-| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`) |
+| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema v2 live (profiles/foods/mealLogs/activityLogs/budgetState/weighIns/auditLogs) |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat model `openai/gpt-oss-120b`; vision plan `qwen/qwen3.8-27b` (probe); embeddings `nomic-embed-text-v1_5` (probe Bangla) |
-| **P0 product surface** | 🔄 UI on fixtures — Wave 1 engine + food seed still not wired |
+| **P0 product surface** | 🔄 Wave 1 done (engine + safety + profile + foods); onboarding saves via Convex; log/plan/coach still on fixtures |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-02 (UI built; docs v3; lint+build green) |
+| **Last Updated** | 2026-11-02 (Wave 1 gate; docs re-audit; DIAGRAMS.md + SRS table added) |
+
+### Wave 1 gate (Nov 2, 2026) — MET
+
+- **Engine:** `src/lib/engine/{types,energy,safety,rebalance,adaptive,index}.ts` — pure TS shared client+Convex
+- **Tests:** `bun test src/lib/engine/engine.test.ts` → **27 pass / 0 fail** (~150k assertions, 5000-case property test)
+- **Hand-check:** 70 kg, 40 min @ 4.3 MET → **154 kcal net** ✓
+- **Six safety profiles (unit + Convex `profile:save` smoke):** normal / under-18→doctor-first / low BMI→restricted / insulin→doctor-first / ED history→doctor-first / pregnancy→doctor-first
+- **Schema v2 live:** profiles (engine-derived `safetyMode`, Asian BMI), foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs; habit tables dropped
+- **Foods:** **171** rows seeded (`foods:seed`) with sourceTag breakdown — fctb 76, estimated-recipe 58, estimated 19, borrowed 16, measured 1, user 1
+- **Onboarding:** final step → `api.profile.save` (deterministic safetyMode server-side); energy query returns BMR/TDEE/floor
+- **Privacy:** `privacy:deleteMyData` + audit trail live
+- **LLM scaffold:** `ai:chat` (privacy-safe context only), `ai:parseMeal` (top-5 candidate pick — W2)
+
+### Docs re-audit (Nov 2, 2026)
+
+| Doc | Action | Notes |
+|-----|--------|-------|
+| `ENDPOINTS.md` | ✅ Updated to v3.2 | Module status table now reflects live Wave 1 modules; function names match code (`profile.save` not `upsert`, `foods.search`/`getById`, etc.); habits modules removed |
+| `ARCHITECTURE.md` | ✅ Updated to v3.1 | Layer status table (engine/food DB ✅); data model split live vs planned; directory tree corrected (`src/lib/engine/`, no `hooks/`, no phantom files); fonts fixed to Manrope + Hind Siliguri |
+| `SRS.md` | ✅ Updated to v2.1 | Removed stale `habits`/`habitLogs` note; added Convex table column to data model; **added §9 SRS Traceability Table** (140 IDs with status/priority/wave/implementation) |
+| `IMPLEMENTATION_PLAN.md` | ✅ Updated | Wave status markers (W1 ✅ Done, W2 ⬜ Next); **added §2a Wave status summary table** |
+| **`DIAGRAMS.md`** | ✅ **New** | **DFD Level 0 (context), Level 1 (7 processes), Level 2 (P2 logging, P4 engine, P6 RAG, P1 onboarding); 8 sequence diagrams** |
+| `ui_prompt.md` | ✅ Clean | No changes needed |
+| `ui-design-system.md` | ✅ Clean | Matches implemented tokens |
+| `bangladeshi-calorie-companion-research.md` | ✅ Clean | Source of truth — untouched |
 
 ### UI build note (Nov 2, 2026)
 
@@ -39,7 +64,7 @@
 
 - **New spec:** `docs/bangladeshi-calorie-companion-research.md` — market/gaps (§1–2), health context (§3), data sources (§4), rebalance engine (§5), P0/P1/P2 checklist (§6), RAG architecture (§7), evaluation (§8), demo (§9), build order (§10)
 - **Build plan:** `docs/IMPLEMENTATION_PLAN.md` **v3** — full scope (all P0/P1 + most P2) in **8 waves with exit gates**; v2 quality decisions kept (deterministic `lib/engine/`, LLM never numbers, safety gates, citations, assisted photo, Bangla plan templates); Convex vector search + Qwen vision + PWA substitutions verified
-- **Docs rewritten:** SRS (FR IDs + §1.1a web deviations), ARCHITECTURE (v3.1), ENDPOINTS (v3.1), IMPLEMENTATION_PLAN (v3 waves), CONTEXT
+- **Docs rewritten:** SRS (FR IDs + §1.1a web deviations + §9 traceability table), ARCHITECTURE (v3.1), ENDPOINTS (v3.2 — live Wave 1 status), IMPLEMENTATION_PLAN (v3 waves + status), CONTEXT, **DIAGRAMS** (DFD L0–L2 + 8 sequence diagrams)
 - **Platform kept:** Convex, Groq AI, Claymorphism design system, build/lint green
 - **Never cut:** safety gates · citations · rebalancing engine (wave gates enforce this)
 

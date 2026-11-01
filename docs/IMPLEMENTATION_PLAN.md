@@ -53,8 +53,9 @@ These block features if they start late. Assign them from day one.
 ## 2. Waves
 
 Each item lists its research reference. Gates are acceptance tests, not dates.
+**Status legend:** ✅ Done · 🔄 In progress · ⬜ Planned
 
-### Wave 1: Foundation (engine, safety, profile, data)
+### Wave 1: Foundation (engine, safety, profile, data) — ✅ DONE (Nov 2, 2026)
 
 | Item | Ref |
 |---|---|
@@ -67,9 +68,10 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 | Consent, delete-my-data, disclaimer, encrypted transport | §6-J |
 | Food DB schema, seed from FCTB, source tags, ranges for uncertain nutrients, measures table | §4, §6-K |
 
-**Gate:** six test profiles give the expected safety mode; property test passes; 150 foods seeded with visible source tags; hand check of 40 minutes brisk walking at 4.3 MET for 70 kg ≈ 154 kcal net.
+**Gate:** six test profiles give the expected safety mode; property test passes; 150+ foods seeded with visible source tags; hand check of 40 minutes brisk walking at 4.3 MET for 70 kg ≈ 154 kcal net.
+**Gate result (Nov 2):** ✅ 27/27 tests · 171 foods seeded · 154 kcal verified · 6 profiles pass · lint 0 errors · build green
 
-### Wave 2: Logging
+### Wave 2: Logging — ⬜ NEXT
 
 | Item | Ref |
 |---|---|
@@ -87,7 +89,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** 20 saved Banglish lines parse correctly; five tested plate photos reach correct items after at most one edit; a shared-pot dal entry computes sensible grams.
 
-### Wave 3: Tracking and the balance engine
+### Wave 3: Tracking and the balance engine — ⬜
 
 | Item | Ref |
 |---|---|
@@ -104,7 +106,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** Friday-biriyani scenario yields a plan matching a hand calculation; zero violations in 5,000 simulated overshoots; feast mode never pushes a day below the floor.
 
-### Wave 4: Activity
+### Wave 4: Activity — ⬜
 
 | Item | Ref |
 |---|---|
@@ -119,7 +121,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** poor air quality or extreme heat switches suggestions to indoor options; extra-activity minutes in the plan match the MET formula.
 
-### Wave 5: AI coach (RAG)
+### Wave 5: AI coach (RAG) — ⬜
 
 | Item | Ref |
 |---|---|
@@ -135,7 +137,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** 20 guideline questions return the right section; unsafe prompts are refused with a safer alternative; every number in replies traces to a tool or chunk.
 
-### Wave 6: Personalisation (the "why us" layer)
+### Wave 6: Personalisation (the "why us" layer) — ⬜
 
 | Item | Ref |
 |---|---|
@@ -150,7 +152,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** Ramadan mode never shows a deficit prompt by default; family mode produces one menu with per-person portions; condition modes show a doctor note.
 
-### Wave 7: Offline, privacy, admin, UX polish
+### Wave 7: Offline, privacy, admin, UX polish — ⬜
 
 | Item | Ref |
 |---|---|
@@ -165,7 +167,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** airplane mode: add a log, view the plan, reload, data persists; delete-my-data clears Convex and local cache.
 
-### Wave 8: Proof, red-team, packaging
+### Wave 8: Proof, red-team, packaging — ⬜
 
 | Item | Size (full) |
 |---|---|
@@ -192,6 +194,23 @@ Report the sample size beside every number and state limits found (mixed dishes,
 6. Wave 8 evaluation runs after Wave 5; the red-team after Wave 5 and again after Wave 6.
 
 **If you work solo,** do the waves in numeric order. The earlier waves already make a complete demo: onboarding with safety, deshi logging, the rebalancing plan, activity, and the cited coach.
+
+---
+
+## 2a. Wave status summary
+
+| Wave | Title | Gate | Status |
+|------|-------|------|--------|
+| 1 | Foundation (engine, safety, profile, data) | 6 safety profiles · property test · 150+ foods · 154 kcal | ✅ **Done** (Nov 2, 2026) |
+| 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | ⬜ **Next** |
+| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | ⬜ |
+| 4 | Activity | AQI/heat → indoor · MET minutes match formula | ⬜ |
+| 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | ⬜ |
+| 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ⬜ |
+| 7 | Offline/privacy/admin | Airplane mode persists · delete-my-data clears | ⬜ |
+| 8 | Proof, red-team, packaging | Report sample sizes · state limits | ⬜ |
+
+**Related docs:** `docs/DIAGRAMS.md` (DFD L0–L2 + sequence diagrams) · `docs/SRS.md` §9 (SRS traceability table) · `docs/CONTEXT.md` (living tracker)
 
 ---
 
