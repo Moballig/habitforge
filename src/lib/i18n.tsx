@@ -39,63 +39,77 @@ function lookup(dict: Dict, path: string): string {
   return typeof cur === "string" ? cur : path;
 }
 
+function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
+  try {
+    const v = localStorage.getItem(key);
+    if (v && (allowed as readonly string[]).includes(v)) return v as T;
+  } catch {
+    /* ignore */
+  }
+  return fallback;
+}
+
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function write(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
+  // Lazy SSR-safe defaults; hydrate from localStorage after mount without sync setState-in-effect.
   const [lang, setLangState] = useState<Lang>("en");
-  const [largeText, setLargeText] = useState(false);
-  const [lowLiteracy, setLowLiteracy] = useState(false);
+  const [largeText, setLargeTextState] = useState(false);
+  const [lowLiteracy, setLowLiteracyState] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("deshi_lang");
-      if (stored === "bn" || stored === "en") setLangState(stored);
-      const lt = localStorage.getItem("deshi_large_text");
-      if (lt === "1") setLargeText(true);
-      const ll = localStorage.getItem("deshi_low_literacy");
-      if (ll === "1") setLowLiteracy(true);
-    } catch {
-      /* ignore */
-    }
+    // Defer to a macrotask so React treats this as an external-system sync, not a cascading render.
+    const id = window.setTimeout(() => {
+      setLangState(readStored("deshi_lang", ["en", "bn"] as const, "en"));
+      setLargeTextState(readFlag("deshi_large_text"));
+      setLowLiteracyState(readFlag("deshi_low_literacy"));
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.lang = lang;
-  }, [lang]);
+    write("deshi_lang", lang);
+  }, [lang, hydrated]);
 
   useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.classList.toggle("large-text", largeText);
-    try {
-      localStorage.setItem("deshi_large_text", largeText ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
-  }, [largeText]);
+    write("deshi_large_text", largeText ? "1" : "0");
+  }, [largeText, hydrated]);
 
   useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.classList.toggle("low-literacy", lowLiteracy);
-    try {
-      localStorage.setItem("deshi_low_literacy", lowLiteracy ? "1" : "0");
-    } catch {
-      /* ignore */
-    }
-  }, [lowLiteracy]);
+    write("deshi_low_literacy", lowLiteracy ? "1" : "0");
+  }, [lowLiteracy, hydrated]);
 
-  const setLang = useCallback((l: Lang) => {
-    setLangState(l);
-    try {
-      localStorage.setItem("deshi_lang", l);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const setLang = useCallback((l: Lang) => setLangState(l), []);
+  const setLargeText = useCallback((v: boolean) => setLargeTextState(v), []);
+  const setLowLiteracy = useCallback((v: boolean) => setLowLiteracyState(v), []);
 
-  const t = useCallback(
-    (path: string) => lookup(DICTS[lang], path),
-    [lang],
-  );
+  const t = useCallback((path: string) => lookup(DICTS[lang], path), [lang]);
 
   const value = useMemo(
     () => ({ lang, setLang, t, largeText, setLargeText, lowLiteracy, setLowLiteracy }),
-    [lang, setLang, t, largeText, lowLiteracy],
+    [lang, setLang, t, largeText, setLargeText, lowLiteracy, setLowLiteracy],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

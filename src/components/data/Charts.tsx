@@ -106,6 +106,9 @@ export function AreaChart({
   animate?: boolean;
 }) {
   if (data.length === 0) return null;
+  const aria = labels?.length
+    ? `Trend chart, ${labels[0]} to ${labels[labels.length - 1]}`
+    : "Trend chart";
   const max = Math.max(...data, target ?? 0) * 1.15;
   const min = 0;
   const padX = 8;
@@ -133,7 +136,7 @@ export function AreaChart({
       viewBox={`0 0 ${width} ${height}`}
       className={`w-full ${animate ? "anim-chart" : ""}`}
       role="img"
-      aria-label="Trend chart"
+      aria-label={aria}
     >
       <defs>
         <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">

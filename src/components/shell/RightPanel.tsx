@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { Button, PillInput } from "@/components/forms/Forms";
 import { NoticeCard } from "@/components/shell/Banners";
 import { TODAY_MEALS, DEMO_PROFILE } from "@/lib/mock";
 

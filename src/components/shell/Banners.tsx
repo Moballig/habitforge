@@ -1,24 +1,29 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { AlertTriangle, CloudOff, Wifi, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
+function subscribeOnline(cb: () => void) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
+}
+
+function getOfflineSnapshot() {
+  return !navigator.onLine;
+}
+
+function getServerOfflineSnapshot() {
+  return false;
+}
+
 export function OfflineBanner() {
   const { t } = useI18n();
-  const [offline, setOffline] = useState(false);
-
-  useEffect(() => {
-    setOffline(!navigator.onLine);
-    const on = () => setOffline(false);
-    const off = () => setOffline(true);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
-    };
-  }, []);
+  const offline = useSyncExternalStore(subscribeOnline, getOfflineSnapshot, getServerOfflineSnapshot);
 
   if (!offline) return null;
 

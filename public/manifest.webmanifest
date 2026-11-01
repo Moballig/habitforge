@@ -1,0 +1,17 @@
+{
+  "name": "Deshi Health Companion",
+  "short_name": "Deshi Health",
+  "description": "Bangladesh-first calorie, diet and exercise-balancing app with a RAG-grounded AI coach.",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#EEEDF5",
+  "theme_color": "#EEEDF5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

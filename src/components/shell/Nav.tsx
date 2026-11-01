@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS, SIDEBAR_EXTRA } from "@/lib/nav";
 import { useI18n } from "@/lib/i18n";
-import ThemeToggle from "./ThemeToggle";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export function NavRail() {
   const pathname = usePathname();

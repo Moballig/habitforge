@@ -1,31 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
 type Props = { variant?: "rail" | "inline" | "top" };
 
-export default function ThemeToggle({ variant = "top" }: Props) {
-  const [dark, setDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+function subscribeDark(cb: () => void) {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => mo.disconnect();
+}
 
-  useEffect(() => {
-    setMounted(true);
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+function getDarkSnapshot() {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getServerDarkSnapshot() {
+  return false;
+}
+
+function applyDark(next: boolean) {
+  document.documentElement.classList.toggle("dark", next);
+  try {
+    localStorage.setItem("deshi_theme", next ? "dark" : "light");
+  } catch {
+    /* ignore */
+  }
+}
+
+export default function ThemeToggle({ variant = "top" }: Props) {
+  const dark = useSyncExternalStore(subscribeDark, getDarkSnapshot, getServerDarkSnapshot);
 
   function toggle() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    try {
-      localStorage.setItem("deshi_theme", next ? "dark" : "light");
-    } catch {
-      /* ignore */
-    }
+    applyDark(!dark);
   }
 
-  const label = mounted && dark ? "Switch to light" : "Switch to dark";
+  const label = dark ? "Switch to light" : "Switch to dark";
 
   if (variant === "rail") {
     return (
@@ -45,9 +55,7 @@ export default function ThemeToggle({ variant = "top" }: Props) {
       type="button"
       onClick={toggle}
       aria-label={label}
-      className={`flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-ink/70 hover:text-ink ${
-        variant === "inline" ? "" : ""
-      }`}
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-ink/70 hover:text-ink"
     >
       {dark ? <Sun size={18} /> : <Moon size={18} />}
     </button>

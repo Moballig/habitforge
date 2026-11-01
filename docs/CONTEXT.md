@@ -15,15 +15,25 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Build Plan v3 — Waves** (no time-driven cuts; exit gates per wave) |
+| **Current Phase** | **UI complete (mock fixtures)** → Wave 1 (engine, safety, profile, data) + probes |
 | **Day** | Day 2 (Nov 2, 2026) |
 | **Build Status** | ✅ `bun run build` passes, lint 0 errors, all routes HTTP 200 |
+| **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`) |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat model `openai/gpt-oss-120b`; vision plan `qwen/qwen3.8-27b` (probe); embeddings `nomic-embed-text-v1_5` (probe Bangla) |
-| **P0 product surface** | ⬜ Not started — Wave 1 (engine, safety, profile, data) + probes first |
+| **P0 product surface** | 🔄 UI on fixtures — Wave 1 engine + food seed still not wired |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-02 (Plan v3 adopted — full scope in waves) |
+| **Last Updated** | 2026-11-02 (UI built; docs v3; lint+build green) |
+
+### UI build note (Nov 2, 2026)
+
+- Design tokens in `src/app/globals.css` (violet/lavender, pastels, radii, Manrope + Hind Siliguri)
+- Shell: `AppFrame`, `NavRail`/`SideNav`/`BottomTabs`, `TopBar`, right panel, offline/safety banners
+- Routes: `/login /signup /onboarding /home /log(+photo|rice|recipe|street) /plan /coach /activity /settings /insights /dev/components`
+- Data still from `src/lib/mock` + `messages/{en,bn}.json`; numbers as props only (no component-side health math)
+- Deleted: `analytics`, old `coach`, habit components, `useHabits`
+- Note: gallery lives at `/dev/components` (App Router treats `_dev` as a private folder)
 
 ### Pivot banner (Nov 2, 2026)
 

@@ -1,21 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { AreaChart, CalorieRing, PlateBalance } from "@/components/data/Charts";
 import { HeroCard, PastelTile, StatTile } from "@/components/data/Cards";
 import { Range, SectionLabel, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
-import { Button } from "@/components/forms/Forms";
 import {
   DEMO_PROFILE,
-  OVERSHOOT_BUDGET,
-  TODAY_MEALS,
   TODAY_SUMMARY,
   WEEK,
 } from "@/lib/mock";
 import { formatDayName, formatDate } from "@/lib/format";
 import { Droplet, Footprints, Leaf, UtensilsCrossed, Wheat } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
 export default function HomePage() {
