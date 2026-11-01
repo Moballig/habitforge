@@ -1,0 +1,143 @@
+{
+  "nav": { "home": "Home", "plan": "Plan", "log": "Log", "coach": "Coach", "activity": "Activity", "settings": "Settings", "insights": "Insights" },
+  "common": {
+    "save": "Save", "cancel": "Cancel", "back": "Back", "next": "Next", "retry": "Try again",
+    "loading": "Loading…", "search": "Search", "edit": "Edit", "remove": "Remove", "confirm": "Confirm",
+    "today": "Today", "week": "Week", "day": "Day", "about": "about", "range": "Range",
+    "kcal": "kcal", "minutes": "min", "steps": "steps"
+  },
+  "login": {
+    "title": "Login to your account",
+    "subtitle": "Welcome back! Enter your details to log in",
+    "email": "Email", "password": "Password",
+    "emailPh": "Enter your email", "passwordPh": "Enter your password",
+    "remember": "Remember login", "forgot": "Forgot password?",
+    "login": "Login", "or": "Or continue with", "google": "Sign in with Google",
+    "newHere": "New here?", "create": "Create account"
+  },
+  "signup": {
+    "title": "Create your account",
+    "subtitle": "Start your health companion in Bangla or English",
+    "name": "Name", "namePh": "Your name",
+    "consent": "I agree to the privacy policy and how my data is used",
+    "create": "Create account", "haveAccount": "Already have an account?", "login": "Log in"
+  },
+  "onboarding": {
+    "step": "Step", "of": "of",
+    "langTitle": "Language and text size",
+    "consentTitle": "Your data, your control",
+    "consentBody": "We only store what you log. You can delete everything anytime from Settings. This app is not a medical device.",
+    "profileTitle": "About you",
+    "measuresTitle": "Body measures",
+    "goalTitle": "Your goal",
+    "safetyTitle": "A few safety questions",
+    "styleTitle": "How you eat",
+    "budgetTitle": "Budget and household",
+    "routineTitle": "Your day",
+    "summaryTitle": "Here is your starting point",
+    "looksRight": "Looks right",
+    "doctorFirst": "Based on your answers, please talk to a doctor or registered dietitian before using calorie targets. You can still log food without targets.",
+    "restrictedNote": "We will keep guidance gentle — no deficit plans for now."
+  },
+  "home": {
+    "hello": "Hello",
+    "overview": "Today",
+    "eaten": "Eaten",
+    "guide": "Today's guide",
+    "protein": "Protein", "carbs": "Carbs", "fat": "Fat",
+    "rice": "Rice portion", "water": "Water", "fibre": "Fibre",
+    "plate": "Plate balance",
+    "plateWhy": "A balanced plate has vegetables, protein and grains.",
+    "nextAction": "One next action",
+    "logLunch": "Log lunch",
+    "walk15": "Take a 15-minute walk after dinner",
+    "overshoot": "A bigger day than planned. Here is a gentle way to spread it",
+    "mealsToday": "Today's meals",
+    "coachNudge": "Coach nudge",
+    "noMeals": "Nothing logged yet. Start with breakfast.",
+    "logMeal": "Log a meal"
+  },
+  "log": {
+    "title": "Log food",
+    "ph": "Type in Bangla, English or Banglish (e.g. bhat dal alu bhorta)",
+    "breakfast": "Breakfast", "lunch": "Lunch", "snacks": "Snacks", "dinner": "Dinner",
+    "recents": "Recents", "favourites": "Favourites", "sameYesterday": "Same as yesterday", "copyMeal": "Copy a meal",
+    "parseTitle": "What we understood",
+    "tapPick": "Pick from the list",
+    "confirmSave": "Save to",
+    "sharedPot": "Shared pot",
+    "photo": "Photo log",
+    "reading": "Reading your plate…",
+    "aiEstimate": "AI-assisted estimate",
+    "rice": "Rice calibrator", "recipe": "Recipe builder", "street": "Street food",
+    "reportWrong": "Report wrong calories",
+    "portion": "Portion",
+    "candidates": "Candidates"
+  },
+  "plan": {
+    "title": "This week",
+    "budget": "7-day budget",
+    "used": "Used",
+    "spread": "Gentle spread plan",
+    "split": "Meals / activity split",
+    "window": "Recovery days",
+    "floor": "Daily floor (never below)",
+    "cap": "Activity cap",
+    "feast": "Planned feast",
+    "whatIf": "If I eat this…",
+    "reverse": "To eat that on…",
+    "adaptive": "Adaptive TDEE",
+    "improving": "Estimate improving",
+    "noPlan": "Nothing to spread right now. Your week is on track.",
+    "restricted": "Maintenance guidance only — no deficit plans.",
+    "doctorFirst": "Please follow your clinician's advice. Logging still works."
+  },
+  "coach": {
+    "title": "AI coach",
+    "ph": "Ask in Bangla, English or Banglish…",
+    "suggest1": "What can I eat for iftar?",
+    "suggest2": "Cheap protein under 100 taka",
+    "suggest3": "Diabetes thakle bhat koto khabo?",
+    "refusal": "I can't help with that, but here is a safer idea",
+    "lowConf": "I could not find this in the guidelines. Please ask a dietitian.",
+    "why": "Why this suggestion",
+    "source": "Source",
+    "stop": "Stop",
+    "empty": "Ask about food, portions or the plan. Answers cite the national guidelines."
+  },
+  "activity": {
+    "title": "Today's movement",
+    "exercise": "Exercise", "foodPlan": "Food plan", "habits": "Daily habits", "water": "Water intake",
+    "next": "Next",
+    "walk": "Walk", "cycle": "Cycle", "homeWorkout": "Home workout",
+    "cricket": "Cricket / football", "yoga": "Yoga", "chores": "Chores",
+    "stepsManual": "Add steps",
+    "weekMinutes": "Active minutes this week",
+    "onTrack": "Good work — you are on track this week",
+    "indoor": "Air quality or heat suggests indoor options today.",
+    "privacyBadge": "Home-only plans · no public leaderboard",
+    "netKcal": "Net calories"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile", "style": "Eating style and budget", "household": "Household",
+    "routine": "Daily routine", "language": "Language and text size", "appearance": "Appearance",
+    "light": "Light", "dark": "Dark", "largeText": "Large text", "lowLiteracy": "Low-literacy mode",
+    "dataSaver": "Data saver", "privacy": "Privacy and data",
+    "deleteData": "Delete my data", "deleteConfirm": "Type DELETE to remove all data",
+    "about": "About", "sources": "Sources and licences", "report": "Report a problem",
+    "offline": "Offline and sync"
+  },
+  "safety": {
+    "banner": "Guidance follows your safety mode.",
+    "referral": "Talk to a doctor or registered dietitian.",
+    "notMedical": "Not a medical device. No diagnosis."
+  },
+  "states": {
+    "empty": "Nothing here yet",
+    "error": "Something went wrong",
+    "offline": "You are offline — logging and the plan still work",
+    "queued": "Waiting to sync",
+    "saved": "Saved"
+  }
+}

@@ -1,48 +1,55 @@
-'use client';
+"use client";
 
-import { useLayoutEffect } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
-const STORAGE_KEY = 'habitforge_theme';
+type Props = { variant?: "rail" | "inline" | "top" };
 
-function applyTheme() {
-  let dark: boolean;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  } catch {
-    dark = false;
-  }
-  document.documentElement.classList.toggle('dark', dark);
-}
+export default function ThemeToggle({ variant = "top" }: Props) {
+  const [dark, setDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-export default function ThemeToggle() {
-  // Dev-only: React Strict Mode remount resets <html> attributes, clearing the
-  // class the inline script set — re-apply before paint. No-op in production.
-  useLayoutEffect(() => {
-    applyTheme();
+  useEffect(() => {
+    setMounted(true);
+    setDark(document.documentElement.classList.contains("dark"));
   }, []);
 
-  const toggle = () => {
-    const next = !document.documentElement.classList.contains('dark');
-    document.documentElement.classList.toggle('dark', next);
+  function toggle() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
     try {
-      localStorage.setItem(STORAGE_KEY, next ? 'dark' : 'light');
+      localStorage.setItem("deshi_theme", next ? "dark" : "light");
     } catch {
-      // localStorage unavailable — session-only toggle still works
+      /* ignore */
     }
-  };
+  }
+
+  const label = mounted && dark ? "Switch to light" : "Switch to dark";
+
+  if (variant === "rail") {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={label}
+        className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+      >
+        {dark ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
+    );
+  }
 
   return (
     <button
+      type="button"
       onClick={toggle}
-      aria-label="Toggle dark mode"
-      title="Toggle dark mode"
-      className="p-2.5 rounded-2xl text-muted-fg hover:bg-muted hover:text-foreground transition-colors clay-sm"
+      aria-label={label}
+      className={`flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-ink/70 hover:text-ink ${
+        variant === "inline" ? "" : ""
+      }`}
     >
-      {/* Icon swaps via CSS — no JS state, no hydration mismatch */}
-      <Sun className="w-5 h-5 hidden dark:block" aria-hidden="true" />
-      <Moon className="w-5 h-5 block dark:hidden" aria-hidden="true" />
+      {dark ? <Sun size={18} /> : <Moon size={18} />}
     </button>
   );
 }

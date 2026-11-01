@@ -1,61 +1,54 @@
-import type { Metadata } from "next";
-import { Nunito_Sans, Varela_Round } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Manrope, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ToastProvider } from "@/components/Toast";
+import { I18nProvider } from "@/lib/i18n";
 
-const nunitoSans = Nunito_Sans({
-  variable: "--font-nunito",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
 });
 
-const varelaRound = Varela_Round({
-  variable: "--font-varela",
-  subsets: ["latin"],
-  weight: "400",
+const hind = Hind_Siliguri({
+  variable: "--font-hind",
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-// Apply stored theme (or OS preference) before first paint to avoid flash
-const themeScript = `(function(){try{var t=localStorage.getItem("habitforge_theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("deshi_theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
 
 export const metadata: Metadata = {
-  title: "HabitForge — AI Habit Tracker & Coach",
+  title: "Deshi Health Companion",
   description:
-    "Build lasting habits with AI-powered coaching. HabitForge learns your patterns, predicts when you're about to break a streak, and provides personalized strategies to help you succeed.",
-  keywords: [
-    "habit tracker",
-    "AI coach",
-    "productivity",
-    "habit building",
-    "streak tracker",
+    "Bangladesh-first calorie, diet and exercise-balancing app with a RAG-grounded AI coach.",
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#EEEDF5" },
+    { media: "(prefers-color-scheme: dark)", color: "#14121F" },
   ],
-  authors: [{ name: "HabitForge" }],
-  openGraph: {
-    title: "HabitForge — AI Habit Tracker & Coach",
-    description: "Build lasting habits with AI-powered coaching.",
-    type: "website",
-  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${nunitoSans.variable} ${varelaRound.variable} h-full antialiased`}
+      className={`${manrope.variable} ${hind.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full">
         <ConvexClientProvider>
-          <ToastProvider>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-          </ToastProvider>
+          <I18nProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </I18nProvider>
         </ConvexClientProvider>
       </body>
     </html>
