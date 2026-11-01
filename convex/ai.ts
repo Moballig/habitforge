@@ -2,13 +2,38 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-function getModel() {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-  return genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+async function groqChat(prompt: string): Promise<string> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) {
+    throw new Error("GROQ_API_KEY is not set on the Convex deployment");
+  }
+  const model = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  const res = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 1024,
+    }),
   });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Groq API ${res.status}: ${body.slice(0, 400)}`);
+  }
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Groq API returned an empty response");
+  return text;
 }
 
 // ─── AI Coach Chat ────────────────────────────────────────
@@ -36,13 +61,15 @@ Respond to the user's message helpfully. If they ask for habit suggestions, give
     const fullPrompt = `${systemPrompt}\n\nUser: ${args.message}`;
 
     try {
-      const model = getModel();
-      const result = await model.generateContent(fullPrompt);
-      return { response: result.response.text() };
+      const response = await groqChat(fullPrompt);
+      return { response };
     } catch (error) {
       console.error("Coach action error:", error);
+      const message = error instanceof Error ? error.message : String(error);
       return {
-        error: "Failed to get AI response. Please check your API key.",
+        error: message.includes("401")
+          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>` (get one at https://console.groq.com/keys)."
+          : `AI request failed: ${message.slice(0, 300)}`,
       };
     }
   },
@@ -76,9 +103,7 @@ Return ONLY a JSON array (no markdown, no code blocks) with this structure:
 ]`;
 
     try {
-      const model = getModel();
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      const text = await groqChat(prompt);
 
       try {
         const cleaned = text
@@ -110,7 +135,12 @@ Return ONLY a JSON array (no markdown, no code blocks) with this structure:
       }
     } catch (error) {
       console.error("Suggest action error:", error);
-      return { error: "Failed to generate suggestions." };
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        error: message.includes("401")
+          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>`."
+          : `Suggestion request failed: ${message.slice(0, 300)}`,
+      };
     }
   },
 });
@@ -142,9 +172,7 @@ Provide a JSON response with exactly this structure (no markdown, no code blocks
 }`;
 
     try {
-      const model = getModel();
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      const text = await groqChat(prompt);
 
       try {
         const cleaned = text
@@ -167,7 +195,12 @@ Provide a JSON response with exactly this structure (no markdown, no code blocks
       }
     } catch (error) {
       console.error("Analyze action error:", error);
-      return { error: "Failed to analyze habits." };
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        error: message.includes("401")
+          ? "Groq rejected the API key (401). Set a valid key: `bunx convex env set GROQ_API_KEY=<key>`."
+          : `Analysis request failed: ${message.slice(0, 300)}`,
+      };
     }
   },
 });

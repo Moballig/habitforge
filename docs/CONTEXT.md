@@ -67,6 +67,8 @@
 | 21:35 | Fixed new React Compiler lint errors (purity/set-state-in-effect); build + lint green | ✅ Phase 3 closed |
 | 21:45 | Fixed hydration mismatch on `<html>` (theme script added `dark` pre-hydration) | ✅ `suppressHydrationWarning` + `useLayoutEffect` re-apply per Next 16 "Preventing Flash" guide |
 | 23:30 | **Full frontend redesign — Claymorphism** via ui-ux-pro-max skill (`design-system/habitforge/MASTER.md`) | ✅ Tokens + clay utilities in globals.css; Varela Round/Nunito Sans fonts; all 16 visual files restyled; old gray/indigo/purple palette fully removed; lint 0 errors, build ✅, all routes 200 |
+| 23:55 | Monotone pass: removed all gradients/glows/pulse sticker, single amber hue + warm neutrals everywhere (heatmap, stats, confetti, report, chat) | ✅ lint 0 errors, build ✅, routes 200 |
+| 00:10 | **Migrated AI from Gemini (403 billing block) → Groq** via raw REST in `convex/ai.ts`; model `openai/gpt-oss-120b` (override: `GROQ_MODEL`); removed `@google/generative-ai` + GEMINI env vars | ✅ chat/suggest/analyze all live-tested OK; lint 0 errors, build ✅ |
 
 **Files (current):**
 - `convex/schema.ts` — Habits + habitLogs tables (indexed)

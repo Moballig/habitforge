@@ -78,7 +78,7 @@ export default function CoachPage() {
       const errorMessage: AIMessage = {
         id: generateId(),
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please make sure your Gemini API key is configured correctly.',
+        content: 'Sorry, I encountered an error. Please make sure your Groq API key is configured correctly.',
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -97,10 +97,19 @@ export default function CoachPage() {
         existingHabits: habits.map(h => ({ name: h.name })),
       });
 
-      setSuggestions(data.suggestions || []);
+      if (data.error || !data.suggestions) {
+        toast(data.error || 'Could not get suggestions.', 'error');
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setSuggestions(data.suggestions);
       setShowSuggestions(true);
     } catch {
+      toast('Suggestion request failed — check your Groq API key.', 'error');
       setSuggestions([]);
+      setShowSuggestions(false);
     } finally {
       setIsLoadingSuggestions(false);
     }
@@ -146,7 +155,7 @@ export default function CoachPage() {
             </div>
             <div>
               <h2 className="font-heading font-bold text-foreground">AI Coach</h2>
-              <p className="text-xs text-muted-fg">Powered by Gemini AI · Real-time via Convex</p>
+              <p className="text-xs text-muted-fg">Powered by Groq · Real-time via Convex</p>
             </div>
           </div>
 
