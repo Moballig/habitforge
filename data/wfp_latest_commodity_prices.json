@@ -1,0 +1,308 @@
+[
+  {
+    "commodity": "Apples (royal gala)",
+    "unit": "KG",
+    "priceBDT": 380,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Bananas (green)",
+    "unit": "1 piece",
+    "priceBDT": 20,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Bananas (ripe)",
+    "unit": "1 piece",
+    "priceBDT": 8.9,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Bathing soap",
+    "unit": "1 piece",
+    "priceBDT": 50,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Cabbage",
+    "unit": "KG",
+    "priceBDT": 50,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Carrots",
+    "unit": "KG",
+    "priceBDT": 200,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Cauliflower",
+    "unit": "KG",
+    "priceBDT": 80,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Chickpeas",
+    "unit": "KG",
+    "priceBDT": 93.3,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Chili (green)",
+    "unit": "KG",
+    "priceBDT": 160.3,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Dishwashing liquid",
+    "unit": "1 piece",
+    "priceBDT": 130,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Eggplants",
+    "unit": "KG",
+    "priceBDT": 60,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Firewood",
+    "unit": "KG",
+    "priceBDT": 10,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Fuel (diesel)",
+    "unit": "L",
+    "priceBDT": 125,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Fuel (gas)",
+    "unit": "12 KG",
+    "priceBDT": 2150,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Fuel (kerosene)",
+    "unit": "L",
+    "priceBDT": 125,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Fuel (petrol)",
+    "unit": "L",
+    "priceBDT": 170,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Ginger (imported)",
+    "unit": "KG",
+    "priceBDT": 170,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Ginger (local)",
+    "unit": "KG",
+    "priceBDT": 360,
+    "date": "2024-11-15"
+  },
+  {
+    "commodity": "Gourd (bitter)",
+    "unit": "KG",
+    "priceBDT": 100,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Gourd (bottle)",
+    "unit": "KG",
+    "priceBDT": 45.5,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Handwash soap",
+    "unit": "1 piece",
+    "priceBDT": 80,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Hyacinth (sim)",
+    "unit": "KG",
+    "priceBDT": 150,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Laundry detergent",
+    "unit": "1 piece",
+    "priceBDT": 70,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Lemon (medium size)",
+    "unit": "1 piece",
+    "priceBDT": 10,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Lentils (masur)",
+    "unit": "KG",
+    "priceBDT": 87.5,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Milk",
+    "unit": "L",
+    "priceBDT": 450,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Milk (powder)",
+    "unit": "500 G",
+    "priceBDT": 470,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Oil (mustard)",
+    "unit": "L",
+    "priceBDT": 230,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Oil (palm)",
+    "unit": "L",
+    "priceBDT": 164.7,
+    "date": "2026-09-15"
+  },
+  {
+    "commodity": "Oranges (malta)",
+    "unit": "KG",
+    "priceBDT": 345,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Papaya (green)",
+    "unit": "KG",
+    "priceBDT": 37.5,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Pumpkin",
+    "unit": "KG",
+    "priceBDT": 45,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (BRRI-28)",
+    "unit": "KG",
+    "priceBDT": 65,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (BRRI-29)",
+    "unit": "KG",
+    "priceBDT": 55,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (BRRI-49)",
+    "unit": "KG",
+    "priceBDT": 48,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (coarse)",
+    "unit": "KG",
+    "priceBDT": 57,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Rice (Gazi)",
+    "unit": "KG",
+    "priceBDT": 43,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (Kajla)",
+    "unit": "KG",
+    "priceBDT": 49.3,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (medium grain)",
+    "unit": "100 KG",
+    "priceBDT": 4618.42,
+    "date": "2021-05-15"
+  },
+  {
+    "commodity": "Rice (Nurjahan)",
+    "unit": "KG",
+    "priceBDT": 63.3,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Rice (Pyzam)",
+    "unit": "KG",
+    "priceBDT": 52,
+    "date": "2025-12-15"
+  },
+  {
+    "commodity": "Sanitary pads",
+    "unit": "10 pcs",
+    "priceBDT": 100,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Snake gourd",
+    "unit": "KG",
+    "priceBDT": 42.8,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Spinach (malabar)",
+    "unit": "KG",
+    "priceBDT": 38.7,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Spinach (red)",
+    "unit": "KG",
+    "priceBDT": 30.8,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Sugar",
+    "unit": "KG",
+    "priceBDT": 102.5,
+    "date": "2026-07-15"
+  },
+  {
+    "commodity": "Toilet paper",
+    "unit": "1 Roll",
+    "priceBDT": 35,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Tomatoes (red)",
+    "unit": "KG",
+    "priceBDT": 100,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Toothpaste",
+    "unit": "1 piece",
+    "priceBDT": 100,
+    "date": "2026-05-15"
+  },
+  {
+    "commodity": "Wheat",
+    "unit": "100 KG",
+    "priceBDT": 2481.25,
+    "date": "2017-11-15"
+  },
+  {
+    "commodity": "Wheat flour",
+    "unit": "KG",
+    "priceBDT": 60,
+    "date": "2026-08-15"
+  }
+]
