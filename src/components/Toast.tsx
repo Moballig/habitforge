@@ -30,21 +30,18 @@ export function useToast(): ToastContextValue {
   return ctx;
 }
 
-const typeStyles: Record<ToastType, { icon: typeof CheckCircle2; color: string; ring: string }> = {
+const typeStyles: Record<ToastType, { icon: typeof CheckCircle2; color: string }> = {
   success: {
     icon: CheckCircle2,
     color: 'text-emerald-500',
-    ring: 'border-emerald-200 dark:border-emerald-800',
   },
   error: {
     icon: AlertCircle,
     color: 'text-red-500',
-    ring: 'border-red-200 dark:border-red-800',
   },
   info: {
     icon: Info,
-    color: 'text-indigo-500',
-    ring: 'border-indigo-200 dark:border-indigo-800',
+    color: 'text-primary',
   },
 };
 

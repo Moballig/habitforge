@@ -25,21 +25,17 @@ export default function CategoryChart({ habits }: CategoryChartProps) {
   const max = rows.length > 0 ? rows[0].count : 1;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+    <div className="card p-5">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Habit Distribution
-        </h3>
-        <span className="text-xs font-medium px-2 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
-          {habits.length} total
-        </span>
+        <h3 className="font-heading font-bold text-foreground">Habit Distribution</h3>
+        <span className="pill bg-accent/15 text-accent">{habits.length} total</span>
       </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+      <p className="text-xs text-muted-fg mb-4">
         Your habits grouped by category
       </p>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 py-8 text-center">
+        <p className="text-sm text-muted-fg py-8 text-center">
           No categories yet — add some habits!
         </p>
       ) : (
@@ -48,21 +44,21 @@ export default function CategoryChart({ habits }: CategoryChartProps) {
             <div key={row.category}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{row.emoji}</span>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm" role="img" aria-hidden="true">{row.emoji}</span>
+                  <span className="text-sm font-bold text-foreground">
                     {row.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  <span className="text-xs font-bold text-muted-fg">
                     {row.count}
                   </span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 w-8 text-right">
+                  <span className="text-xs text-muted-fg w-8 text-right">
                     {row.pct}%
                   </span>
                 </div>
               </div>
-              <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden clay-inset">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{

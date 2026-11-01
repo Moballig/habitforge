@@ -43,15 +43,15 @@ export default function HabitAnalyticsCard({ habit, logs, habitId }: HabitAnalyt
   const last7Done = last7.filter((d) => d.done).length;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
+    <div className="card p-5 transition-all duration-200 hover:-translate-y-0.5">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-base">{config.emoji}</span>
-          <h4 className="font-semibold text-gray-900 dark:text-white truncate">{habit.name}</h4>
+          <span className="text-base" role="img" aria-label={config.label}>{config.emoji}</span>
+          <h4 className="font-heading font-bold text-foreground truncate">{habit.name}</h4>
         </div>
         <span
-          className="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+          className="flex-shrink-0 pill text-white"
           style={{ backgroundColor: config.color }}
         >
           {config.label}
@@ -60,12 +60,19 @@ export default function HabitAnalyticsCard({ habit, logs, habitId }: HabitAnalyt
 
       {/* Completion rate big number */}
       <div className="flex items-end gap-1 mb-3">
-        <span className="text-3xl font-bold text-gray-900 dark:text-white">
+        <span className="text-3xl font-heading font-bold text-foreground">
           {habit.completionRate}%
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">completion rate</span>
+        <span className="text-xs text-muted-fg mb-1">completion rate</span>
       </div>
-      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-4">
+      <div
+        className="h-2 bg-muted rounded-full overflow-hidden clay-inset mb-4"
+        role="progressbar"
+        aria-valuenow={habit.completionRate}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${habit.name} completion rate`}
+      >
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{
@@ -77,42 +84,42 @@ export default function HabitAnalyticsCard({ habit, logs, habitId }: HabitAnalyt
 
       {/* Stats rows */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="text-center p-2 rounded-xl bg-orange-50 dark:bg-orange-950/30">
-          <Flame className="w-3.5 h-3.5 text-orange-500 mx-auto mb-1" />
-          <p className="text-sm font-bold text-gray-900 dark:text-white">{habit.currentStreak}d</p>
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">current</p>
+        <div className="text-center p-2.5 rounded-2xl bg-amber-100/70 dark:bg-amber-950/30 clay-sm">
+          <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mx-auto mb-1" aria-hidden="true" />
+          <p className="text-sm font-heading font-bold text-foreground">{habit.currentStreak}d</p>
+          <p className="text-[10px] text-muted-fg">current</p>
         </div>
-        <div className="text-center p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/30">
-          <TrendingUp className="w-3.5 h-3.5 text-indigo-500 mx-auto mb-1" />
-          <p className="text-sm font-bold text-gray-900 dark:text-white">{habit.longestStreak}d</p>
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">longest</p>
+        <div className="text-center p-2.5 rounded-2xl bg-primary/10 clay-sm">
+          <TrendingUp className="w-3.5 h-3.5 text-primary mx-auto mb-1" aria-hidden="true" />
+          <p className="text-sm font-heading font-bold text-foreground">{habit.longestStreak}d</p>
+          <p className="text-[10px] text-muted-fg">longest</p>
         </div>
-        <div className="text-center p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mx-auto mb-1" />
-          <p className="text-sm font-bold text-gray-900 dark:text-white">
+        <div className="text-center p-2.5 rounded-2xl bg-emerald-100/70 dark:bg-emerald-950/30 clay-sm">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" aria-hidden="true" />
+          <p className="text-sm font-heading font-bold text-foreground">
             {habit.totalCompletions}
           </p>
-          <p className="text-[10px] text-gray-500 dark:text-gray-400">total</p>
+          <p className="text-[10px] text-muted-fg">total</p>
         </div>
       </div>
 
       {/* Last 7 days mini strip */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <Calendar className="w-3 h-3 text-gray-400 mr-0.5" />
+          <Calendar className="w-3 h-3 text-muted-fg mr-0.5" aria-hidden="true" />
           {last7.map((d, i) => (
             <div
               key={i}
               title={`${d.done ? 'Done' : 'Missed'}${d.isToday ? ' (today)' : ''}`}
-              className={`w-4 h-4 rounded-sm ${
+              className={`w-4 h-4 rounded-md ${
                 d.done
                   ? 'bg-emerald-500'
-                  : 'bg-gray-200 dark:bg-gray-700'
+                  : 'bg-muted'
               } ${d.isToday && d.done ? 'ring-2 ring-emerald-300 dark:ring-emerald-700' : ''}`}
             />
           ))}
         </div>
-        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+        <span className="text-[10px] font-bold text-muted-fg">
           {last7Done}/7 this week
         </span>
       </div>

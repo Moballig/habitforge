@@ -21,52 +21,47 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       value: `${stats.todayCompletions}/${stats.todayTotal}`,
       subtitle: `${stats.todayRate}% complete`,
       icon: Target,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-blue-50 dark:bg-blue-950/30',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
     },
     {
       label: 'Best Streak',
       value: `${stats.bestStreak}d`,
       subtitle: stats.bestStreakHabit || 'No streaks yet',
       icon: Flame,
-      color: 'from-orange-500 to-red-500',
-      bgColor: 'bg-orange-50 dark:bg-orange-950/30',
+      iconBg: 'bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
     },
     {
       label: 'Total Check-ins',
       value: stats.totalCompletions.toString(),
       subtitle: 'All time',
       icon: TrendingUp,
-      color: 'from-emerald-500 to-teal-500',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
+      iconBg: 'bg-primary/15 text-primary',
     },
     {
       label: 'Active Habits',
       value: stats.totalHabits.toString(),
       subtitle: 'Being tracked',
       icon: Award,
-      color: 'from-purple-500 to-indigo-500',
-      bgColor: 'bg-purple-50 dark:bg-purple-950/30',
+      iconBg: 'bg-rose-100 dark:bg-rose-950/50 text-rose-500 dark:text-rose-400',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {cards.map((card) => (
-        <div
-          key={card.label}
-          className={`${card.bgColor} rounded-2xl p-4 sm:p-5 border border-gray-200/50 dark:border-gray-700/50`}
-        >
+        <div key={card.label} className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-[11px] font-bold text-muted-fg uppercase tracking-wider">
               {card.label}
             </span>
-            <div className={`w-8 h-8 bg-gradient-to-br ${card.color} rounded-lg flex items-center justify-center`}>
-              <card.icon className="w-4 h-4 text-white" />
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center clay-sm ${card.iconBg}`}
+            >
+              <card.icon className="w-4.5 h-4.5" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{card.value}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{card.subtitle}</p>
+          <p className="text-2xl sm:text-3xl font-heading font-bold text-foreground">{card.value}</p>
+          <p className="text-xs text-muted-fg mt-1 truncate">{card.subtitle}</p>
         </div>
       ))}
     </div>

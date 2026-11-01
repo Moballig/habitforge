@@ -16,8 +16,8 @@ export default function AnalyticsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading analytics...</p>
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-fg font-medium">Loading analytics...</p>
         </div>
       </div>
     );
@@ -26,23 +26,20 @@ export default function AnalyticsPage() {
   if (habits.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="text-center py-20 animate-fade-in">
-          <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950 dark:to-purple-950 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <BarChart3 className="w-10 h-10 text-indigo-500" />
+        <div className="text-center py-20 card animate-fade-in">
+          <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-3xl flex items-center justify-center mx-auto mb-6 clay-sm">
+            <BarChart3 className="w-10 h-10 text-primary" aria-hidden="true" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
             No data to analyze yet
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">
+          <p className="text-muted-fg max-w-sm mx-auto mb-8">
             Add a few habits and check them off — your analytics will appear here automatically.
           </p>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 transition-all"
-          >
-            <Plus className="w-5 h-5" />
+          <Link href="/" className="btn btn-primary px-6 py-3">
+            <Plus className="w-5 h-5" aria-hidden="true" />
             Create Your First Habit
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -53,10 +50,10 @@ export default function AnalyticsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl sm:text-4xl font-heading font-bold text-foreground">
           Analytics
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-muted-fg mt-1">
           Understand your patterns and let AI guide your next week
         </p>
       </div>
@@ -75,7 +72,7 @@ export default function AnalyticsPage() {
 
       {/* Per-habit breakdown */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-xl font-heading font-bold text-foreground mb-4">
           Per-Habit Breakdown
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

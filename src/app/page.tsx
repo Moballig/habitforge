@@ -57,10 +57,10 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl sm:text-4xl font-heading font-bold text-foreground">
             Dashboard
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-muted-fg mt-1">
             {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
@@ -71,9 +71,9 @@ export default function Dashboard() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-200"
+          className="btn btn-primary px-5 py-3 text-sm"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-5 h-5" aria-hidden="true" />
           New Habit
         </button>
       </div>
@@ -87,11 +87,11 @@ export default function Dashboard() {
       {/* Habits List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-heading font-bold text-foreground">
             Today&apos;s Habits
           </h2>
           {habits.length > 0 && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="pill bg-accent/15 text-accent">
               {habits.filter((h) => h.todayCompleted).length}/{habits.length} done
             </span>
           )}
@@ -160,27 +160,27 @@ function DashboardSkeleton() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-2">
-          <div className="h-8 w-44 bg-gray-200 dark:bg-gray-800 rounded-lg" />
-          <div className="h-4 w-64 bg-gray-200 dark:bg-gray-800 rounded-md" />
+          <div className="h-9 w-48 bg-muted rounded-2xl" />
+          <div className="h-4 w-64 bg-muted rounded-full" />
         </div>
-        <div className="h-11 w-36 bg-gray-200 dark:bg-gray-800 rounded-xl" />
+        <div className="h-12 w-36 bg-muted rounded-2xl" />
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-28 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div key={i} className="h-28 bg-muted rounded-3xl" />
         ))}
       </div>
 
       {/* Grid card */}
-      <div className="h-48 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+      <div className="h-48 bg-muted rounded-3xl" />
 
       {/* List */}
       <div className="space-y-3 sm:space-y-4">
-        <div className="h-6 w-36 bg-gray-200 dark:bg-gray-800 rounded-md" />
+        <div className="h-6 w-36 bg-muted rounded-full" />
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-24 bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div key={i} className="h-24 bg-muted rounded-3xl" />
         ))}
       </div>
     </div>
@@ -189,31 +189,28 @@ function DashboardSkeleton() {
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="text-center py-16 px-6 animate-fade-in">
-      <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950 dark:to-purple-950 rounded-2xl flex items-center justify-center mx-auto mb-6">
-        <Sparkles className="w-10 h-10 text-indigo-500" />
+    <div className="text-center py-16 px-6 card animate-fade-in">
+      <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 rounded-3xl flex items-center justify-center mx-auto mb-6 clay-sm">
+        <Sparkles className="w-10 h-10 text-primary" aria-hidden="true" />
       </div>
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-2xl font-heading font-bold text-foreground mb-2">
         Start Forging Your Habits
       </h3>
-      <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-8">
+      <p className="text-muted-fg max-w-sm mx-auto mb-8">
         Add your first habit and let AI help you build consistency. Small steps lead to big changes.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-        <button
-          onClick={onAdd}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all"
-        >
-          <Plus className="w-5 h-5" />
+        <button onClick={onAdd} className="btn btn-primary px-6 py-3">
+          <Plus className="w-5 h-5" aria-hidden="true" />
           Create Your First Habit
         </button>
         <a
           href="/coach"
-          className="flex items-center gap-2 px-6 py-3 text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-xl transition-colors"
+          className="btn btn-soft px-6 py-3 text-primary"
         >
-          <Zap className="w-4 h-4" />
+          <Zap className="w-4 h-4" aria-hidden="true" />
           Ask AI for Suggestions
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
         </a>
       </div>
     </div>

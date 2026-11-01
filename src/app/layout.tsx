@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Nunito_Sans, Varela_Round } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ToastProvider } from "@/components/Toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const nunitoSans = Nunito_Sans({
+  variable: "--font-nunito",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const varelaRound = Varela_Round({
+  variable: "--font-varela",
   subsets: ["latin"],
+  display: "swap",
 });
 
 // Apply stored theme (or OS preference) before first paint to avoid flash
@@ -41,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${nunitoSans.variable} ${varelaRound.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
