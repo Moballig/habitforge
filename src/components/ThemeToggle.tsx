@@ -1,14 +1,33 @@
 'use client';
 
+import { useLayoutEffect } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
+const STORAGE_KEY = 'habitforge_theme';
+
+function applyTheme() {
+  let dark: boolean;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch {
+    dark = false;
+  }
+  document.documentElement.classList.toggle('dark', dark);
+}
+
 export default function ThemeToggle() {
+  // Dev-only: React Strict Mode remount resets <html> attributes, clearing the
+  // class the inline script set — re-apply before paint. No-op in production.
+  useLayoutEffect(() => {
+    applyTheme();
+  }, []);
+
   const toggle = () => {
-    const el = document.documentElement;
-    const next = !el.classList.contains('dark');
-    el.classList.toggle('dark', next);
+    const next = !document.documentElement.classList.contains('dark');
+    document.documentElement.classList.toggle('dark', next);
     try {
-      localStorage.setItem('habitforge_theme', next ? 'dark' : 'light');
+      localStorage.setItem(STORAGE_KEY, next ? 'dark' : 'light');
     } catch {
       // localStorage unavailable — session-only toggle still works
     }
