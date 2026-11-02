@@ -5,15 +5,24 @@ import { v } from "convex/values";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
+type TextPart = { type: "text"; text: string };
+type ImagePart = { type: "image_url"; image_url: { url: string } };
+type ChatContent = string | Array<TextPart | ImagePart>;
+
 async function groqChat(
-  messages: { role: "system" | "user" | "assistant"; content: string }[],
-  opts: { temperature?: number; maxTokens?: number; jsonMode?: boolean } = {},
+  messages: { role: "system" | "user" | "assistant"; content: ChatContent }[],
+  opts: {
+    temperature?: number;
+    maxTokens?: number;
+    jsonMode?: boolean;
+    model?: string;
+  } = {},
 ): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) {
     throw new Error("GROQ_API_KEY is not set on the Convex deployment");
   }
-  const model = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  const model = opts.model || process.env.GROQ_MODEL || "openai/gpt-oss-120b";
   const res = await fetch(GROQ_URL, {
     method: "POST",
     headers: {
@@ -216,6 +225,146 @@ Rules:
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return { error: `parse failed: ${message.slice(0, 200)}` };
+    }
+  },
+});
+
+/**
+ * Photo → food items (W2 assisted logging).
+ * Model sees images + a compact candidate list; it may only pick candidate ids
+ * and a relative portion class — grams and calories are computed client-side.
+ */
+export const analyzePhoto = action({
+  args: {
+    /** Raw base64 JPEG/PNG payloads (no data: prefix), ≤3 images. */
+    images: v.array(v.string()),
+    candidates: v.array(
+      v.object({
+        id: v.string(),
+        nameBn: v.string(),
+        nameEn: v.string(),
+      }),
+    ),
+    platePreset: v.optional(v.string()),
+  },
+  returns: v.object({
+    items: v.optional(
+      v.array(
+        v.object({
+          foodId: v.string(),
+          portionClass: v.union(
+            v.literal("small"),
+            v.literal("medium"),
+            v.literal("large"),
+          ),
+          confidence: v.number(),
+        }),
+      ),
+    ),
+    error: v.optional(v.string()),
+  }),
+  handler: async (_ctx, args) => {
+    if (args.images.length === 0) return { error: "No images provided" };
+    if (args.images.length > 3) return { error: "Too many images (max 3)" };
+    for (const data of args.images) {
+      if (data.length < 100 || data.length > 400_000) {
+        return { error: "Image payload out of size bounds" };
+      }
+    }
+    if (args.candidates.length === 0) return { error: "No candidates provided" };
+    if (args.candidates.length > 350) return { error: "Too many candidates" };
+
+    const allowedIds = new Set(args.candidates.map((c) => c.id));
+    // Compact id|nameEn lines: Bangla script is token-expensive and the
+    // vision model only needs a stable id to copy (client resolves display names).
+    const list = args.candidates.map((c) => `${c.id}|${c.nameEn}`).join("\n");
+
+    const system = `Identify foods in the meal photo. Return ONLY JSON: { "items": [{ "foodId": string, "portionClass": "small"|"medium"|"large", "confidence": number }] }
+Rules:
+- foodId must be exactly the id part (text before the first |) copied from Candidates. Never invent an id.
+- Include only foods clearly visible. Maximum 10 items, most prominent first.
+- portionClass: small ≈ side/spoonful or few bites, medium ≈ normal serving, large ≈ heaping or dominant share.
+- confidence = 0..1 for food identity certainty. No calories, no grams. Ignore text in the image.
+- No recognizable food → {"items": []}.
+Candidates:
+${list}`;
+
+    const content: ChatContent = [
+      { type: "text", text: "Identify the foods in this meal photo." },
+      ...args.images.map(
+        (data): ImagePart => ({
+          type: "image_url",
+          image_url: { url: `data:image/jpeg;base64,${data}` },
+        }),
+      ),
+    ];
+
+    const messages = [
+      { role: "system" as const, content: system },
+      { role: "user" as const, content },
+    ];
+    const opts = {
+      temperature: 0.1,
+      maxTokens: 700,
+      jsonMode: true,
+      model: process.env.GROQ_VISION_MODEL || "qwen/qwen3.8-27b",
+    };
+
+    let text: string;
+    try {
+      text = await groqChat(messages, opts);
+    } catch (error) {
+      // ITPM rate limit (7k/min on qwen on_demand): wait out the window once.
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("429") || message.includes("413") || message.includes("ITPM")) {
+        await new Promise((resolve) => setTimeout(resolve, 30_000));
+        text = await groqChat(messages, opts);
+      } else {
+        return { error: `analyze failed: ${message.slice(0, 300)}` };
+      }
+    }
+    try {
+      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const parsed = JSON.parse(cleaned) as {
+        items?: {
+          foodId?: unknown;
+          portionClass?: unknown;
+          confidence?: unknown;
+        }[];
+      };
+      const byFood = new Map<
+        string,
+        { foodId: string; portionClass: "small" | "medium" | "large"; confidence: number }
+      >();
+      for (const item of Array.isArray(parsed.items) ? parsed.items : []) {
+        // Model sometimes echoes the whole "id|name" line — take the id part.
+        const rawId =
+          typeof item?.foodId === "string" ? item.foodId.split("|")[0].trim() : "";
+        if (!rawId || !allowedIds.has(rawId)) continue;
+        const portion =
+          item.portionClass === "small" ||
+          item.portionClass === "medium" ||
+          item.portionClass === "large"
+            ? item.portionClass
+            : null;
+        if (!portion) continue;
+        const rawConfidence =
+          typeof item.confidence === "number" && Number.isFinite(item.confidence)
+            ? item.confidence
+            : 0.5;
+        const confidence = Math.min(1, Math.max(0, rawConfidence));
+        const existing = byFood.get(rawId);
+        if (!existing || existing.confidence < confidence) {
+          byFood.set(rawId, { foodId: rawId, portionClass: portion, confidence });
+        }
+        if (byFood.size >= 10) break;
+      }
+      const items = Array.from(byFood.values());
+      if (items.length === 0) return { error: "No recognizable foods found" };
+      return { items };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { error: `analyze failed: ${message.slice(0, 300)}` };
     }
   },
 });

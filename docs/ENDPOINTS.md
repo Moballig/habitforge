@@ -227,18 +227,22 @@ await parseMealAction({
 
 JSON mode with a maximum 25-item candidate pool. Returned IDs are checked against that pool; quantity is bounded to `0 < qty ≤ 20`; units are length-bounded. Code converts units → grams via `measures` and computes kcal. On Groq failure, `/log` uses the deterministic offline top candidate per clause. The 20-case local parser set and a live four-item Groq smoke pass.
 
-### 4.3 `ai.analyzePhoto` (Wave 2 — assisted)
+### 4.3 `ai.analyzePhoto` (Wave 2 — ✅ live, probe in progress)
 
 ```ts
-await analyzePhotoAction({
-  images: [...],            // ≤3, qwen/qwen3.8-27b JSON mode
-  supportedFoods: [...],    // compact id+name list
-  platePreset: "medium",    // from profile calibration
+await analyzePhoto({
+  images: [...],            // ≤3 base64 JPEG payloads (no data: prefix), ≤400k chars each
+  candidates: [...],        // all 318 seed foods: { id, nameBn, nameEn }
+  platePreset?: "medium",   // reserved for profile calibration
 });
-// → { items: [{ foodId, portionClass: "small"|"medium"|"large", confidence }] }
+// → { items: [{ foodId, portionClass: "small"|"medium"|"large", confidence }] } | { error }
 ```
 
-Code maps portionClass → grams via plate preset → kcal **with range** → confirm/edit screen. If probe fails on mixed dishes: ship pre-tested demo photos only and say so on stage.
+- **Model:** `qwen/qwen3.8-27b` (override `GROQ_VISION_MODEL`), JSON mode, `temperature 0.1`, `max_tokens 700`.
+- **Prompt economy:** candidates are sent as compact `id|nameEn` lines (Bangla script is token-expensive; client resolves display names). Groq qwen on_demand has a **7,000 input-tokens/min** ITPM limit — full 318-line list with Bangla exceeded it; English-only compact list fits (~5.6k incl. image). The action waits 30 s and retries once on 429/413.
+- **Validation:** `foodId` must exist in the candidate set (model sometimes echoes `id|name`; the id part is taken), portionClass enum, confidence clamped 0–1, ≤10 items, deduped.
+- **Client:** `/log/photo` compresses the capture (canvas → ≤768 px JPEG 0.7, `src/lib/ai/photo.ts`), calls the action, maps `portionClass` → grams via the food's measure ladder (`portionClassToGrams`), computes kcal **with ±15% range**, and shows a confirm screen with exclude toggles + S/M/L chips + slot picker → `mealLogs.create({ method: "photo" })`.
+- **Gate:** `bun scripts/test_vision.mjs --n 10` scores against FoodBD test labels + nutrition CSV. If probe fails on mixed dishes: ship pre-tested demo photos only and say so on stage.
 
 ### 4.4 Other actions (later waves)
 

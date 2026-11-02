@@ -1,8 +1,7 @@
-# UI Implementation Prompt: Deshi Health Companion
+# UI Implementation Prompt: Deshi Health Companion (self-contained)
 
 > Paste this whole file into Claude Code (or any coding agent) at the repo root.
-> Before you start, copy the five reference images into `docs/ui-reference/` with these names:
-> `ref-1-fitness-dashboard.png`, `ref-2-dokko-dashboard.png`, `ref-3-hierarchy-spacing.png`, `ref-4-himotou-exercise.png`, `ref-5-login.png`.
+> It contains **everything needed to design and build the frontend. No reference images are required.** Every visual pattern is described in words, with exact sizes, colours and layouts.
 
 ---
 
@@ -12,293 +11,401 @@ You are the lead frontend engineer and designer for **Deshi Health Companion**, 
 
 **Stack:** Next.js 16 (App Router), Tailwind 4, Convex, Groq, Vercel.
 
-**Your task:** implement the complete UI for every page, shared shell and component listed below, matching the visual language of the five reference images. Backend wiring comes in parallel waves, so build every screen against typed fixtures first and swap in Convex queries later without changing the components.
-
-Read these first, in order:
-1. `docs/bangladeshi-calorie-companion-research.md` (source of truth)
-2. The full-scope build plan v3 (waves 1 to 8)
-3. The five images in `docs/ui-reference/`
+**Task:** implement the complete UI for every page, the shared shell and every component below. Build against typed fixtures first (`lib/mock/`), so Convex queries can be swapped in later without changing components. Backend and engine work happen in parallel in `lib/engine/`.
 
 ### Hard rules that come from the product, not from taste
 
-1. **The UI never invents numbers.** Calories, floors, caps, exercise minutes and grams come only from `lib/engine/` or a tool result. Components receive numbers as props and format them. They never calculate health values themselves.
-2. **Every number that is an estimate shows its uncertainty.** Use `<Range>` ("620 to 780 kcal") or the "about" prefix, plus a `<SourceTag>` (FCTB, estimated-recipe, user-entered, AI-assisted).
-3. **Shame-free copy.** Never write "you failed", "cheat day", "burn off your binge", "bad food", red alarm styling for an over-day. An over-day is a neutral amber note followed by a gentle plan.
-4. **Safety modes change the UI.** `safetyMode()` returns `normal`, `restricted` or `doctor-first`. In `restricted` the deficit controls and rebalance planner are hidden. In `doctor-first` no calorie target, deficit or weight-loss pace is shown at all, only a calm referral card.
-5. **Privacy.** Never put the user's name, age, weight or conditions into anything that is sent to the LLM. The UI may show them locally.
-6. **Bangla is a first-class language, not a translation afterthought.** Every screen must work in Bangla, English and mixed use, with Bangla numerals when the language is Bangla.
-7. **No remote images or hotlinks.** Use local assets, inline SVG and generated illustrations only (this also matters for offline and data-saver mode).
+1. **The UI never invents numbers.** Calories, floors, caps, exercise minutes and grams come only from `lib/engine/` or a tool result. Components receive numbers as props and only format them.
+2. **Every estimate shows its uncertainty:** use `<Range>` ("620 to 780 kcal") or an "about" prefix, plus a `<SourceTag>` (FCTB, estimated-recipe, user-entered, AI-assisted).
+3. **Shame-free copy.** Never "you failed", "cheat day", "burn off your binge", "bad food", or red alarm styling for an over-day. An over-day is a calm amber note followed by a gentle plan.
+4. **Safety modes change the UI.** `safetyMode()` returns `normal`, `restricted` or `doctor-first`. In `restricted`, deficit controls and the rebalance planner are hidden. In `doctor-first`, no calorie target, deficit or weight-loss pace is shown, only a calm referral card.
+5. **Privacy.** Name, age, weight and conditions are shown locally only and never put into anything sent to the LLM.
+6. **Bangla is first-class.** Every screen works in Bangla, English and mixed use, with Bangla numerals when the language is Bangla.
+7. **No remote images or hotlinks.** Local assets, inline SVG and generated illustrations only (offline and data-saver depend on it).
+8. **No weight-loss promises anywhere** ("lose X in Y days" is never used; use neutral rhythm wording such as "Day 21 of your 28-day plan").
 
 ---
 
-## 1. What to take from each reference image (and what to leave)
+## 1. The design language (a mix of five dashboard styles, described in words)
 
-| Ref | Borrow | Do not copy |
-|---|---|---|
-| **1. Purple fitness dashboard** | Soft lavender canvas inside a rounded outer frame; a floating pill-shaped navigation rail; one hero "Overview" card with a smooth area chart, a highlighted data point with tooltip and a month/week selector; a notched stat strip under the chart; goal cards with a progress bar and a small "N days left" pill; a right column for secondary info | The "Friends" social list and the live map. This app has no public leaderboard. Replace the right column with today's meals and a coach nudge |
-| **2. DoKKo health dashboard** | Labelled left sidebar with active item as a solid blue pill; greeting header ("Hello, name") with a subtle wave emoji; bar-range "Health Overview" chart; stacked panels (upcoming, recent, list) with a clear card hierarchy; chips with status labels such as "Scheduled / Completed"; neutral grey-white surface | The 3D muscle model, heart rate, blood pressure, ECG, appointments and "Upgrade now". We are not a medical app. Use the same layout slot for a **plate-balance visual** (see Home) |
-| **3. Hierarchy and spacing board** | The **8pt grid** (every gap, padding and size is a multiple of 8, with 4 allowed for tight icon gaps); strict visual hierarchy (page title, section label with a dot, card title, value); small stat cards with a tiny chart inside; neumorphic-soft cards on a light grey base; icon-only rail with a light/dark toggle at the bottom; top bar with search, notification bell and avatar | The anatomy renders and clinical readings |
-| **4. himotou exercise page** | Top tabs inside a page (Exercise, Food plan, Daily habits, Water intake); a large page title with a "Day N" subtitle; a hero exercise card with a circular timer chip and segmented progress bars; a "Next" row of three cards; pastel-tinted quick-tile grid (green, blue, lilac, peach) with icon + label; a semicircle gauge for the goal; a small success toast at the bottom | The "30 days to lose 30lb" headline and any weight-loss promise. The title becomes a neutral rhythm headline such as "Day 21 of your 28-day plan" or "Today's movement". The anatomy illustration is replaced by a clean line-icon or illustration of the activity |
-| **5. Konekta login** | Split card on a warm grey page: rounded image panel on the left, form on the right; centered logo, bold title, grey subtitle; pill-shaped inputs with grey labels; "Remember login" and underlined "Forgot password"; full-width purple pill primary button; "Or continue with" divider; two grey pill social buttons; "New here? Create account" footer | The Apple sign-in button (not needed, skip it). The left image is a local botanical or food-ingredient collage of Bangladeshi produce (rice, lentils, hilsa, gourd, green chili) as an SVG or optimised WebP, not a stock photo |
+The look is a **soft, rounded, lavender-and-violet health dashboard**: floating rounded frames, big pill shapes, pastel tinted tiles, one violet hero card, one coral accent card, and a strict 8pt grid. **Spend the boldness in two places only:** the violet hero card (the only gradient in the app) and the `PlateBalance` illustration, which is the app's signature. Draw `PlateBalance` as a top-down Bangladeshi thali (a mound of rice, a bati of dal, a fish or egg piece, a bhaji, a lemon wedge) whose segments carry the balance data, and reuse that drawing style in the login collage and in empty states. Everything else stays quiet and flat. Sections 2 and 3 describe the five signature patterns in detail. Section 4 puts them together into pages.
 
-**Shared visual DNA to carry across all pages:** very large corner radii (cards 24, inner tiles 16, buttons and inputs fully pill-shaped), generous whitespace, soft diffuse shadows, pastel tinted tiles, violet-and-blue accents with one warm accent, rounded sans type, subtle gradients only inside hero cards.
-
----
-
-## 2. Design plan (produce this first, then build)
-
-Before writing page code, create `docs/ui-design-system.md` with the tokens below, review it against the references and the product rules, adjust anything that feels generic, and note what you changed. Then implement the tokens in `app/globals.css` using Tailwind 4 `@theme`.
-
-### 2.1 Color tokens (light and dark)
+### 1.1 Colour tokens
 
 | Token | Light | Dark | Role |
 |---|---|---|---|
-| `--ink` | `#1E1A2E` | `#F1EFF8` | Primary text |
-| `--canvas` | `#EEEDF5` | `#14121F` | Page background (lavender-grey from refs 1 and 3) |
+| `--page` | `#B9BEDD` | `#0E0C18` | Browser backdrop behind the app frame (desktop only) |
+| `--canvas` | `#EEEDF5` | `#14121F` | App background inside the frame |
 | `--surface` | `#FFFFFF` | `#1D1A2C` | Cards |
-| `--surface-soft` | `#F6F5FA` | `#25223A` | Inner tiles, inputs |
-| `--violet` | `#5B3E9E` | `#9B84E0` | Primary actions, rail, hero card |
-| `--blue` | `#2F62F0` | `#6C93FF` | Active nav pill, links, charts secondary |
-| `--coral` | `#F2678F` | `#FF86A7` | Hero accent card, highlight point |
-| `--leaf` | `#2F8F67` | `#59C596` | "Balanced", success, plate balance good |
-| `--turmeric` | `#E9A23B` | `#F5BC62` | Gentle caution, near the cap (never red) |
+| `--surface-soft` | `#F4F3F9` | `#25223A` | Inputs, inner tiles, inset stat wells |
+| `--ink` | `#1E1A2E` | `#F1EFF8` | Primary text |
+| `--ink-soft` | `#625E75` | `#A9A5BE` | Secondary text, labels (AA on both canvas and surface) |
+| `--line` | `#E3E1EC` | `#34304A` | Dividers, outlines |
+| `--violet-600` | `#5B3E9E` | `#B3A0F0` | Violet as text, icon, link and chart stroke |
+| `--action` | `#5B3E9E` | `#6A4CC0` | Fill of every primary button, active nav item and the Log button (white text passes AA in both modes). One action colour for the whole app |
+| `--violet-500` | `#6E57C4` | `#7A62CE` | Hero gradient start |
+| `--violet-700` | `#4A3590` | `#3B2A78` | Hero gradient end and the solid rail |
+| `--blue` | `#2F62F0` | `#6C93FF` | Second chart series and the selected-tile icon holder only. Never a button or nav colour |
+| `--coral-500` | `#CF3A66` | `#CF3A66` | Highlighted data point (same in dark mode) |
+| `--coral-600` | `#B22C58` | `#B22C58` | Solid fill of the coral card (white text on it passes AA, so it stays the same in dark mode) |
+| `--leaf` | `#2F8F67` | `#59C596` | Balanced, success, progress bar fill (`#35C26B` for bars). Icon and fill only; text on a leaf tint is `--ink` |
+| `--turmeric` | `#E9A23B` | `#F5BC62` | Gentle caution, near the cap (never red for calories). Icon and 1px border only; text on its tint (`#FFF3DC`, dark `#3A2E14`) is `--ink` |
+| `--rose` | `#C2415D` | `#F07A92` | Form errors only |
 
-Pastel tiles (ref 4): `mint #E4F6EC`, `sky #E3F0FF`, `lilac #ECE6FA`, `peach #FDEBDD`, each with a darker same-hue icon colour. Define dark variants too.
+Pastel tiles, each with a darker same-hue icon colour and a dark-mode variant:
+`mint #E4F6EC / icon #2F8F67`, `lilac #ECE6FA / icon #6A4CC0`, `peach #FDEBDD / icon #D9772B`. Three tints only; no sky blue, so blue stays a data colour.
 
-Rules: contrast AA minimum for text. Never use pure red for calorie states; reserve a muted `--rose` only for form errors. Semantic colour must always be paired with an icon or text label, never colour alone.
+Rules: text contrast at least AA; colour is never the only signal (pair with an icon or label); no pure red for calorie states.
 
-### 2.2 Typography
+### 1.2 Typography
 
-- **Latin:** Manrope (matches refs 3 and 5). **Bangla:** Hind Siliguri, with Noto Sans Bengali as fallback. Load both with `next/font`, subset, `display: swap`.
-- One family stack for the whole app, set as `font-family: var(--font-latin), var(--font-bangla), system-ui, sans-serif`.
-- Scale (px): 12, 14, 16, 20, 24, 32, 40. Weights 400, 500, 700, 800 for big numbers.
-- Bangla gets `line-height: 1.65` (Latin 1.4) and about 1px larger size at body level because Bangla glyphs read small. Test conjuncts (যুক্তাক্ষর) are not clipped in chips and buttons.
-- Page title style like ref 3: 32/40 bold, followed by section labels with a small coloured dot (ref 3 "• Heart Conditions"). Use the dot only where it marks a real section, not as decoration.
-- Numbers: tabular figures for all stats. Use `Intl.NumberFormat('bn-BD')` when language is Bangla. Build one `formatNumber`, `formatRange`, `formatKcal` helper in `lib/format.ts` and use it everywhere.
+- **Latin:** Manrope. **Bangla:** Hind Siliguri, fallback Noto Sans Bengali. Load with `next/font`, subset, `display: swap`. Stack: `var(--font-latin), var(--font-bangla), system-ui, sans-serif`.
+- Scale (px): 12, 14, 16, 20, 24, 28, 32, 40. Weights 400, 500, 700, 800 (800 only for big stat numbers).
+- Bangla: line-height 1.65 (Latin 1.4), body about 1px larger than Latin. Verify conjuncts are not clipped in chips, tabs and buttons.
+- Page title 32/40 bold. Section label 16 bold, plain (no dots, no eyebrow labels above titles). Card title 14 to 16 bold. Labels 12 to 14 in `--ink-soft`. Stat numbers 28 to 40 bold with tabular figures.
+- A big light-weight (400) page headline of 40px is allowed on `/activity` only.
+- **Verify the fonts before locking them:** render a test row with Bangla and Latin digits in Manrope + Hind Siliguri. If numerals mismatch in weight or height, switch to **Anek Bangla + Anek Latin** (one family designed for both scripts, variable weight and width; confirm it is available in `next/font/google`) and use its width axis for the big stat numbers.
+- Numbers go through `lib/format.ts` (`formatNumber`, `formatRange`, `formatKcal`) using `Intl.NumberFormat('bn-BD')` in Bangla. Never format numbers inline.
 
-### 2.3 Spacing, radius, elevation
+### 1.3 Spacing, radius, elevation
 
-- 8pt grid: 8, 16, 24, 32, 40, 48, 56, 64. Card padding 24 (16 on mobile). Gap between cards 16 to 24.
-- Radii: page frame 32, card 24, tile 16, chip and button and input 999px.
-- Shadows: one soft ambient shadow for cards (`0 8px 24px rgb(60 40 120 / 0.08)`), one pressed/inset variant for the neumorphic stat tiles from ref 3. Dark mode uses border + subtle glow instead of shadow.
-- Hero cards (ref 1 purple, ref 4 gauge card) may use a violet to indigo gradient. No other gradients.
+- **8pt grid:** every gap, padding and size is a multiple of 8 (8, 16, 24, 32, 40, 48, 56, 64); 4 is allowed only for tight icon gaps.
+- Radii: app frame 32, hero card 28, card 24, tile 16, chip/button/input/search fully pill (999px).
+- Card padding 24 (16 on mobile). Gap between cards 16 (24 on desktop).
+- Shadows: card `0 8px 24px rgb(60 40 120 / 0.08)`; floating frame `0 24px 64px rgb(60 40 120 / 0.18)`; inset well `inset 0 2px 6px rgb(60 40 120 / 0.08)` (used inside stat tiles). Dark mode swaps shadows for a 1px `--line` border and a faint glow. **Only the hero card, floating callouts, sheets and the raised Log button carry a shadow.** Ordinary cards are flat (`--surface` on `--canvas`, at most a 1px `--line` border) so that elevation signals hierarchy.
+- **One gradient only:** the violet hero card (`linear-gradient(135deg, violet-500, violet-700)`). The rail is solid `--violet-700`, the coral card is solid `--coral-600`, the gauge arc is solid `--action`, and no button has a gradient.
 
-### 2.4 Motion (restraint)
+### 1.4 Motion
 
-- One orchestrated moment: on first load of `/home`, the calorie ring fills and the 7-day area chart draws in. Nothing else animates on load.
-- Interaction motion only: tab underline slide, sheet open, chip select, slider drag, toast in/out, the logged-meal "added" confirmation.
-- Respect `prefers-reduced-motion` (replace with instant state changes).
-
-### 2.5 Layout concept
-
-```
-Mobile (default, 360 to 430px)          Desktop (>=1024px)
-+------------------------+              +----+---------------------------+----------+
-| greeting + avatar  [bn]|              |rail| page title   search bell av|  right   |
-| hero card              |              |    +---------------------------+  panel   |
-| stat tiles (2 col)     |              |    | hero card   | goal tiles  |  meals   |
-| sections ...           |              |    | stat strip               |  nudge   |
-+------------------------+              |    | cards row                |          |
-| Home Plan [+] Coach Act |              +----+---------------------------+----------+
-+------------------------+
-```
-
-- **Mobile first.** Bangladesh usage is mostly phones. Bottom tab bar with 5 items: Home, Plan, **Log (centre, raised button)**, Coach, Activity. Settings lives in the avatar menu.
-- **Tablet (768+):** icon-only floating rail on the left (ref 1 and 3), no bottom bar.
-- **Desktop (1280+):** rail expands to a labelled sidebar (ref 2) with an active blue pill, plus the right-hand panel from ref 1. The whole app sits in a rounded frame on the lavender canvas like ref 1.
-- Alignment: left aligned everywhere. Big numbers left aligned in cards. Centre alignment only on the login title block and empty states.
+- One unprompted moment: on first load of `/home`, the calorie ring fills and the area chart line draws in (700 ms, ease-out).
+- Everything else is a response to user action: tab underline slide, sheet open, chip select, slider drag, toast in/out, a small "added" check after saving a meal.
+- Honour `prefers-reduced-motion` (instant state changes).
 
 ---
 
-## 3. App shell and shared components
+## 2. Signature patterns (fully specified)
 
-Build these first in `components/` (client components only where needed). Each gets a Storybook-style demo route at `/_dev/components` (hidden in production).
+Each pattern is a reusable layout recipe. Implement them as components, then compose pages from them.
+
+### Pattern 1: Floating frame with a violet rail and a violet hero card
+
+**Frame (desktop only, 1024 px and up).** The page backdrop is `--page`. In the centre sits the app frame: max width 1440, margin 32, radius 32, a 1px white-40% border plus a 12px translucent outer ring (white 35%), floating shadow. Inside is a `--canvas` panel with 24px padding. Below 1024 px the frame disappears and the app is edge to edge.
+
+**Rail.** A vertical pill 72px wide, full height of the frame minus 24px margin on each side, radius 36, solid `--violet-700` background. From top to bottom: a bell icon button; a hairline divider (white 20%); icons Home, Log (document), Plan (bar chart), Activity (line chart), Coach (play/chat), each 24px, white at 70% opacity; the **active icon sits in a 44px rounded-square (radius 14) with white 20% fill** and full white icon; a flexible spacer; a hairline divider; the **light/dark toggle**; a logout icon. Tooltips show the label on hover and on keyboard focus.
+
+**Page header.** The page title 20 to 32 bold on the left, with no breadcrumb or eyebrow label above it. On the right: a search pill 240x44 (`--surface-soft`, search icon left, placeholder "Search foods"), then a 44px circular avatar.
+
+**Hero "Overview" card (the star of the dashboard).** Radius 28, violet gradient, padding 24, text white.
+- Top row: title "Overview" 16 bold on the left; on the right an outlined pill selector (white 40% border, 32px high visually, 44px hit area) reading "Weekly" with a chevron.
+- Chart area (160px high): a smooth cubic-curve **area chart**. Line is `--coral-500`, 3px, rounded caps. Fill is a vertical gradient from coral 35% down to transparent. One **highlighted point**: a 16px coral circle with a 3px white ring; behind it a translucent white-12% vertical column (36px wide, radius 18) running full chart height; above it a dark tooltip chip (`#2B2350`, radius 12, padding 8x12) with the value in white 14 bold and a unit label in white 85% 12px.
+- Under the chart: a row of period labels (12px, white 85%); the active label sits in a white pill with violet text.
+- **Notched stat strip** at the bottom: a lighter violet band (white 8%) with three stats side by side. The **middle stat is raised**: the band curves up around it as a rounded notch (draw with an SVG path or two radius cut-outs), and that centre value is larger (32 bold) while the outer two are 24 bold. Each stat is value on top, small caption below (white 90%). Example content: left "Eaten", centre "Today", right "Guide".
+
+**Side accent cards** (stacked, right of the hero, each about 1/3 of the hero's width):
+1. Violet card (`--violet-600`, radius 24): a 56px rounded-square icon holder (white 20%) with an icon on the left, title "Daily walk" 16 bold white.
+2. Coral card (solid `--coral-600`, radius 24): same icon holder, title "Today's movement", below it a caption "Total time" (white 90%), the value "48 min" at 32 bold white, a faint area chart in the background (white 20% line), and a 40px circular white button with a right-arrow in the bottom right.
+
+**Goal cards row** (three cards, white, radius 24, padding 24, flat (no shadow), evenly split under the hero). Each: a **56px round violet icon button that overlaps the top edge of the card by half**, a three-dots menu icon top right, centred title 16 bold, centred grey subtitle (e.g. "150 min / week"), then a labelled progress bar: left label "Progress", right label percent (e.g. "45%"), a 6px-high track (`--surface-soft`) with a `#35C26B` fill with fully rounded ends, then a row with a grey fraction ("68 / 150 min") on the left and a calm lilac pill ("3 of 7 days", background `#ECE6FA`, text `--violet-600`) on the right. Never a countdown or "days left" wording; that creates pressure.
+
+**Right panel** (desktop, 320px wide, white, radius 24, left border of the frame): a header with a small icon and title ("Household") and a "View all" link; a **segmented control** (`--surface-soft` track, active segment solid `--action` with white text, radius 999, 44px high) with two segments; a list of rows (avatar 40px circle, name 14 bold, caption 12 grey, trailing envelope or check icon in a rounded-square button, 16px between rows); then a compact card at the bottom with a header ("Today's air and heat") and a small illustrated tile instead of a map (see 4.3).
+
+### Pattern 2: Labelled sidebar, greeting header and stacked info panels
+
+Used on desktop from 1280 px to replace the rail with a **labelled sidebar**.
+
+**Sidebar.** 232px wide, `--surface-soft` panel with radius 24, padding 16. Top: a 40px rounded-square violet (`--action`) logo tile with a white plus mark and the app name 24 bold beside it. Menu items are 44px tall, radius 12, icon 20px + label 14 medium, 12px gap, `--ink-soft` text. The **active item is a solid `--action` pill with white icon and text**. Items: Home, Log, Plan, Coach, Activity, Insights, Settings. At the bottom a promo-style card (white, radius 16, padding 16): titled **"Share with a dietitian"** 14 bold, a 56px round illustration, a one-line caption ("Export your week as a PDF") and a full-width grey button **"Export PDF"**. Render this card only once the PDF export works (Wave 6); until then leave the slot empty. Never ship a button that does nothing.
+
+**Greeting header.** Left: "Hello, {name} 👋" at 24 bold; below it 14 grey "Here's your update for today." Right: a **solid `--action` pill button** 44px high (white text with a small plus icon) labelled "Log a meal", then two circular 40px icon buttons (chat, bell with a small dot) and the avatar.
+
+**Centre visual with floating callout.** A large area (about 40% of the content width) holds a visual, with a **floating white callout card** (radius 16, padding 12, soft shadow, icon in a small coloured circle, label 12 grey, value 14 bold) attached by a thin line to a dot on the visual. Under the visual a row of three 72px thumbnails (radius 16, one selected with a blue 2px outline). In this app the visual is the **plate-balance illustration** (see Components), callout "Vegetables 32%", and thumbnails switch between "Today", "This week" and "Rice".
+
+**Right stack of panels** (each white, radius 16, padding 16, gap 16):
+- **Range bar chart** titled "Overview": legend of two dots (violet and blue) top left, small icons top right; 7 vertical columns, each a rounded bar split into a violet segment (bottom) and a blue segment (middle), with the y-axis ticks in grey (0 to 100) and day labels (Sa Su Mo Tu We Th Fr).
+- **Upcoming / next-up card**: avatar and name, a caption, a full-width **solid `--action` button** with an icon ("Join video call" becomes **"Start a 15-minute walk"**), and a full-width grey button below ("Reschedule" becomes **"Move to evening"**).
+- **Recent list card** with a "See all" outlined pill on the right of the title and horizontal chips, each chip: 40px tinted icon square, a name 12 bold, a caption 12 grey, and a small status badge in the top right (violet "Scheduled" or mint "Completed") with a 999px radius.
+- **Key-values list**: rows with a 36px tinted icon square, a label 14, and a bold value with a unit (e.g. "Water 1.6 L", "Fibre 18 g").
+
+### Pattern 3: 8pt grid board with a light icon rail, inset stat wells and section dots
+
+Used for **mobile and tablet** shells and for the stat tiles everywhere.
+
+**Light icon rail (optional variant; the default tablet rail is the violet rail from Pattern 1, so build this one only in Tier C).** On the left, a column of 44px white circular buttons spaced 16px, on a `--canvas` background with a hairline divider after the first group; the **active button is solid `--action` with a white icon**. At the bottom two small buttons: a "gauge" (accessibility/text size) and a sun/moon theme toggle. At the top a 48px white circle logo.
+
+**Top bar.** Search pill (max 320px) with a round white 36px search button at its right end; a white circular bell with a small red dot (`--rose`); a 44px circular avatar.
+
+**Hierarchy.** Page title 28 to 32 bold at the left. Under it, plain 16 bold section labels ("Today", "This week"), no dots. The content order always runs: title, section label, cards, then secondary sections.
+
+**Stat tile (inset-well style).** A white card, radius 20, padding 16. Header row: a 36px rounded-square icon holder (grey-white, or **solid blue with a white icon when the tile is active/selected**), then a tiny grey label (12) above a bold value (14 to 16). Below it a **grey inset well** (`--surface-soft`, radius 14, height 72, inset shadow) containing a mini visual:
+- *ticks well:* thin vertical grey ticks of varying height with a blue tick as the current marker;
+- *wave well:* a thin blue line wave (ECG-like squiggle) drawn as an SVG path;
+- *flat well:* a faint flat grey wave.
+On the right inside the well sits a **small solid `--action` rectangle (radius 8) with white text** showing the main value and, below it, the unit in a smaller size. Tiles form a 2 x 2 grid on mobile and 4 across on desktop.
+
+**Daily series chart.** A white card, radius 20, with a big centred average number (32 bold, e.g. "92") and a caption "Avg" below it, a y-axis in light grey, hour or day labels along the bottom in light grey, and **floating vertical pill bars** (6px wide, rounded ends, mixed violet for in-range and light grey for the rest, with some bars showing a blue and a grey pill stacked with a gap).
+
+**Schedule card.** White, radius 20: a top row with a small rounded-square icon and "Next check-in" caption plus the date bold; a date stepper pill (`--surface-soft`, left/right arrow buttons, date text centred); a vertical list of rows (36px round avatar, name 14); a **full-width `--action` pill button with a trailing arrow icon** ("Consult now" becomes **"Open plan"**).
+
+### Pattern 4: Tabbed exercise page with timer chip, segmented progress, pastel tiles and a semicircle gauge
+
+Used for `/activity`. This page sits inside a white card, radius 24, on a very light blue page tint (`#E8F1FD` light, `#16203A` dark) when on desktop.
+
+**Sidebar for this page style (200px).** A small logo plus name at the top, a grey "Menu" label (12), items with an icon and a label (14), active item has a faint lilac background. A "Scheduled events" section with small coloured ring bullets (violet, coral, blue) and plain event names. A user chip with avatar, name and a chevron at the bottom.
+
+**Top tabs.** A row of text tabs, 14px, underline style, active tab in `--ink` with a 2px `--ink` underline and inactive in `--ink-soft`. Tabs: **Exercise, Food plan, Daily habits, Water intake**. The tab row scrolls horizontally when Bangla labels do not fit; never wrap or truncate them. A bell, a user icon and the avatar sit at the far right.
+
+**Headline block.** A 40px regular-weight title ("Today's movement") with a grey "Day 21" below. Two ghost circular arrow buttons (prev/next) at the right of the title row, faint and soft-shadowed.
+
+**Exercise hero.** Left: a **circular timer chip**, 48px diameter, a 4px violet ring segment on a light-lilac track with the time in the centre ("4:35", 12 bold). Next to it: the activity name 16 bold ("Brisk walk") and a grey line ("3 x 10 minutes"). Centre: a large clean line illustration of the activity (about 360 x 220), rendered as inline SVG, soft grey ground shadow beneath it. Under the illustration: **five segmented progress bars**, equal width, 4px high, 8px gaps, filled violet up to the current step and light grey after.
+
+**"Next" row.** A 20px bold "Next" heading, then three cards in a row (no border, light shadow, radius 16): small illustration on top, name 14 bold, duration 12 grey.
+
+**Right column.**
+- A **2 x 3 grid of pastel quick tiles** (each 104 x 96, radius 16, tinted mint, lilac, peach, mint, lilac, peach): a 28px icon in the darker hue at top left and a two-line 12px label under it. Content: Wake-up routine, Sleep schedule, Healthy diet, Habit tracker, Water plan, Tips.
+- A **goal card** with a heading ("Weekly active minutes") 14 centred, a **semicircle gauge** (arc 12px thick, solid `--action` for done and light grey for remaining, a small circular marker at the arc's end with a tiny icon inside), and centred below it big numbers "90 min" with a lighter "/ 150" next to it.
+- A **success toast** card (mint background `#E1F7EC`, radius 12, padding 12, check-circle icon in `--leaf`, text 12 in `--ink`): "Good work, you are on track this week."
+
+### Pattern 5: Split login card
+
+On a warm grey page (`#D6D5D0`; dark `#1A1820`), a centred white card (max 1032 x 704, radius 40, padding 24 to 32, no heavy shadow).
+
+- **Left panel:** an image area, 45% of the card width, radius 24, soft grey-beige background (`#C9C5BC`) holding a **botanical collage illustration** of Bangladeshi produce (green leaves, a white flower with a yellow centre, rice stalks, a lentil bowl, a chili, a hilsa fish silhouette) drawn as a local SVG or optimised WebP. Hidden below 768px.
+- **Right panel (form):** centred column, max 424px. Logo mark (a black flower/star glyph, 32px) with the app name 16 bold to its right. Title "Login to your account" 28 bold centred. Subtitle 14 `--ink-soft` centred ("Welcome back! Enter your details to log in to your account.").
+- Field label 14 `--ink-soft`. **Pill inputs:** height 48, radius 999, 1px `--line` border, padding 0 20px, placeholder 14 ink at 60%, focus shows a 2px violet ring.
+- Row: a 16px rounded-square checkbox + "Remember login" (12 grey) on the left, "Forgot password?" underlined 12 violet on the right.
+- **Primary button:** full width, 48 high, `--violet-600`, white 16 bold text, radius 999.
+- Divider: thin lines either side of "Or continue with" (12 grey).
+- **One social button (Google):** full width, 48 high, `--surface-soft`, radius 999, Google glyph + "Sign in with Google" 14 bold. (No Apple button.)
+- Footer 12 grey: "New here? **Create account**" with the link in violet bold.
+
+---
+
+## 3. Shared components to build first (`components/`)
+
+Demo every component on a hidden `/_dev/components` route.
 
 **Shell**
-- `AppFrame`: outer rounded canvas, responsive rail/sidebar/bottom-bar switch.
-- `NavRail`, `SideNav`, `BottomTabs`: same route list, one source in `lib/nav.ts`. Rail bottom holds the **light/dark toggle** and a logout icon (ref 1 and 3).
-- `TopBar`: page title, search (opens food search sheet), language switch (বাংলা / EN), notification bell, avatar menu.
-- `RightPanel` (desktop only): "Today" meals list, coach nudge, safety or offline notices.
-- `OfflineBanner`, `SyncStatusPill`, `SafetyBanner` (calm, informational, with referral wording slot).
+- `AppFrame` (Pattern 1 frame on desktop, edge to edge on mobile) with the three navigation modes: `BottomTabs` (mobile), `NavRail` (tablet, Pattern 1 violet rail or Pattern 3 light rail, pick the violet rail as default), `SideNav` (xl desktop, Pattern 2). One nav source in `lib/nav.ts`.
+- `TopBar` (title, search, language switch বাংলা/EN, bell, avatar menu), `RightPanel`, `OfflineBanner`, `SyncStatusPill`, `SafetyBanner`.
+- **Mobile bottom tab bar:** white, radius 24 top corners, height 64 plus safe area, 5 items (Home, Plan, **Log raised centre**, Coach, Activity). The Log button is a 56px violet circle lifted 16px above the bar with a plus icon and a soft violet shadow.
 
-**Data display**
-- `HeroCard` (violet gradient, ref 1): title, period selector, area chart with highlighted point and tooltip, notched stat strip below.
-- `StatTile` (ref 3): icon, label, value, optional tiny sparkline or tick-bar inside, soft inset style.
-- `PastelTile` (ref 4): tinted square with icon and two-line label. Used for quick actions.
-- `GoalCard` (ref 1 bottom row): round icon button on top, title, subtitle, labelled progress bar, "N days left" pill.
-- `CalorieRing`, `SemiGauge` (ref 4), `AreaChart`, `BarRangeChart` (ref 2 health overview), `SegmentedProgress` (ref 4), `Sparkline`. Build these as small hand-written SVG components, not a chart library, to keep the bundle light for low-end phones.
-- `PlateBalance`: a simple top-down plate divided into vegetables, protein, grains, other with the share filled in. It takes the place of the anatomy figure in refs 2 and 3.
-- `Range`, `SourceTag`, `MicronutrientRange`, `Num` (language-aware number).
-- `Chip`, `TabBar` (underline style from ref 4), `SegmentedControl`, `Slider` (for the 60/40 split), `Toggle`, `StepperInput`, `Sheet` (bottom sheet on mobile, side drawer on desktop), `Toast`, `Skeleton`, `EmptyState`, `ConfirmDialog`.
-- `Input`, `PillInput` (ref 5 style), `Select`, `Field` (label + hint + error), `Button` (primary violet, secondary grey, ghost, danger-soft).
-- `CitationChip` (coach answers; shows section and page, opens a source drawer) and `ToolNumber` (visually tags a number that came from the engine or a tool).
+**Data display:** `HeroCard`, `StatTile`, `PastelTile`, `GoalCard`, `CalorieRing`, `SemiGauge`, `AreaChart`, `BarRangeChart`, `SegmentedProgress`, `Sparkline`, `PlateBalance`, `Range`, `SourceTag`, `MicronutrientRange`, `Num`. All charts, rings and gauges are **hand-written SVG** (no chart library) to keep the bundle light for low-end phones; every chart has a visually hidden data table for accessibility.
 
-All interactive elements: 44px minimum touch target, visible focus ring, accessible names in both languages.
+`PlateBalance`: a top-down circular plate (diameter 200, soft shadow ring) divided into four coloured segments (vegetables `--leaf`, protein `--coral-500`, grains `--turmeric`, other `--violet-500`), with segment arc sizes driven by props, a centre label, and tap targets that update the callout. Style it as the thali described in section 1.
+
+**Inputs and feedback:** `Button` (primary violet, secondary grey, ghost, danger-soft), `PillInput`, `Field` (label, hint, error), `Select`, `Chip`, `TabBar` (Pattern 4 underline style), `SegmentedControl` (Pattern 1 style), `Slider` (for the 60/40 split), `Toggle`, `StepperInput`, `Sheet` (bottom sheet on mobile, right drawer on desktop), `Toast`, `Skeleton`, `EmptyState`, `ConfirmDialog`.
+
+**Chat:** `ChatBubble`, `CitationChip` (shows guideline section and page, opens a source drawer), `ToolNumber` (visually tags a number that came from the engine or a tool), `RefusalCard`.
+
+All interactive elements: 44px minimum touch target, visible 2px focus ring, accessible names in both languages.
 
 ---
 
 ## 4. Pages (build every one)
 
-Routes: `/login /signup /onboarding /home /log /plan /coach /activity /settings`, plus sub-routes and later-wave pages in section 5. Use the fixtures in `lib/mock/` (typed to the engine's types, one seeded demo user with a week of data, clearly labelled as demo data).
+Routes: `/login /signup /onboarding /home /log /plan /coach /activity /settings`, plus later-wave stubs (section 5). Every page uses the shell from section 3 and the patterns from section 2.
 
-### 4.1 `/login` and `/signup` (ref 5)
+### 4.1 `/login` and `/signup`: Pattern 5
 
-- Split card on warm grey (`#D6D5D0`) page, white card with radius 40, left image panel radius 24 (local botanical-ingredient collage, hidden below 768px so mobile shows the form only).
-- Right: logo mark, title "Login to your account" (বাংলা: "আপনার অ্যাকাউন্টে লগইন করুন"), grey subtitle, Email and Password pill inputs, "Remember login" checkbox, "Forgot password?" underlined link, full-width violet pill **Login**, divider "Or continue with", **Google** button only, footer "New here? Create account".
-- Signup uses the same layout with name, email, password, and a consent checkbox linking to the privacy page. No weight, age or condition collected here.
-- States: field errors under inputs in plain language, loading spinner inside the button, disabled while submitting. Language switch top right of the card.
+- Login exactly as Pattern 5. Signup uses the same card with name, email, password and a consent checkbox linking to the privacy page. No weight, age or conditions here.
+- States: field errors under inputs in plain language, a spinner inside the button while submitting, language switch top right of the card.
 
-### 4.2 `/onboarding` (wizard)
+```
++------------------------------------------------------------+
+| +----------------+   [logo] Deshi Health                   |
+| |   botanical    |        Login to your account            |
+| |   collage      |     Welcome back! Enter your details    |
+| |   (rounded)    |   Email    (_________________________)  |
+| |                |   Password (_________________________)  |
+| |                |   [ ] Remember login     Forgot password?|
+| |                |   [          Login (violet)           ] |
+| |                |   ------- Or continue with -------      |
+| +----------------+   [     G  Sign in with Google        ] |
+|                         New here? Create account            |
++------------------------------------------------------------+
+```
 
-One question group per step, large type, pill inputs, `SegmentedProgress` at the top (ref 4 style). Back and Next always visible. Progress is saved after each step so leaving does not lose answers.
+### 4.2 `/onboarding`: wizard
 
-Steps:
-1. Language and text size
-2. Consent, data use, "delete my data" explained in two lines, disclaimer
-3. Profile: age, sex, height, weight, activity level
-4. Body measures: **Asian BMI (23 / 27.5 cut-offs)**, waist, waist-to-height ratio, shown as a small result tile with a neutral wording
-5. Goal and pace: maintain, gentle change, build strength. Pace options appear only if `safetyMode` is `normal`
-6. Safety screening questions, one per screen, plain wording. Result may switch to `restricted` or `doctor-first`; show a calm explanation card and the referral copy slot
-7. Eating style: rice-heavy, roti-heavy, vegetarian, no-beef, halal-only, fasting habits
-8. Budget band in taka, household (who cooks, how many eat from the pot, meals out)
-9. Daily routine: prayer times, commute
-10. Summary: "Here is your starting point" with ranges and a "Looks right" primary button
+One question group per step, large type, pill inputs, a **segmented progress bar** (Pattern 4 style, one segment per step) at the top, Back and Next always visible, progress saved after every step.
 
-Doctor-first outcome: replace steps 5 and the summary targets with a referral card, still allow food logging without targets.
+Steps: 1) language and text size; 2) consent, data use, "delete my data" explained in two lines, disclaimer; 3) profile (age, sex, height, weight, activity); 4) body measures with **Asian BMI (23 / 27.5)**, waist and waist-to-height ratio shown in a Pattern 3 stat tile with neutral wording; 5) goal and pace (maintain, gentle change, build strength; pace appears only in `normal` mode); 6) safety screening, one question per screen, result may switch to `restricted` or `doctor-first` with a calm explanation card and referral copy slot; 7) eating style (rice-heavy, roti-heavy, vegetarian, no-beef, halal-only, fasting habits); 8) budget band in taka and household (who cooks, how many eat from the pot, meals out); 9) daily routine (prayer times, commute); 10) summary "Here is your starting point" with ranges and a "Looks right" primary button.
 
-### 4.3 `/home` (refs 1, 2, 3)
+Doctor-first outcome: skip step 5 and the targets in step 10, show a referral card, and still allow food logging without targets.
 
-Greeting "Hello, {name} 👋" with today's date. Desktop: left sidebar, centre content, right panel.
+### 4.3 `/home`: Patterns 1, 2 and 3 mixed
 
-- **Hero card (ref 1):** "Today" with the `CalorieRing` (eaten vs today's guide, shown as a range), and a 7-day `AreaChart` underneath with the current day highlighted and a tooltip. Period selector: Day / Week.
-- **Stat strip inside the hero (ref 1 notch):** Protein, Carbs, Fat as three values with units.
-- **Stat tiles row (ref 3):** Rice portion (e.g. "about 1.5 bati"), Water, Steps, Fibre, each with a tiny sparkline.
-- **Plate balance (replaces ref 2 anatomy):** `PlateBalance` with a one-line "why" text and the micronutrient ranges as small chips (iron, vitamin A, calcium, zinc, D, B12).
-- **One next action:** a single pastel tile or button, such as "Log lunch" or "Take a 15-minute walk after dinner". Only one at a time.
-- **Right panel:** Today's meals with calories per meal and edit buttons, coach nudge card, offline/safety notices.
-- Overshoot day: an amber `SafetyBanner`-style card "A bigger day than planned. Here is a gentle way to spread it" linking to `/plan`.
+Desktop (rail or sidebar, centre, right panel):
+
+```
++----+---------------------------------------------+-----------+
+|rail| Home                     [search]      (av) | Household |
+|    | Hello, Moballig 👋   [ Log a meal ]         | [Meals|Fam]|
+|    | +-------------------------+ +-------------+ | row row   |
+|    | | OVERVIEW  [Weekly v]    | | Daily walk  | | row row   |
+|    | |  area chart + tooltip   | +-------------+ | row       |
+|    | |  Eaten | TODAY | Guide  | | Today's move| | ---------- |
+|    | +-------------------------+ |  48 min  (>)| | Air + heat |
+|    | [stat][stat][stat][stat]    +-------------+ |  card      |
+|    | [PlateBalance + callout] [goal][goal][goal] |           |
++----+---------------------------------------------+-----------+
+```
+
+- **Hero card (Pattern 1):** "Overview" with a Day / Week selector. Chart shows 7 days of calories eaten against the guide band, the current day highlighted with the tooltip. The notched strip shows **Eaten | Today (centre, bigger, the `CalorieRing` summary as a range) | Guide**. In `restricted` and `doctor-first` modes the Guide stat and guide band are removed (see section 6).
+- **Side accent cards (Pattern 1):** "Daily walk" (violet), "Today's movement" (coral, minutes today, arrow button to `/activity`).
+- **Stat tiles (Pattern 3):** Rice portion ("about 1.5 bati", ticks well), Water (flat well), Steps (wave well), Fibre (ticks well). The selected tile turns its icon holder solid blue.
+- **Plate balance block (Pattern 2):** `PlateBalance` with a floating callout, three thumbnails (Today, This week, Rice), a one-line "why" caption, and micronutrient ranges as small chips (iron, vitamin A, calcium, zinc, D, B12).
+- **Goal cards (Pattern 1):** three `GoalCard`s such as "Balanced plates this week", "Veg servings", "Water days".
+- **One next action:** a single solid `--action` button inside the right stack ("Log lunch" or "Take a 15-minute walk after dinner"). Never more than one.
+- **Right panel (Pattern 1):** segmented control **Meals | Household**. *Meals*: rows for today's breakfast, lunch, snack, dinner with kcal range and an edit button. *Household*: family members who eat from the pot (family mode) with portion notes. Under the list a small **"Air and heat today"** card: temperature and AQI in two rounded chips, a short suggestion ("Good evening for a walk" / "Indoors today"), no map.
+- **Overshoot day:** an amber card (background `#FFF3DC`, `--turmeric` icon and 1px border, text in `--ink`) "A bigger day than planned. Here is a gentle way to spread it" with a button to `/plan`.
+- **Mobile:** stack as hero card, then 2 x 2 stat tiles, plate balance, goal cards in a horizontal snap scroller, then Meals/Household in a segmented section.
 
 ### 4.4 `/log`
 
-- **Search-first screen:** large pill search input, placeholder "Type in Bangla, English or Banglish (e.g. bhat dal alu bhorta)". Mic button (Chrome `bn-BD` only, hidden if unsupported), camera button (photo logging), barcode button.
-- Meal tabs under the search: Breakfast, Lunch, Snacks, Dinner (underline `TabBar`, ref 4).
-- **Quick lists:** chips for Recents, Favourites, "Same as yesterday", "Copy a meal".
-- **Parse result sheet:** top 5 candidates as selectable rows with name (Bangla + English), portion text, kcal range, `SourceTag`. If parsing fails, show the tap-to-pick list. Portion controls: household measures (bati S/M/L, spoon, glass, ladle) and plate fractions as chips.
-- **Confirm screen:** items, grams, kcal as a range, edit portion, remove item, "Report wrong calories", big **Save to {meal}** button.
-- **Shared-pot mode** toggle: fraction of the pot or spoons from the pot.
-- **Photo flow:** `/log/photo` capture or upload up to 3 images, "Reading your plate..." skeleton, result list with relative portion chips, the plate preset used, kcal range, edit before save. Always label "AI-assisted estimate".
-- Sub-routes: `/log/rice` (**rice calibrator**: choose plate and bowl, 100/150/200/300 g reference visuals, save "my usual rice", rice type hints), `/log/recipe` (home-cooked recipe builder: ingredients, oil, servings, method), `/log/street` (street-food and restaurant presets with ranges).
+```
++--------------------------------------------------+
+| Log a meal                                       |
+| (  Type in Bangla, English or Banglish...  )  mic cam barcode |
+| Breakfast | Lunch | Snacks | Dinner   (underline tabs)       |
+| [Recents] [Favourites] [Same as yesterday] [Copy a meal]     |
+| ---- candidates (top 5) ------------------------------------ |
+|  [icon] Bhat (cooked rice)   1.5 bati   ~280 kcal  [FCTB]    |
+|  ...                                                         |
++--------------------------------------------------+
+```
 
-### 4.5 `/plan` (refs 2 and 4)
+- Large pill search input, placeholder "Type in Bangla, English or Banglish (e.g. bhat dal alu bhorta)". Mic hidden if `bn-BD` recognition is unsupported.
+- **Parse result sheet:** top 5 candidates as selectable rows (name in Bangla and English, portion text, kcal range, `SourceTag`), a tap-to-pick list on failure. Portion controls: household measure chips (bati S/M/L, spoon, glass, ladle) and plate-fraction chips (1/4, 1/2, 3/4, full).
+- **Confirm screen:** items with grams and kcal range, edit portion, remove, "Report wrong calories", a full-width violet **Save to {meal}** button; a green check animation confirms.
+- **Shared-pot toggle:** fraction of the pot or spoons from the pot.
+- Sub-routes: `/log/photo` (capture or upload up to 3 images, "Reading your plate..." skeleton, result with relative portion chips, plate preset used, kcal range, "AI-assisted estimate" label, edit before save), `/log/rice` (rice calibrator: pick plate and bowl, 100/150/200/300 g visual cards, rice type chips, "Save as my usual rice"), `/log/recipe` (home-cooked recipe builder: ingredients, oil, servings, cooking method), `/log/street` (street-food and restaurant presets with ranges).
 
-- **Header:** "This week" with a date-range switcher.
-- **7-day budget** as a `BarRangeChart` (ref 2 style): one bar per day, the guide band behind it, today highlighted. Weekly used vs weekly budget in a `SemiGauge` (ref 4).
-- **Spread plan card** (only when `safetyMode = normal`): plain-language summary of the overshoot and how it is spread across the next days; **60/40 split slider** that updates the preview live; controls for window length, preferred exercise, days off; floor and caps shown as read-only notes; the arithmetic with a ± range in Bangla and English.
-- **Planned-feast mode** (Eid, weddings) toggle with a date picker.
-- **What-if simulator** and **reverse mode** as two tabs inside one card: "If I eat this..." and "To eat that on Friday, I should..."
-- **Adaptive TDEE** note with honest states: "Estimate improving (3 of 14 days)". Weight-trend chart with noise notes (Eid, illness, travel).
-- In `restricted`: hide the spread plan and show maintenance guidance. In `doctor-first`: show only the referral card.
+### 4.5 `/plan`: Patterns 2, 3 and 4 mixed
 
-### 4.6 `/coach` (chat)
+- Header "This week" with a date-range stepper pill (Pattern 3 schedule stepper).
+- **Range bar chart (Pattern 2):** one bar per day, a light guide band behind the bars, today highlighted, legend "Eaten" (violet) and "Spread plan" (blue).
+- **Semicircle gauge (Pattern 4):** weekly used against weekly budget, centred numbers "9,800 / 12,600 kcal" shown as a range.
+- **Spread plan card** (only in `normal` mode): plain-language summary of the overshoot and how it is spread; **60/40 split slider** with a live preview; controls for window length, preferred exercise and days off; floor and caps shown as read-only notes; the arithmetic shown with a ± range in Bangla and English.
+- **Planned-feast mode** toggle with a date picker (Eid, weddings).
+- **What-if / Reverse** as two underline tabs inside one card.
+- **Adaptive TDEE** note with honest states ("Estimate improving, 3 of 14 days") and a weight-trend chart (Pattern 3 daily series style) with noise-note markers (Eid, illness, travel).
+- `restricted`: hide the spread plan and show maintenance guidance. `doctor-first`: only the referral card.
 
-- Mobile: full-screen chat. Desktop: conversation on the left, source drawer on the right.
-- Message bubbles with rounded 24 corners; user bubbles violet, coach bubbles `surface-soft`. Bangla/English/Banglish input, suggestion chips above the input ("What can I eat for iftar?", "Cheap protein under 100 taka").
-- `CitationChip` after each grounded answer (shows guideline section and page, opens the source drawer). `ToolNumber` for numbers coming from the engine.
-- Refusal rendering: a distinct soft card ("I can't help with that, but here is a safer idea") never styled as an error. Low-retrieval-confidence rendering: "I could not find this in the guidelines" with a suggestion to ask a dietitian.
-- Streaming text with a typing indicator, a stop button, a retry on failure, and a "why this suggestion" expandable line on every recommendation.
-- Meal-suggestion cards inside chat (fit the remaining budget, cost band, season), smart-swap cards with local alternatives, cheap-protein finder table.
-- Input bar: text, mic, send. Sticky above the bottom tabs.
+### 4.6 `/coach`
 
-### 4.7 `/activity` (ref 4)
+- Mobile: full-screen chat. Desktop: conversation on the left, a source drawer on the right.
+- `ChatBubble`: radius 24 (the corner nearest the speaker is radius 8), user bubbles `--violet-600` with white text, coach bubbles `--surface-soft`.
+- Suggestion chips above the input ("What can I eat for iftar?", "Cheap protein under 100 taka").
+- After a grounded answer: `CitationChip`s (section and page) that open the source drawer; engine numbers are wrapped in `ToolNumber`.
+- `RefusalCard` for unsafe prompts: soft lilac card, text "I can't help with that, but here is a safer idea" plus a suggested action; never styled as an error. Low-confidence retrieval: "I could not find this in the guidelines" with a suggestion to ask a dietitian.
+- Streaming text with a typing indicator, a stop button, a retry on failure, and a "Why this?" expandable line on every recommendation.
+- In-chat cards: meal suggestion (fits remaining budget, cost band, season), smart swap with local alternatives, cheap-protein table.
+- Input bar sticky above the bottom tabs: text, mic, send (violet circle).
 
-- Top `TabBar` like ref 4: **Exercise, Food plan, Daily habits, Water intake**. Food plan links to `/plan` content summary, Daily habits and Water are simple trackers.
-- Large title "Today's movement" with subtitle "Day N" when a plan is active.
-- **Hero exercise card:** circular timer chip (e.g. `4:35`), activity name, sets or minutes, a clean illustration, and `SegmentedProgress` below.
-- **"Next" row:** three cards with a small illustration, name and duration (ref 4 bottom).
-- **Pastel quick tiles (2 x 3):** Walk, Cycle, Home workout, Cricket or football, Yoga, Chores. Each opens a MET-based logging sheet showing net calories as a range.
-- **Right column:** `SemiGauge` for this week's active minutes, and a success toast style note "Good work, you are on track this week".
-- **Manual steps entry** (web substitute for step import), **context-aware banner** (heat, rain, air quality, load-shedding, daylight) that switches suggestions to indoor options, **prayer-time and Ramadan slots**, **women-friendly privacy mode** badge (home-only plans, no leaderboard).
-- No-equipment plans (rooftop, balcony, room, low-noise) as a filter chip row.
+### 4.7 `/activity`: Pattern 4
+
+Compose the page exactly as Pattern 4:
+
+```
++--------------------------------------------------------------------+
+| Exercise | Food plan | Daily habits | Water intake            (bell)(av)|
+| Today's movement                       < >         [2x3 pastel tiles]|
+| Day 21                                                              |
+| (4:35) Brisk walk                       [illustration]   [semicircle |
+|  3 x 10 minutes                                           gauge]    |
+| ▬▬ ▬▬ ▬▬ ▱▱ ▱▱  (segmented progress)                   [mint toast] |
+| Next:  [Stretch] [Yoga] [Balcony steps]                             |
++--------------------------------------------------------------------+
+```
+
+- Tabs: Exercise (default), Food plan (summary linking to `/plan`), Daily habits, Water intake (simple trackers).
+- Quick tiles open a **MET-based logging sheet** (Walk, Cycle, Home workout, Cricket or football, Yoga, Chores) showing net calories as a range.
+- Also: manual steps entry (web substitute for step import), a **context banner** for heat, rain, air quality, load-shedding and daylight that switches suggestions to indoor options, prayer-time and Ramadan slots, a women-friendly privacy mode badge (home-only plans, no leaderboard), and filter chips for no-equipment plans (rooftop, balcony, room, low-noise).
 
 ### 4.8 `/settings`
 
-Grouped cards: Profile, Eating style and budget, Household, Daily routine, Language and text size, Appearance (light, dark, large text, low-literacy mode with icons), Data saver, Notifications, **Privacy and data** (consent, export, **Delete my data** with a typed confirmation and a clear result message), Offline and sync status, About, sources and dataset licences, Report a problem.
+Grouped white cards (Pattern 3 hierarchy): Profile, Eating style and budget, Household, Daily routine, Language and text size, Appearance (light, dark, large text, low-literacy mode with icons), Data saver, Notifications, **Privacy and data** (consent, export, **Delete my data** with a typed confirmation and a clear result message), Offline and sync status, About, sources and dataset licences, Report a problem.
 
 ---
 
-## 5. Later-wave pages (stub the route and layout now, fill in as waves land)
+## 5. Later-wave routes (create the route, layout and empty state now)
 
-| Route | Content | Wave |
-|---|---|---|
-| `/ramadan` | Iftar and sehri plans, hydration, light-exercise timing, no deficit prompts by default | 6 |
-| `/family` | One menu with per-person portions (children, elders, a family member with a condition), doctor note slot | 6 |
-| `/planner` | Taka-aware weekly planner with shopping list and cheap-protein finder | 6 |
-| `/calendar` | Seasonal and festival calendar, respectful tone | 6 |
-| `/conditions` | Condition-aware plates, always behind a safety gate and a visible doctor note | 6 |
-| `/insights` | Weekly review without scolding, diversity score, sodium and oil awareness, sugar as spoons | 3 and 5 |
-| `/admin` | Foods, recipes, prices editor, "report wrong calories" review queue, analytics (role-gated) | 7 |
-| `/privacy`, `/about`, `/sources` | Static pages: privacy, disclaimer, data sources and licences | 1 |
-
-Admin uses the same components with denser tables, but the same tokens.
+| Route | Content |
+|---|---|
+| `/ramadan` | Iftar and sehri plans, hydration, light-exercise timing, no deficit prompts by default |
+| `/family` | One menu with per-person portions (children, elders, a family member with a condition), doctor note slot |
+| `/planner` | Taka-aware weekly planner with shopping list and cheap-protein finder |
+| `/calendar` | Seasonal and festival calendar, respectful tone |
+| `/conditions` | Condition-aware plates, always behind a safety gate and a visible doctor note |
+| `/insights` | Weekly review without scolding, diversity score, sodium and oil awareness, sugar as spoons |
+| `/admin` | Foods, recipes, prices editor, "report wrong calories" queue, anonymised analytics (role-gated, denser tables, same tokens) |
+| `/privacy`, `/about`, `/sources` | Static pages |
 
 ---
 
 ## 6. Required states for every page
 
-Every page and every data component must handle: **loading** (skeletons, not spinners), **empty** (explains what to do next and offers the action), **error** (what happened, how to fix it, retry), **offline** (banner plus cached data, queued sync indicator), **restricted** and **doctor-first** safety modes, **dark mode**, **Bangla and English**, **large-text and low-literacy modes**, **data-saver** (no images loaded unless tapped).
+**Loading** (skeletons that match the final layout, not spinners), **empty** (explains the next step and offers the action), **error** (what happened, how to fix it, retry), **offline** (banner, cached data, queued-sync pill), **restricted** and **doctor-first** modes, **dark mode**, **Bangla and English**, **large-text** and **low-literacy** modes, **data-saver** (no images load until tapped).
+
+**Safety-mode rules for the hero and charts:** in `restricted`, remove the Guide stat, the guide band and any deficit wording and use maintenance wording; in `doctor-first`, show eaten amounts and the plate balance only, no target of any kind, with the referral card pinned at the top of `/home`.
 
 ---
 
 ## 7. Copy guide
 
-- Plain verbs, sentence case, active voice. Buttons say what happens: "Save to lunch", not "Submit".
-- Name things as users do: "rice plate", "shared pot", "rebalance", not "caloric deficit distribution".
-- Keep one name for each action across the flow ("Save" produces a "Saved" toast).
-- Errors do not apologise or blame, they say what to do.
-- Provide every string in `messages/bn.json` and `messages/en.json`. No hard-coded text in components.
-- Example tone for an over-day: EN "Friday was a bigger day. Here is a gentle way to spread it over the next 4 days." BN "শুক্রবার একটু বেশি খাওয়া হয়েছে। চলুন, পরের ৪ দিনে ধীরে ধীরে সামলে নিই।"
-- Never promise weight outcomes. Replace any "lose X in Y days" pattern with neutral rhythm language.
+- Plain verbs, sentence case, active voice. Buttons say what happens ("Save to lunch", not "Submit"). One name per action through the flow ("Save" leads to a "Saved" toast).
+- Name things the way users do: "rice plate", "shared pot", "spread it over the week".
+- Errors do not apologise or blame; they say what to do.
+- All strings live in `messages/bn.json` and `messages/en.json`; no hard-coded text in components.
+- Over-day tone, EN: "Friday was a bigger day. Here is a gentle way to spread it over the next 4 days." BN: "শুক্রবার একটু বেশি খাওয়া হয়েছে। চলুন, পরের ৪ দিনে ধীরে ধীরে সামলে নিই।"
 
 ---
 
 ## 8. Technical requirements
 
-- Next.js 16 App Router, server components by default, client components only for interaction. Tailwind 4 with tokens in `@theme`. Icons from `lucide-react`.
-- Folder layout: `app/(auth)/login`, `app/(auth)/signup`, `app/(app)/{home,log,plan,coach,activity,settings,onboarding}`, `components/{shell,data,forms,chat}`, `lib/{format.ts,nav.ts,mock/}`, `messages/`.
-- Charts and gauges are hand-written SVG. Keep each page's JS small; lazy-load the coach, photo capture and charts.
-- PWA-ready: manifest, icons, `theme-color` for light and dark, safe-area insets, no layout shift on font load.
-- Accessibility: semantic landmarks, labelled inputs, focus order, `aria-live` for toasts and chat streaming, charts with text alternatives (a visually hidden table).
-- Performance budget on a mid-range Android over 3G-class mobile data: first meaningful screen under 3 s, no images above 100 KB, fonts subset.
-- Do not add a UI kit that fights the tokens. If you use headless primitives for dialogs, sheets and tabs, style them fully with the tokens.
+- Next.js 16 App Router, server components by default, client components only for interaction. Tailwind 4 with all tokens in `@theme` and CSS variables for dark mode. Icons from `lucide-react`.
+- Folders: `app/(auth)/{login,signup}`, `app/(app)/{home,log,plan,coach,activity,settings,onboarding}`, `components/{shell,data,forms,chat}`, `lib/{format.ts,nav.ts,mock/}`, `messages/`.
+- Lazy-load the coach, photo capture and charts. Keep each page's JS small.
+- PWA-ready: manifest, icons, `theme-color` for both modes, safe-area insets, no layout shift on font load.
+- Accessibility: landmarks, labelled inputs, sensible focus order, `aria-live` for toasts and chat streaming.
+- Performance on a mid-range Android over mobile data: first meaningful screen under 3 s, no image over 100 KB, fonts subset.
+- Do not add a UI kit that fights the tokens. Headless primitives for dialogs, sheets and tabs are fine if fully styled with the tokens.
 
 ---
 
 ## 9. Order of work
 
-1. `docs/ui-design-system.md`, tokens, fonts, `AppFrame`, nav, theme and language switches, `/_dev/components`.
+**Deadline reality check.** The build plan's submission date is November 5, 2026, so ship in tiers and keep `main` demoable after each one.
+- **Tier A (demo path, do first):** `AppFrame` with mobile bottom tabs and the desktop labelled sidebar only, `/login`, `/signup`, a short `/onboarding` (consent, profile, safety screen, summary), `/home`, `/log` with confirm and photo, `/plan`, `/coach`.
+- **Tier B:** `/activity`, `/settings`, rice calibrator, recipe builder, `/log/street`, full onboarding.
+- **Tier C:** the violet-rail tablet mode and Pattern 3 light rail, later-wave routes, admin, dark-mode polish, low-literacy mode.
+
+1. Write `docs/ui-design-system.md` from sections 1 to 3, review it for anything that looks generic, then implement tokens, fonts, `AppFrame`, nav, theme and language switches, and `/_dev/components`.
 2. `/login`, `/signup`, `/onboarding` (with safety outcomes).
-3. `/home` with `HeroCard`, `CalorieRing`, `StatTile`, `PlateBalance`.
-4. `/log` and sub-routes (the demo-critical path: search, parse sheet, confirm, rice calibrator, photo).
+3. `/home` (`HeroCard`, `CalorieRing`, `StatTile`, `PlateBalance`).
+4. `/log` and sub-routes (demo-critical: search, parse sheet, confirm, rice calibrator, photo).
 5. `/plan` (overshoot, 60/40 slider, gauge, feast mode).
 6. `/coach` (citations, refusal cards, suggestion cards).
 7. `/activity`, then `/settings`.
 8. Later-wave stubs, offline and low-end polish, admin.
 
-After each step, run the app, screenshot at 360, 768 and 1280 px in light and dark and in Bangla and English, compare with the references, and fix drift before moving on. Commit after each step so `main` stays demoable.
+After each step, run the app, screenshot at 360, 768 and 1280 px in light and dark and in Bangla and English, compare against this spec, fix drift, then commit so `main` stays demoable.
 
 ---
 
 ## 10. Acceptance checklist
 
-- [ ] Every route in sections 4 and 5 exists and renders with fixtures
-- [ ] Layout holds at 360, 768, 1280 px with no horizontal scroll, in Bangla (longer strings) as well as English
-- [ ] Spacing is on the 8pt grid; radii and shadows come from tokens only
-- [ ] Visual match to refs: floating rail, violet hero card with area chart, pastel quick tiles, semicircle gauge, split login card
-- [ ] No weight-loss promise, anatomy graphic, medical reading, friends list or map anywhere
+Tier A items must pass before submission; the rest as time allows.
+
+- [ ] Every Tier A route renders with fixtures; Tier B and C routes exist at least as stubs
+- [ ] Layout holds at 360, 768, 1280 px with no horizontal scroll, in Bangla and English
+- [ ] Spacing is on the 8pt grid; radii, colours and shadows come from tokens only
+- [ ] Signature looks are present (one gradient only, on the hero; thali-style plate balance): floating frame and violet rail, violet hero card with notched stat strip, coral accent card, goal cards with overlapping icon, inset stat wells, pastel tiles, semicircle gauge, segmented progress, split login card
+- [ ] No weight-loss promise, medical reading, public leaderboard or map anywhere
 - [ ] No component computes a health number; every estimate shows a range and a source tag
 - [ ] `restricted` hides deficit controls; `doctor-first` shows no targets
 - [ ] Light/dark, large-text, low-literacy and data-saver modes work on every page
 - [ ] Loading, empty, error and offline states exist for every page
-- [ ] Keyboard focus visible, touch targets 44px or more, text contrast AA
+- [ ] Keyboard focus visible, touch targets at least 44px, text contrast AA (white text on violet, coral and action fills; `--ink` text on turmeric, leaf and mint tints)
 - [ ] Reduced motion respected; only the home load sequence animates unprompted
 - [ ] Demo path works with seeded data: onboarding, photo log, Banglish log, overshoot plan with live 60/40 toggle, coach citation, airplane-mode check
