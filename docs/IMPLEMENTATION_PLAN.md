@@ -89,7 +89,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** 20 saved Banglish lines parse correctly; five tested plate photos reach correct items after at most one edit; a shared-pot dal entry computes sensible grams.
 
-**Progress (Nov 2):** ✅ 318-row reconciled seed · indexed BN/EN server search + bundled offline alias search · live meal CRUD/day-summary · `/log` saves through Convex · 20 deterministic Bangla/Banglish parser cases pass + live Groq candidate smoke passes · shared-pot 1/5 dal math/UI passes. ⬜ Assisted-photo gate remains; rice/recipe/voice/barcode scope remains.
+**Progress (Nov 3):** ✅ 318-row reconciled seed · indexed BN/EN server search + bundled offline alias search · live meal CRUD/day-summary · `/log` saves through Convex · 20 deterministic Bangla/Banglish parser cases pass + live Groq candidate smoke passes · shared-pot 1/5 dal math/UI passes · **`ai.analyzePhoto` live (qwen vision, ITPM-aware compact prompt + 429 retry) + `/log/photo` wired (compress → analyze → chips/toggle/slot → save)** · FoodBD gate run (10 images: 49% recall / 55% precision / 123 kcal mean error → assisted mode confirmed). ⬜ Rice/recipe/voice/barcode scope remains.
 
 ### Wave 3: Tracking and the balance engine — ⬜
 

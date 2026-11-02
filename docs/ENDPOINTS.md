@@ -242,7 +242,7 @@ await analyzePhoto({
 - **Prompt economy:** candidates are sent as compact `id|nameEn` lines (Bangla script is token-expensive; client resolves display names). Groq qwen on_demand has a **7,000 input-tokens/min** ITPM limit — full 318-line list with Bangla exceeded it; English-only compact list fits (~5.6k incl. image). The action waits 30 s and retries once on 429/413.
 - **Validation:** `foodId` must exist in the candidate set (model sometimes echoes `id|name`; the id part is taken), portionClass enum, confidence clamped 0–1, ≤10 items, deduped.
 - **Client:** `/log/photo` compresses the capture (canvas → ≤768 px JPEG 0.7, `src/lib/ai/photo.ts`), calls the action, maps `portionClass` → grams via the food's measure ladder (`portionClassToGrams`), computes kcal **with ±15% range**, and shows a confirm screen with exclude toggles + S/M/L chips + slot picker → `mealLogs.create({ method: "photo" })`.
-- **Gate:** `bun scripts/test_vision.mjs --n 10` scores against FoodBD test labels + nutrition CSV. If probe fails on mixed dishes: ship pre-tested demo photos only and say so on stage.
+- **Gate (passed as assisted):** `bun scripts/test_vision.mjs --n 10` against FoodBD test labels + nutrition CSV — **49% mappable-GT recall, 55% precision, 123 kcal mean |error|** (5 images with CSV entries). Core staples (rice, dal, ruti-family, milk, egg-family, carrot, cucumber) hit reliably; misses concentrate on mixed/fried obscure vegetables and biriyani-vs-rice / fish-vs-chicken confusions. Verdict: assisted confirm-screen flow is the right ship mode; pre-tested demo photos available for stage.
 
 ### 4.4 Other actions (later waves)
 

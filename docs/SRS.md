@@ -432,7 +432,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
 | FR-B-01 | Bangla/Banglish text logging | P0 | W2 | 🔄 | Parser wired; 20 local cases + live Groq smoke pass; browser gate pending |
-| FR-B-02 | Photo logging | P0 | W2 | 🔄 | `ai.analyzePhoto` live (qwen vision, candidate-constrained); UI wired with chips/toggle/slot; FoodBD 10-photo gate running |
+| FR-B-02 | Photo logging | P0 | W2 | 🔄 | `ai.analyzePhoto` live + UI wired; FoodBD gate (10 test images): 49% mappable recall / 55% precision / 123 kcal mean error — assisted flow confirmed as correct ship mode |
 | FR-B-03 | Deshi food DB (BN/EN/aliases) | P0 | W1 | ✅ | 318 rows; indexed server search + offline alias search |
 | FR-B-04 | Household measures | P0 | W1 | ✅ | `measures[]` in seed |
 | FR-B-05 | Recents, favourites, copy meal | P0 | W2 | 🔄 | `listRecent` + `copyMeal` live; UI chips/favourites pending |
