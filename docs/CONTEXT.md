@@ -15,9 +15,9 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Wave 2 + RAG data foundation** — logging/parser/shared-pot pass; 9,447-chunk corpus ingested; assisted-photo gate next |
-| **Day** | Day 2 (Nov 2, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 53/53 green |
+| **Current Phase** | **Wave 2 complete + RAG data foundation** — logging/parser/shared-pot/photo gate pass; 9,447-chunk corpus ingested; coach wired |
+| **Day** | Day 3 (Nov 3, 2026) |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 56/56 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
@@ -38,7 +38,7 @@
 - **Privacy:** `privacy:deleteMyData` + audit trail live
 - **LLM scaffold:** `ai:chat` (privacy-safe context only), `ai:parseMeal` (top-5 candidate pick — W2)
 
-### Wave 2 progress (Nov 2, 2026)
+### Wave 2 progress (Nov 2–3, 2026)
 
 - `convex/mealLogs.ts`: live `listByDate`, `listRecent`, `create`, `update`, `remove`, `copyMeal`, `daySummary`; bounded indexed reads, return validators, profile-key checks
 - `/log`: bundled offline Bangla/English/Banglish alias search; code-only gram/kcal ranges; Convex create/list/delete; Groq parser with offline fallback
@@ -48,6 +48,7 @@
 - Smoke: create → list → copy → summary → wrong-key rejection → cleanup passed on `dev:disciplined-zebra-716`
 - Verification: **53 tests**, lint 0 errors (4 generated warnings), root + Convex TypeScript pass, production build passes
 - Remaining W2 gate: five assisted-photo tests; spoon-based shared-pot entry and other W2 enhancements remain
+- Photo gate (Nov 3): `ai.analyzePhoto` live (qwen3.8-27b, ITPM-safe compact prompt + 429 retry) + `/log/photo` wired; FoodBD 10-image gate → 49% recall / 55% precision / 123 kcal mean error; **Wave 2 marked complete**
 
 ### RAG data foundation (Nov 3, 2026)
 
@@ -171,7 +172,7 @@
 
 **Wave 1 (foundation):** ✅ Complete. Engine, safety modes, onboarding/profile, consent/delete-data, schema and tagged food seed passed their gate.
 
-**Wave 2 now:** manual logging + 318-food search + meal CRUD + parser/shared-pot ✅; next are assisted photo flow, rice calibration and recipes. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); remaining work is wiring `rag.search` into the coach and adding query rewrite/citations.
+**Wave 2 now:** ✅ complete — manual logging + 318-food search + meal CRUD + parser/shared-pot + assisted photo flow (FoodBD-gated) all live; P1 extras (rice calibration, recipes, voice, barcode) carried beyond the gate. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); coach wiring live (`ai.chat` tool + query rewrite + citations).
 
 **Then waves in order:** W3 tracking + balance engine UI → W4 activity → W5 RAG coach → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
 
@@ -251,7 +252,7 @@
 | No Convex function test suite | Medium | Medium — add `convex-test` auth/data-scope coverage |
 | No error boundary component | Medium | Low — add React error boundary |
 | FCTB-tagged demo values not source-row verified | High | High — complete D1 import/review before production claims |
-| Shared-pot, photo and parser gates incomplete | High | Medium — remaining Wave 2 work |
+| Shared-pot, photo and parser gates incomplete | High | Closed — all Wave 2 gates met (Nov 3) |
 | No authentication; profile key is demo-only | High | Medium — add Convex Auth before multi-user launch |
 | AI responses not cached | Low | Low — add Convex caching if rate-limited |
 | Bangla medical queries retrieve food aliases before guideline sections | Medium | Medium — Groq English query rewrite before embedding |
@@ -287,7 +288,7 @@
 
 ```
 Wave 1 ████████████████████████  100% — Foundation gate met
-Wave 2 █████████████████░░░░░░░   70% — Core/parser/shared-pot live; photo gate pending
+Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
 Wave 3 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Tracking + balance UI
 Wave 4 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Activity
 Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending

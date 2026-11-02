@@ -127,7 +127,7 @@ The LLM **never invents foods, grams or calories**. It only chooses from the can
 
 | Call | Model | Status |
 |---|---|---|
-| `ai.analyzePhoto` | `qwen/qwen3.8-27b` (JSON mode, ≤ 3 images/request) | ⬜ Wave 2 gate |
+| `ai.analyzePhoto` | `qwen/qwen3.8-27b` (JSON mode, ≤3 images/request) | ✅ live; FoodBD gate 49% R / 55% P → assisted |
 | Bangla voice input | `whisper-large-v3` / `-turbo` | ⬜ Wave 2/4 (Chrome `bn-BD` only) |
 | RAG-grounded answer | Groq chat + retrieved chunks | ✅ live (`context` arg + `[n]` citations) |
 

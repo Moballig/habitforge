@@ -1,6 +1,6 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
-**Version:** 2.2 (Wave 2 core logging live; traceability updated)
+**Version:** 2.2 (Wave 2 complete; traceability updated)
 **Date:** November 2, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
@@ -616,4 +616,4 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | AC | 10 | 2 | 0 | 8 |
 | **Total** | **140** | **58** | **21** | **61** |
 
-> Status reflects Wave 1 completion and verified Wave 2 core logging progress (Nov 2, 2026).
+> Status reflects Wave 1 and Wave 2 completion (photo gate passed Nov 3, 2026).

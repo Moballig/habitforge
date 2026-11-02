@@ -346,7 +346,7 @@ The bottleneck is local ONNX inference at ingestion, not Convex writes; one-time
 
 Deshi Health Companion demonstrates that a nutrition assistant for a low-resource language context can be simultaneously *local* (Bangla/Banglish foods and prices), *grounded* (9,447 citable chunks from official and community sources), and *safe* (a deterministic, tested engine that the LLM cannot override and personal data it cannot see). The retrieval stack shows that the absence of an embedding API is not a blocker: a quantized multilingual encoder on commodity CPU plus hybrid search and a one-line LLM rewrite deliver credible cross-lingual recall.
 
-Immediate next steps, in order: (1) wire the remaining Wave 2 gates — plate-photo vision and Bangla voice; (2) a numeric validator that blocks any figure absent from a tool result or retrieved chunk; (3) Bangla aliases and guideline summaries to close the `bn`-chunk gap; (4) price normalisation to BDT/kg and recipe-corpus quotas; (5) OCR of the glycaemic-index PDF; (6) a `rag.stats` audit query; and (7) user testing with Bangla-speaking participants before any production move.
+Immediate next steps, in order: (1) Bangla voice logging (the last open Wave 2 P1 item — plate-photo vision shipped Nov 3 with its FoodBD gate); (2) a numeric validator that blocks any figure absent from a tool result or retrieved chunk; (3) Bangla aliases and guideline summaries to close the `bn`-chunk gap; (4) price normalisation to BDT/kg and recipe-corpus quotas; (5) OCR of the glycaemic-index PDF; (6) a `rag.stats` audit query; and (7) user testing with Bangla-speaking participants before any production move.
 
 ---
 

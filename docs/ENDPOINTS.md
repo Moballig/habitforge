@@ -1,6 +1,6 @@
 # Deshi Health Companion — Backend Functions Documentation
 
-**Version:** 3.3 (aligned with Build Plan v3 — Wave 2 in progress)
+**Version:** 3.3 (aligned with Build Plan v3 — Wave 2 complete)
 **Last Updated:** November 2, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
@@ -119,7 +119,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Convex Queries & Mutations (current — Wave 2 in progress)
+## 3. Convex Queries & Mutations (current — Wave 2 complete)
 
 ### `profile` (Wave 1 — ✅ live)
 
@@ -227,7 +227,7 @@ await parseMealAction({
 
 JSON mode with a maximum 25-item candidate pool. Returned IDs are checked against that pool; quantity is bounded to `0 < qty ≤ 20`; units are length-bounded. Code converts units → grams via `measures` and computes kcal. On Groq failure, `/log` uses the deterministic offline top candidate per clause. The 20-case local parser set and a live four-item Groq smoke pass.
 
-### 4.3 `ai.analyzePhoto` (Wave 2 — ✅ live, probe in progress)
+### 4.3 `ai.analyzePhoto` (Wave 2 — ✅ live, gate passed as assisted)
 
 ```ts
 await analyzePhoto({
