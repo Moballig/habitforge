@@ -66,6 +66,17 @@ export const chat = action({
         lang: v.optional(v.string()),
       }),
     ),
+    /** Retrieved reference excerpts (public RAG corpus only — never PII). */
+    context: v.optional(
+      v.array(
+        v.object({
+          text: v.string(),
+          source: v.string(),
+          section: v.optional(v.string()),
+          page: v.optional(v.number()),
+        }),
+      ),
+    ),
   },
   returns: v.object({
     response: v.optional(v.string()),
@@ -74,6 +85,18 @@ export const chat = action({
   handler: async (_ctx, args) => {
     const mode = args.safeContext?.mode ?? "normal";
     const goal = args.safeContext?.goal ?? "maintain";
+
+    const excerpts = (args.context ?? []).slice(0, 6).map((item, index) => {
+      const label = `${item.source}${item.section ? ` — ${item.section}` : ""}${
+        item.page != null ? ` p.${item.page}` : ""
+      }`;
+      return `[${index + 1}] ${label}\n${item.text.slice(0, 700)}`;
+    });
+    const contextBlock =
+      excerpts.length > 0
+        ? `\n\nReference excerpts from the knowledge base:\n${excerpts.join("\n\n")}\nRules for excerpts: use them only when relevant and cite them inline with their marker, e.g. [2]. Never quote a number that does not appear in an excerpt. If none are relevant, ignore them and avoid precise numbers.`
+        : "";
+
     const system = `You are Deshi Health Companion's nutrition coach for Bangladesh.
 Rules:
 - Be warm, practical, shame-free. Never say "cheat day", "burn off", or "bad food".
@@ -82,7 +105,7 @@ Rules:
 - Never invent precise calorie numbers. If you must mention numbers, keep them approximate and clearly labelled as rough.
 - Not a medical device. No diagnosis, no medication advice.
 - Answer in the user's language (Bangla, English, or Banglish).
-Current mode: ${mode}. Goal category: ${goal}.`;
+Current mode: ${mode}. Goal category: ${goal}.${contextBlock}`;
 
     try {
       const response = await groqChat([
@@ -193,6 +216,53 @@ Rules:
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return { error: `parse failed: ${message.slice(0, 200)}` };
+    }
+  },
+});
+
+/**
+ * Retrieval query rewrite: Bangla/Banglish → concise English search terms.
+ * Only feeds the embedding step; the original query still drives keyword
+ * search and the coach's answer language. Send the search phrase only (no PII).
+ */
+export const rewriteQuery = action({
+  args: { query: v.string() },
+  returns: v.object({
+    rewritten: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (_ctx, args) => {
+    const query = args.query.trim();
+    if (query.length < 2) return { error: "Query too short" };
+    if (query.length > 300) return { error: "Query too long" };
+    try {
+      const text = await groqChat(
+        [
+          {
+            role: "system",
+            content: `Rewrite the user's search query into concise English search terms for a Bangladeshi nutrition knowledge base (foods, dietary guidelines, food prices).
+Rules:
+- Output ONLY the rewritten query. No quotes, no explanation, no trailing punctuation.
+- Keep Bangladeshi dish names romanized (e.g. "alu bhorta", "khichuri", "ilish").
+- Translate health terms precisely (e.g. "ডায়াবেটিস" → "type 2 diabetes").
+- Maximum 12 words.`,
+          },
+          { role: "user", content: query },
+        ],
+        // gpt-oss reasons first: 60 tokens was consumed by reasoning alone.
+        { temperature: 0, maxTokens: 400 },
+      );
+      const rewritten = text
+        .split("\n")[0]
+        .replace(/^["'`]+|["'`]+$/g, "")
+        .replace(/[.!?]+$/, "")
+        .trim()
+        .slice(0, 200);
+      if (!rewritten) return { error: "Empty rewrite" };
+      return { rewritten };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { error: message.slice(0, 200) };
     }
   },
 });

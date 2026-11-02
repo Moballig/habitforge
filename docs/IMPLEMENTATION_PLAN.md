@@ -27,7 +27,7 @@
 | Safety | `safetyMode()` returns normal, restricted or doctor-first; restricted modes disable deficits and the rebalance planner |
 | Web substitutions | Phone step counters are not readable by a web app → manual steps entry. APK → installable web app (PWA) |
 
-**Probes to run first (30 minutes each)** because they decide design details: Qwen vision on 10 plate photos; Bangla/Banglish queries on Groq embeddings (the named model, `nomic-embed-text-v1_5`, is likely English-oriented, so test it); Chrome `bn-BD` speech recognition (Chrome 139+ only).
+**Probes to run first (30 minutes each)** because they decide design details: Qwen vision on 10 plate photos; Bangla/Banglish queries on a **local multilingual embedding model** — Groq exposes no embeddings endpoint, so the originally named `nomic-embed-text-v1_5` is not callable there (verified: `/v1/embeddings` → 404); Chrome `bn-BD` speech recognition (Chrome 139+ only).
 
 ---
 
@@ -123,7 +123,9 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** poor air quality or extreme heat switches suggestions to indoor options; extra-activity minutes in the plan match the MET formula.
 
-### Wave 5: AI coach (RAG) — ⬜
+### Wave 5: AI coach (RAG) — 🔄 data foundation live
+
+**Done (Nov 3):** 9,447-chunk corpus from `/data` — guidelines, FCTB/IFCT books, 913 food facts, 318 Bangla/Banglish aliases, 5,938 recipes, 232 indigenous-table chunks, 76 research chunks, 73 price summaries, 157 FAOSTAT summaries. Convex `ragChunks` has keyword + 384-dim vector indexes; `rag.search` merges both; `POST /api/embed` runs multilingual-e5-small locally. Structured mirrors: `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`. Next: coach wiring, Groq query rewrite, citation UI, 20-question gate.
 
 | Item | Ref |
 |---|---|
@@ -207,7 +209,7 @@ Report the sample size beside every number and state limits found (mixed dishes,
 | 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | 🔄 **In progress** — parser/shared-pot pass; photo pending |
 | 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | ⬜ |
 | 4 | Activity | AQI/heat → indoor · MET minutes match formula | ⬜ |
-| 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | ⬜ |
+| 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | 🔄 Data + hybrid retrieval live; coach wiring pending |
 | 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ⬜ |
 | 7 | Offline/privacy/admin | Airplane mode persists · delete-my-data clears | ⬜ |
 | 8 | Proof, red-team, packaging | Report sample sizes · state limits | ⬜ |

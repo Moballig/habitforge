@@ -36,7 +36,8 @@ flowchart TB
     end
 
     subgraph External["External Services"]
-        GroqAPI["Groq: chat + vision + embeddings"]
+        GroqAPI["Groq: chat + vision"]
+        EmbedAPI["Local embeddings: /api/embed (multilingual-e5-small, 384d)"]
     end
 
     UI -- "useQuery / useMutation" --> Q
@@ -53,7 +54,7 @@ flowchart TB
 |-------|----------|-------|-------------|
 | **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
 | **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 27 tests, property-tested |
-| **Vector store (RAG)** | National dietary guidelines text, FCTB notes, cooking/portion guidance, exercise guidance, curated FAQs | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, cosine, dim 2–4096, ≤256 results) **merged with keyword/alias match**; chunks carry section + page; refuse below tuned threshold | ⬜ Wave 5 |
+| **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; chunks carry source, section, page, language; refuse below tuned threshold | ✅ Foundation — **9,447 chunks** ingested; coach wiring pending |
 | **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Scaffold — Groq via `convex/ai.ts` `groqChat()`; `chat` + `parseMeal` live |
 | **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — re-check Groq docs before coding; assisted flow with confirm screen | ⬜ Wave 2 |
 
@@ -74,7 +75,8 @@ flowchart TB
 | **Styling** | Tailwind CSS | 4.3.x | Utility-first CSS (CSS-based config) + clay utilities |
 | **Icons** | Lucide React | 1.66.x | Consistent icon set |
 | **Backend/DB** | Convex | 1.49.x | Tables, reactive queries, mutations, actions, **vector index** |
-| **LLM / Vision / Embeddings** | Groq OpenAI-compatible REST | — | Chat: `openai/gpt-oss-120b` (override `GROQ_MODEL`); Vision: `qwen/qwen3.8-27b`; Embeddings: `nomic-embed-text-v1_5` (**test Bangla early** — likely English-oriented; fallback: LLM rewrites query to English, chunks stored English + Bangla alias keywords) via `groqChat()` in `convex/ai.ts` |
+| **LLM / Vision** | Groq OpenAI-compatible REST | — | Chat: `openai/gpt-oss-120b` (override `GROQ_MODEL`); Vision: `qwen/qwen3.8-27b`; via `groqChat()` in `convex/ai.ts` |
+| **Embeddings** | Local ONNX (`@huggingface/transformers`) | 4.3.x | `Xenova/multilingual-e5-small`, 384 dims, quantized, Bangla-capable; passage vectors at ingest, query vector via `POST /api/embed`. **Groq exposes no embedding endpoint** (`/v1/embeddings` → 404) |
 | **Engine** | `lib/engine/` pure TS | — | Shared client + Convex; `bun test` + property test |
 | **Offline** | Service worker + IndexedDB | — | PWA: app shell + food snapshot cached; logs queued, last-write-wins per entry |
 | **Package Manager** | Bun | 1.4.2 | Fast JS package manager & runtime |
@@ -107,15 +109,24 @@ flowchart TB
 
 > Photo logging itself uses **Groq Qwen vision** (Plan v3 §0), not a locally trained model. Datasets inform the supported-food list and test photos.
 
-### 3.3 RAG knowledge corpus (§4.3, track D7)
+### 3.3 RAG knowledge corpus (§4.3, track D7) — ✅ ingested
 
-1. *National Dietary Guidelines for Bangladesh* (Aug 2025) — **primary corpus**: chunk by heading 300–600 tokens; keep tables (exchange lists, weights/measures) structured; each chunk stores **section name and page**
-2. Earlier *Dietary Guidelines for Bangladesh* (FAO/BIRDEM, 2013 rev.)
-3. WHO 2004 Asian BMI consultation
-4. Compendium of Physical Activities (MET values)
-5. BIRDEM/DAB patient education material **where licence allows**
-6. Curated "deshi swaps" / cooking notes (nutritionist-reviewed — track D10)
-7. Seasonal and price notes (track D6 — bazar walk)
+| Source | Chunks | Tag |
+|--------|-------:|-----|
+| National Dietary Guidelines for Bangladesh (NNS/WHO/FAO, 2025) | 259 | `guideline` |
+| FCTB 2013 reference book | 351 | `food-table` |
+| IFCT 2017 reference book | 1,130 | `food-table` |
+| Unified food facts (913 foods) | 913 | `food-table` |
+| Deshi food alias index (Bangla/Banglish) | 318 | `food-table` |
+| Mondol & Rahim standardised recipes + Biswas research | 76 | `research` |
+| Nayakrishi/Mog indigenous food tables (5 PDFs) | 232 | `indigenous` |
+| Cleaned Indian Food Dataset (5,938 recipes, 150 Bengali) | 5,938 | `recipe` |
+| WFP monthly commodity price summaries | 73 | `price` |
+| FAOSTAT balance/security/affordability summaries | 157 | `faostat` |
+
+**Metadata:** every chunk stores `docId`, `chunkIndex`, `source`, `section`, `page`, `lang` (`en`/`bn`/`mixed`), `keywords`, and a 384-dim embedding. Structured mirrors live in `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, and the inventory in `datasetSources`.
+
+**Chunking:** page-first sliding window (~1,400 chars, 180 overlap) for PDFs; one chunk per recipe/food/price summary. Table rows that need exact numbers stay in structured tables — RAG is for explanations, not arithmetic (§7.1).
 
 ### 3.4 Collected ourselves (tracks D4–D6, D8)
 
@@ -157,17 +168,29 @@ Pure functions shared by client and Convex: `bmr`, `tdee`, `metNetKcal`, `safety
 
 | Aspect | Spec |
 |--------|------|
-| **Corpus** | National Dietary Guidelines 2025 (D7): heading chunks 300–600 tokens, tables structured, section + page metadata |
-| **Retrieval** | **Convex `.vectorIndex()`** (call `ctx.vectorSearch` from an **action**, then load full docs with a query; cosine; ≤256 results) **merged with keyword + alias match** |
-| **Query path** | User message → **LLM rewrites to short English query** (also extracts food names) → retrieval → answer with `Source: <section>` |
-| **Embeddings** | `nomic-embed-text-v1_5` (Groq) — **probe Bangla/Banglish first**; fallback is the English rewrite path |
+| **Corpus** | 9,447 chunks across guidelines, food tables, recipes, research, prices and FAOSTAT (see §3.3) |
+| **Retrieval** | **Convex `.vectorIndex()`** (call `ctx.vectorSearch` from an **action**, then hydrate with an internal query; 384 dims) **merged with full-text keyword search** |
+| **Query path** | User message → local embedding (`POST /api/embed`, multilingual-e5-small) → `rag.search` → answer with `Source: <section>` |
+| **Embeddings** | **`Xenova/multilingual-e5-small`** (384 dims, quantized, local, Bangla-capable) — Groq hosts **no** embedding models. Query prefix `query:`; passage prefix `passage:` |
 | **Refusal** | Best match below tuned similarity threshold → "I'm not sure…" + suggest a professional |
 | **Number validator** | Any number in the final reply must appear in a tool result or retrieved chunk; else regenerate once, then template fallback |
 | **Privacy** | Send Groq only food text + question — **never age, weight, name, or conditions**; pass safe categories (`mode=restricted`) set by code |
 
 **Answer format:** short answer, then `Source: section name`.
 
-### 4.5 Guardrails (§7.5)
+### 4.5 Data ingestion (offline, reproducible)
+
+```
+data/ ──► scripts/prepare_rag_data.py ──► scripts/out/*.jsonl ──► scripts/ingest_rag.mjs ──► Convex
+           pdftotext + csv/json            chunks, records            local e5 embeddings
+```
+
+- `prepare_rag_data.py` extracts PDFs with `pdftotext`, parses CSV/JSON, chunks text, and writes structured records plus a dataset inventory.
+- `ingest_rag.mjs` embeds passages in batches (quantized model cached in `.cache/transformers`) and upserts through token-guarded Convex mutations (`RAG_INGEST_TOKEN`).
+- Re-runs require `--fresh`; the script refuses to duplicate chunks otherwise.
+- `scripts/test_rag.mjs` runs representative Bangla/English queries end-to-end.
+
+### 4.6 Guardrails (§7.5)
 
 - **System rules:** never diagnose, never prescribe medication, never recommend extreme restriction, always follow `safetyMode`
 - **Output checks:** numbers must match tool outputs; block unsourced numbers

@@ -26,8 +26,10 @@ flowchart LR
     P0 -->|"Personalised plan,<br/>coach answers,<br/>citations, source tags"| U
     Admin -->|"CRUD foods, recipes,<br/>prices; review queue"| P0
     P0 -->|"Report queue,<br/>analytics (anonymised)"| Admin
-    P0 -->|"Chat prompts,<br/>photo images,<br/>embedding queries<br/>(no PII)"| Groq
-    Groq -->|"LLM responses,<br/>vision JSON,<br/>embeddings"| P0
+    P0 -->|"Chat prompts,<br/>photo images<br/>(no PII)"| Groq
+    Groq -->|"LLM responses,<br/>vision JSON"| P0
+    P0 -->|"Passages / query text"| LocalEmbed["Local embedder<br/>(multilingual-e5-small)"]
+    LocalEmbed -->|"384-dim vectors"| P0
 ```
 
 **Data stores at Level 0:**
@@ -238,7 +240,7 @@ flowchart TB
 | Sub-process | Input | Output | Notes |
 |-------------|-------|--------|-------|
 | P6.1 | User question | Short English query | LLM rewrites; extracts food names |
-| P6.2 | Query text | Embedding + top chunks | `nomic-embed-text-v1_5` via Groq; `ctx.vectorSearch` |
+| P6.2 | Query text | Embedding + top chunks | Local `multilingual-e5-small` via `POST /api/embed`; `ctx.vectorSearch` |
 | P6.3 | Vector results | Merged + keyword/alias match | Hybrid retrieval |
 | P6.4 | Best score | Pass / refuse | Below threshold → refuse |
 | P6.5 | Chunks + safe mode | Answer draft | Numbers only via tools |

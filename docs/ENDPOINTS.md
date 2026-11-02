@@ -23,7 +23,7 @@
 | `convex/profile` | ✅ Done | `get`, `save`, `energy` — engine computes safetyMode server-side | W1 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
-| `convex/ai` | ✅ Base scaffold | `chat` (privacy-safe), `parseMeal` (top-5 candidate pick) | W2/5 |
+| `convex/ai` | ✅ Live | `chat` (+RAG `context`, `[n]` citations), `parseMeal` (candidate pick), `rewriteQuery` | W2/5 |
 | `convex/mealLogs` | ✅ Core live | List/create/update/remove/copy/day summary; profile-key checks | W2 |
 | `convex/budget` | ⬜ Planned | 7-day budget, overshoot, spread plan (engine-backed) | W3 |
 | `convex/activity` | ⬜ Planned | MET logging, manual steps | W4 |
@@ -43,7 +43,8 @@
 | `GROQ_API_KEY` | **Convex env** | ✅ for AI | Groq API key (`gsk_...`) |
 | `GROQ_MODEL` | Convex env (optional) | ❌ | Chat model override (default `openai/gpt-oss-120b`) |
 | `GROQ_VISION_MODEL` | Convex env (optional) | ❌ | Photo model (default `qwen/qwen3.8-27b` — **re-check Groq docs before coding**) |
-| `GROQ_EMBED_MODEL` | Convex env (optional) | ❌ | Embeddings (default `nomic-embed-text-v1_5` — **probe Bangla first**) |
+| `RAG_INGEST_TOKEN` | Convex env + `.env.local` | ✅ for ingestion | Guards `rag.push*` / `rag.clearChunks`; **not** needed for search |
+| `GROQ_EMBED_MODEL` | — | ❌ removed | Groq has no embeddings endpoint; vectors come from local `multilingual-e5-small` |
 
 ### Setup
 
@@ -97,7 +98,22 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ### Other tables
 
-`measures` (kitchen-scale standards D4) · `mealLogs` · `profiles` (+ safetyScreen, safetyMode, plate/rice calibration) · `healthMeasures` · `activityLogs` (+ manual steps) · `budgetState` · `priceRecords` (D6) · `ragChunks` (**vectorIndex**, section+page metadata) · `auditLogs`.
+`measure` · `mealLogs` · `profiles` (+ safetyScreen, safetyMode, plate/rice calibration) · `activityLogs` (+ manual steps) · `budgetState` · `auditLogs` · **RAG/data corpus** (see below).
+
+### RAG + data corpus tables (Wave 5 foundation — ✅ live)
+
+| Table | Rows (dev) | Purpose |
+|-------|-----------:|---------|
+| `ragChunks` | 9,447 | Text chunks with `source`, `section`, `page`, `lang`, `keywords`, 384-dim `embedding`. Keyword + vector indexes. |
+| `foodFacts` | 913 | Deduplicated FCTB 2013 + IFCT 2017 nutrients with provenance |
+| `ragChunks` (alias doc) | 318 | Bangla/Banglish food aliases from the project seed |
+| `recipes` | 5,938 | Structured recipes (name, cuisine, ingredients, method, URL) |
+| `priceObservations` | 34,491 | WFP monthly market prices in BDT |
+| `markets` | 171 | WFP market geography |
+| `nutritionIndicators` | 23,746 | FAOSTAT food balance, food security and affordability |
+| `datasetSources` | 16 | Dataset inventory with record + chunk counts and ingestion time |
+
+**Indexes:** `ragChunks` has `by_doc`, `by_source_tag`, `search_text` (full-text) and `by_embedding` (384 dims, filters `sourceTag`/`lang`). Each structured table has a natural-key index; foods and recipes also have search indexes.
 
 **Indexes:** by date, by user, by food — all hot paths. Vector search **only from actions**.
 
@@ -161,32 +177,43 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `activity.listByDate` | query | `date` | |
 | `activity.addSteps` | mutation | count | Manual steps (web substitute) |
 
-### `rag` (Wave 5 — ⬜ planned)
+### `rag` (Wave 5 foundation — ✅ live)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `rag.search` | **action** | `query`, `lang?` | Embed + `ctx.vectorSearch` + keyword merge |
-| `rag.ingest` | mutation | source doc | Chunk 300–600 tokens; section + page metadata |
+| `rag.search` | **action** | `query`, `queryEmbedding?`, `sourceTag?`, `lang?`, `limit?` | Hybrid: `ctx.vectorSearch` (when a 384-dim query vector is supplied) merged with keyword results. Returns text + citation metadata + score |
+| `rag.keywordSearch` | query | `query`, `sourceTag?`, `lang?`, `limit?` | Full-text retrieval; always available, no embedding needed |
+| `rag.sources` | query | — | Dataset inventory with record/chunk counts |
+| `rag.pushChunks` | mutation | ingest token + ≤100 chunks | Point lookup via `by_doc_chunk` index; deletes extra rows sharing the key (self-healing); `mode:"insert"` for bulk loads |
+| `rag.clearChunks` | mutation | ingest token, `docId?`, `limit?` | Batched re-ingest cleanup |
+| `rag.pushRecipes` / `pushFoodFacts` / `pushPrices` / `pushMarkets` / `pushIndicators` / `pushSources` | mutation | ingest token + records | Upserts keyed by stable hash |
+
+**Query embeddings:** `POST /api/embed` (Next.js, Node runtime) runs `Xenova/multilingual-e5-small` locally (quantized, 384 dims, Bangla-aware) and returns `{ embedding }`. Client helper: `src/lib/ai/rag.ts` → `embedQuery()`. This avoids a second paid API key because Groq hosts no embedding models.
 
 ---
 
-## 4. AI Actions (`convex/ai.ts` — base scaffold)
+## 4. AI Actions (`convex/ai.ts` — live)
 
 All run in Convex actions (`"use node"`) via `groqChat()`. **Privacy hard rule:** never send age/weight/name/conditions to Groq — only food text, question, and safe categories (`mode=restricted`) set by code.
 
-### 4.1 `ai.chat` (Wave 5 — RAG coach)
+### 4.1 `ai.chat` (Wave 5 — RAG coach, ✅ live)
 
 ```ts
 await chatAction({
-  message: "diabetes thakle bhat koto khabo?",
+  message: "ডায়াবেটিস থাকলে ভাত কত খাব?",
   safeContext: { mode: "normal", goal: "gentle-change", lang: "bn" },
+  context: [{ text: "...", source: "National Dietary Guidelines...", section: "...", page: 90 }],
 });
-// → { response } | { error }
+// → { response: "... [1] ..." } | { error }
 ```
 
-Pipeline (Wave 5): rewrite → embed → `ctx.vectorSearch` + keyword merge → Groq with chunks + tools → **number validator** → answer + `Source: <section>`. Refuse below similarity threshold.
+Pipeline (✅ live): client `embedQuery` → `rag.search` (hybrid, ≥0.8, top 5) → optional `ai.rewriteQuery` when the query has Bangla script or the first pass is weak (second search, merged best-score-per-chunk) → Groq with numbered excerpts → answer with inline `[n]` markers → client parses markers into citation chips. No hits above threshold → answer flagged `lowConfidence`.
 
-**Current (W1 scaffold):** privacy-safe system prompt only; no RAG, no sources yet.
+```ts
+await rewriteAction({ query: "ডায়াবেটিস থাকলে ভাত কত খাব?" });
+// → { rewritten: "type 2 diabetes rice portion size" } | { error }
+// temperature 0, maxTokens 400 (gpt-oss reasons first — never below ~300)
+```
 
 ### 4.2 `ai.parseMeal` (Wave 2 — ✅ wired; LLM chooses, code computes)
 

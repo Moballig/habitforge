@@ -15,16 +15,16 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Wave 2 in progress** — manual logging, parser and shared-pot sub-gates pass; assisted-photo gate next |
+| **Current Phase** | **Wave 2 + RAG data foundation** — logging/parser/shared-pot pass; 9,447-chunk corpus ingested; assisted-photo gate next |
 | **Day** | Day 2 (Nov 2, 2026) |
 | **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 53/53 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
-| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema v2 live (profiles/foods/mealLogs/activityLogs/budgetState/weighIns/auditLogs) |
-| **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat model `openai/gpt-oss-120b`; vision plan `qwen/qwen3.8-27b` (probe); embeddings `nomic-embed-text-v1_5` (probe Bangla) |
+| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
+| **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
 | **P0 product surface** | 🔄 Onboarding + `/log` use Convex; `/log` has 318-food offline search and live CRUD; plan/coach still on fixtures |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-02 (Wave 2 core logging + 318-food reconciliation verified) |
+| **Last Updated** | 2026-11-03 (RAG corpus from `/data` ingested: 9,447 chunks + 66k structured records) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
@@ -48,6 +48,17 @@
 - Smoke: create → list → copy → summary → wrong-key rejection → cleanup passed on `dev:disciplined-zebra-716`
 - Verification: **53 tests**, lint 0 errors (4 generated warnings), root + Convex TypeScript pass, production build passes
 - Remaining W2 gate: five assisted-photo tests; spoon-based shared-pot entry and other W2 enhancements remain
+
+### RAG data foundation (Nov 3, 2026)
+
+- **Corpus:** **9,447 chunks** in `ragChunks` — guidelines 259, FCTB/IFCT books + food facts + aliases 2,712, indigenous 232, research 76, recipes 5,938, prices 73, FAOSTAT 157
+- **Structured mirrors:** `foodFacts` 913 · `recipes` 5,938 · `priceObservations` 34,491 · `markets` 171 · `nutritionIndicators` 23,746 · inventory in `datasetSources` (16)
+- **Embeddings:** local `Xenova/multilingual-e5-small`, quantized, 384 dims, cached in `.cache/transformers`; no second API key. `POST /api/embed` verified (384 dims, Bangla input)
+- **Retrieval:** `rag.search` (vector + keyword merge) and `rag.keywordSearch`; alias doc fixes Bangla/Banglish lookups (`alu bhorta` → 0.982; `ভর্তা` → 0.977)
+- **Pipeline:** `scripts/prepare_rag_data.py` (pdftotext + CSV/JSON → JSONL) → `scripts/ingest_rag.mjs` (embed + token-guarded upsert) → `scripts/test_rag.mjs`
+- **Data quality fixes:** FCTB categories recovered from code prefixes; 318-row alias index added; 34,491 WFP price rows and 23,746 FAOSTAT rows deduplicated
+- **Known gaps:** `rice-glycaemic-index-bau.pdf` has no text layer (needs OCR); cross-lingual Bangla medical queries retrieve food aliases ahead of guideline sections — add Groq query rewrite before embedding
+- **Verification:** 53 tests, lint 0 errors, both TypeScript checks, production build (20 routes incl. `/api/embed`) pass
 
 ### Docs re-audit (Nov 2, 2026)
 
@@ -156,11 +167,11 @@
 
 ### Pivot plan — Deshi Health Companion (Plan v3 waves — see IMPLEMENTATION_PLAN.md)
 
-**Probes first (30 min each):** Qwen vision on 10 plate photos · Bangla/Banglish on Groq embeddings · Chrome `bn-BD` speech.
+**Probes first (30 min each):** Qwen vision on 10 plate photos · local multilingual embeddings on Bangla/Banglish queries · Chrome `bn-BD` speech.
 
 **Wave 1 (foundation):** ✅ Complete. Engine, safety modes, onboarding/profile, consent/delete-data, schema and tagged food seed passed their gate.
 
-**Wave 2 now:** manual logging + 318-food search + meal CRUD ✅; next are parser evaluation, shared-pot math, assisted photo flow, rice calibration and recipes.
+**Wave 2 now:** manual logging + 318-food search + meal CRUD + parser/shared-pot ✅; next are assisted photo flow, rice calibration and recipes. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); remaining work is wiring `rag.search` into the coach and adding query rewrite/citations.
 
 **Then waves in order:** W3 tracking + balance engine UI → W4 activity → W5 RAG coach → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
 
@@ -243,6 +254,8 @@
 | Shared-pot, photo and parser gates incomplete | High | Medium — remaining Wave 2 work |
 | No authentication; profile key is demo-only | High | Medium — add Convex Auth before multi-user launch |
 | AI responses not cached | Low | Low — add Convex caching if rate-limited |
+| Bangla medical queries retrieve food aliases before guideline sections | Medium | Medium — Groq English query rewrite before embedding |
+| `rice-glycaemic-index-bau.pdf` unparsed (scanned) | Low | Low — OCR (tesseract) or manual table entry |
 
 ---
 
@@ -277,7 +290,7 @@ Wave 1 ████████████████████████ 
 Wave 2 █████████████████░░░░░░░   70% — Core/parser/shared-pot live; photo gate pending
 Wave 3 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Tracking + balance UI
 Wave 4 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Activity
-Wave 5 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — RAG coach
+Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof
 ```
 

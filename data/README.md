@@ -65,3 +65,39 @@ All datasets listed in the user's research index and project requirements have b
 3. **DeshiFoodBD (2021):** Mendeley `tczzndbprx` (5,425 images, 19 dishes).
 4. **Bangladeshi Street Food:** Mendeley `pjkrx3kk8h` (5 Dhaka street food classes).
 5. **Traditional Bangladeshi Desserts:** Mendeley `j2pnx2mwwk` (4,118 images, 27 sweet/pitha classes).
+
+---
+
+## 6. Convex ingestion (RAG database)
+
+Everything above is loaded into the dev Convex deployment as a hybrid-search knowledge base.
+
+| Table | Rows | Contents |
+|---|---:|---|
+| `ragChunks` | 9,447 | Text chunks + 384-dim embeddings, source/section/page/language metadata |
+| `foodFacts` | 913 | Unified FCTB 2013 + IFCT 2017 food composition |
+| `recipes` | 5,938 | Structured recipes (150 Bengali) |
+| `priceObservations` | 34,491 | WFP market prices in BDT |
+| `markets` | 171 | WFP market geography |
+| `nutritionIndicators` | 23,746 | FAOSTAT food balance, security and affordability |
+| `datasetSources` | 16 | Inventory with record/chunk counts |
+
+### Reproduce
+
+```bash
+# 1. Extract + chunk every dataset into scripts/out/*.jsonl
+python3 scripts/prepare_rag_data.py
+
+# 2. Embed locally and push (requires RAG_INGEST_TOKEN in .env.local + Convex env)
+node scripts/ingest_rag.mjs --fresh
+
+# 3. Verify retrieval
+node scripts/test_rag.mjs
+```
+
+**Embeddings:** `Xenova/multilingual-e5-small` (384 dims, quantized, local). Groq does not host embedding models, so no second API key is required. Model files cache in `.cache/transformers`.
+
+**Notes:**
+- `rice-glycaemic-index-bau.pdf` is a scanned PDF with no text layer; it is the only source not yet in the corpus.
+- `fctb_foods_extracted.json`, `ifct2017_extracted.json`, and the Kaggle CSV are merged into `unified_food_database.json` / the IFCT package, so they are represented once.
+- Re-running ingestion without `--fresh` is refused to prevent duplicate chunks.

@@ -13,6 +13,7 @@ import type * as foods from "../foods.js";
 import type * as mealLogs from "../mealLogs.js";
 import type * as privacy from "../privacy.js";
 import type * as profile from "../profile.js";
+import type * as rag from "../rag.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   mealLogs: typeof mealLogs;
   privacy: typeof privacy;
   profile: typeof profile;
+  rag: typeof rag;
 }>;
 
 /**

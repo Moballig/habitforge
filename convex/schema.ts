@@ -22,6 +22,19 @@ const measure = v.object({
   grams: v.number(),
 });
 
+export const ragSourceTag = v.union(
+  v.literal("guideline"),
+  v.literal("food-table"),
+  v.literal("recipe"),
+  v.literal("research"),
+  v.literal("indigenous"),
+  v.literal("price"),
+  v.literal("faostat"),
+  v.literal("market"),
+);
+
+export const ragLang = v.union(v.literal("en"), v.literal("bn"), v.literal("mixed"));
+
 export default defineSchema({
   // ─── Profile & safety (W1) ─────────────────────────────
   profiles: defineTable({
@@ -121,6 +134,145 @@ export default defineSchema({
     .index("by_source", ["sourceTag"])
     .searchIndex("search_name_en", { searchField: "nameEn" })
     .searchIndex("search_name_bn", { searchField: "nameBn" }),
+
+  // ─── RAG knowledge base (Wave 5 corpus) ────────────────
+  ragChunks: defineTable({
+    docId: v.string(),
+    chunkIndex: v.number(),
+    sourceTag: ragSourceTag,
+    source: v.string(),
+    section: v.optional(v.string()),
+    page: v.optional(v.number()),
+    lang: ragLang,
+    text: v.string(),
+    keywords: v.array(v.string()),
+    embedding: v.array(v.float64()),
+    url: v.optional(v.string()),
+    publishedAt: v.optional(v.string()),
+  })
+    .index("by_doc", ["docId"])
+    .index("by_doc_chunk", ["docId", "chunkIndex"])
+    .index("by_source_tag", ["sourceTag"])
+    .searchIndex("search_text", {
+      searchField: "text",
+      filterFields: ["sourceTag", "lang"],
+    })
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 384,
+      filterFields: ["sourceTag", "lang"],
+    }),
+
+  // ─── Structured datasets from /data ────────────────────
+  foodFacts: defineTable({
+    key: v.string(),
+    nameEn: v.string(),
+    nameBn: v.string(),
+    scientificName: v.optional(v.string()),
+    category: v.string(),
+    kcalPer100: v.number(),
+    proteinPer100: v.number(),
+    fatPer100: v.number(),
+    carbPer100: v.number(),
+    fiberPer100: v.optional(v.number()),
+    calciumMg: v.optional(v.number()),
+    ironMg: v.optional(v.number()),
+    sodiumMg: v.optional(v.number()),
+    zincMg: v.optional(v.number()),
+    vitaminAMcg: v.optional(v.number()),
+    vitaminCMg: v.optional(v.number()),
+    sourceTag: v.union(
+      v.literal("fctb"),
+      v.literal("regional-table"),
+      v.literal("indigenous"),
+    ),
+    sourceDetail: v.string(),
+    regionTags: v.optional(v.array(v.string())),
+  })
+    .index("by_key", ["key"])
+    .index("by_category", ["category"])
+    .searchIndex("search_name_en", { searchField: "nameEn" })
+    .searchIndex("search_name_bn", { searchField: "nameBn" }),
+
+  recipes: defineTable({
+    key: v.string(),
+    name: v.string(),
+    cuisine: v.string(),
+    minutes: v.optional(v.number()),
+    ingredients: v.array(v.string()),
+    instructions: v.string(),
+    url: v.optional(v.string()),
+    source: v.string(),
+    region: v.optional(v.string()),
+  })
+    .index("by_key", ["key"])
+    .index("by_cuisine", ["cuisine"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["cuisine"],
+    }),
+
+  priceObservations: defineTable({
+    key: v.string(),
+    date: v.string(),
+    commodity: v.string(),
+    unit: v.string(),
+    priceBDT: v.number(),
+    usdPrice: v.optional(v.number()),
+    priceType: v.optional(v.string()),
+    market: v.optional(v.string()),
+    admin1: v.optional(v.string()),
+    category: v.optional(v.string()),
+    source: v.string(),
+  })
+    .index("by_key", ["key"])
+    .index("by_commodity_and_date", ["commodity", "date"])
+    .index("by_date", ["date"])
+    .searchIndex("search_commodity", { searchField: "commodity" }),
+
+  markets: defineTable({
+    marketId: v.string(),
+    name: v.string(),
+    admin1: v.string(),
+    admin2: v.string(),
+    latitude: v.optional(v.number()),
+    longitude: v.optional(v.number()),
+    country: v.string(),
+  }).index("by_market_id", ["marketId"]),
+
+  nutritionIndicators: defineTable({
+    key: v.string(),
+    dataset: v.union(
+      v.literal("food-balance"),
+      v.literal("food-security"),
+      v.literal("affordability"),
+    ),
+    item: v.string(),
+    element: v.string(),
+    unit: v.string(),
+    year: v.string(),
+    value: v.number(),
+    flag: v.optional(v.string()),
+    source: v.string(),
+  })
+    .index("by_key", ["key"])
+    .index("by_dataset_and_item", ["dataset", "item"])
+    .searchIndex("search_item", {
+      searchField: "item",
+      filterFields: ["dataset"],
+    }),
+
+  datasetSources: defineTable({
+    key: v.string(),
+    name: v.string(),
+    sourceTag: ragSourceTag,
+    license: v.optional(v.string()),
+    url: v.optional(v.string()),
+    recordCount: v.number(),
+    chunkCount: v.number(),
+    ingestedAt: v.number(),
+    notes: v.optional(v.string()),
+  }).index("by_key", ["key"]),
 
   // ─── Meal logging (W2 skeleton now) ────────────────────
   mealLogs: defineTable({

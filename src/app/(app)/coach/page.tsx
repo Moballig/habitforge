@@ -1,40 +1,57 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useAction } from "convex/react";
 import { Send, Square } from "lucide-react";
+import { api } from "../../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
-import { COACH_SEED } from "@/lib/mock";
-import type { CoachMessage } from "@/lib/types";
-import { MessageBubble, SuggestionChips, RefusalCard } from "@/components/chat/Chat";
+import { COACH_SEED, DEMO_PROFILE } from "@/lib/mock";
+import { embedQuery, type RagHit } from "@/lib/ai/rag";
+import type { Citation, CoachMessage } from "@/lib/types";
+import { MessageBubble, SuggestionChips } from "@/components/chat/Chat";
 import { EmptyState, SourceTag } from "@/components/data/Primitives";
 import { SafetyBanner } from "@/components/shell/Banners";
-import { DEMO_PROFILE } from "@/lib/mock";
 
 function clock(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Demo-only reply; Wave 5 replaces with ai.chat action (RAG + citations).
-function demoReply(q: string): CoachMessage {
-  const lower = q.toLowerCase();
-  const refusal = /diagnosis|medicine|insulin dose|কোন ওষুধ/.test(lower);
-  if (refusal) {
-    return {
-      id: `d-${Date.now()}`,
-      role: "coach",
-      text: "এটায় আমি সাহায্য করতে পারি না, কিন্তু খাবারের পরিমাণ নিয়ে পরামর্শ দিতে পারি।",
-      refusal: true,
-      time: clock(),
-    };
-  }
+/** Hybrid-score floor for passing a chunk to the model as a citation source. */
+const CONTEXT_THRESHOLD = 0.8;
+const CONTEXT_LIMIT = 5;
+const CONTEXT_CHARS = 700;
+
+function citationFrom(hit: RagHit): Citation {
   return {
-    id: `d-${Date.now()}`,
-    role: "coach",
-    text: "ন্যূনতম প্রোটিন বাড়াতে ডিম, ছোট মাছ বা ডাল যোগ করুন। প্রতিদিন এক মুঠো বাদামও ভালো। প্লেটের এক-চতুর্থাংশ প্রোটিন রাখার চেষ্টা করুন।",
-    citations: [{ section: "Protein guidance — Daily needs", page: 42 }],
-    toolNumbers: ["plate ¼ protein"],
-    time: clock(),
+    section: hit.section ? `${hit.source} — ${hit.section}` : hit.source,
+    page: hit.page,
   };
+}
+
+/** Collect the [n] markers the model actually used → citation chips. */
+function collectCitations(text: string, hits: RagHit[]): Citation[] {
+  const cited: Citation[] = [];
+  const seen = new Set<string>();
+  for (const match of text.matchAll(/\[(\d{1,2})\]/g)) {
+    const hit = hits[Number(match[1]) - 1];
+    if (!hit) continue;
+    const citation = citationFrom(hit);
+    const key = `${citation.section}-${citation.page ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cited.push(citation);
+  }
+  return cited;
+}
+
+/** Union two result sets, keeping the best score per chunk. */
+function mergeHits(a: RagHit[], b: RagHit[]): RagHit[] {
+  const byId = new Map<string, RagHit>();
+  for (const hit of [...a, ...b]) {
+    const previous = byId.get(hit.id);
+    if (!previous || hit.score > previous.score) byId.set(hit.id, hit);
+  }
+  return [...byId.values()].sort((x, y) => y.score - x.score);
 }
 
 export default function CoachPage() {
@@ -42,19 +59,18 @@ export default function CoachPage() {
   const [messages, setMessages] = useState<CoachMessage[]>(COACH_SEED);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
-  const [showRefusal, setShowRefusal] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestRef = useRef(0);
+
+  const search = useAction(api.rag.search);
+  const chat = useAction(api.ai.chat);
+  const rewrite = useAction(api.ai.rewriteQuery);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinking]);
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
-
-  function send(text: string) {
+  async function send(text: string) {
     const q = text.trim();
     if (!q || thinking) return;
     setInput("");
@@ -63,17 +79,101 @@ export default function CoachPage() {
       { id: `u-${Date.now()}`, role: "user", text: q, time: clock() },
     ]);
     setThinking(true);
-    setShowRefusal(false);
-    timerRef.current = setTimeout(() => {
-      const reply = demoReply(q);
-      setMessages((m) => [...m, reply]);
-      setThinking(false);
-      if (reply.refusal) setShowRefusal(true);
-    }, 700);
+    const request = ++requestRef.current;
+
+    // 1) Retrieve: local embedding → hybrid search. Falls back to keyword-only.
+    //    Bangla queries (or weak first-pass scores) get an English rewrite for
+    //    the vector pass; keyword search always keeps the original wording.
+    let hits: RagHit[] = [];
+    let lowConfidence = false;
+    try {
+      const embedding = await embedQuery(q);
+      let results: RagHit[] = await search({ query: q, queryEmbedding: embedding, limit: 6 });
+      const hasBangla = /[\u0980-\u09FF]/.test(q);
+      if (hasBangla || (results[0]?.score ?? 0) < CONTEXT_THRESHOLD) {
+        const attempt = await rewrite({ query: q.slice(0, 300) });
+        if (attempt.rewritten && request === requestRef.current) {
+          const rewrittenEmbedding = await embedQuery(attempt.rewritten);
+          if (rewrittenEmbedding) {
+            const second = await search({
+              query: q,
+              queryEmbedding: rewrittenEmbedding,
+              limit: 6,
+            });
+            results = mergeHits(results, second);
+          }
+        }
+      }
+      if (request !== requestRef.current) return;
+      hits = results.filter((h) => h.score >= CONTEXT_THRESHOLD).slice(0, CONTEXT_LIMIT);
+      if (hits.length === 0) lowConfidence = true;
+    } catch {
+      lowConfidence = true;
+    }
+    if (request !== requestRef.current) return;
+
+    // 2) Answer with excerpts + safe context only (no PII).
+    const lang = /[\u0980-\u09FF]/.test(q) ? "bn" : "en";
+    try {
+      const reply = await chat({
+        message: q,
+        safeContext: {
+          mode: DEMO_PROFILE.safetyMode,
+          goal: DEMO_PROFILE.goal,
+          lang,
+        },
+        context: hits.map((h) => ({
+          text: h.text.slice(0, CONTEXT_CHARS),
+          source: h.source,
+          section: h.section,
+          page: h.page,
+        })),
+      });
+      if (request !== requestRef.current) return;
+      if (reply.error || !reply.response) {
+        setMessages((m) => [
+          ...m,
+          {
+            id: `c-${Date.now()}`,
+            role: "coach",
+            text: reply.error ?? "No response from the coach.",
+            time: clock(),
+            lowConfidence: true,
+          },
+        ]);
+      } else {
+        setMessages((m) => [
+          ...m,
+          {
+            id: `c-${Date.now()}`,
+            role: "coach",
+            text: reply.response,
+            citations: collectCitations(reply.response, hits),
+            lowConfidence,
+            time: clock(),
+          },
+        ]);
+      }
+    } catch (error) {
+      if (request !== requestRef.current) return;
+      const message = error instanceof Error ? error.message : String(error);
+      setMessages((m) => [
+        ...m,
+        {
+          id: `c-${Date.now()}`,
+          role: "coach",
+          text: `AI request failed: ${message.slice(0, 200)}`,
+          time: clock(),
+          lowConfidence: true,
+        },
+      ]);
+    } finally {
+      if (request === requestRef.current) setThinking(false);
+    }
   }
 
   function stop() {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    requestRef.current += 1;
     setThinking(false);
   }
 
@@ -96,7 +196,6 @@ export default function CoachPage() {
         ) : (
           messages.map((m) => <MessageBubble key={m.id} m={m} />)
         )}
-        {showRefusal && <RefusalCard />}
         {thinking && (
           <div className="flex justify-start">
             <div className="rounded-card bg-surface-soft px-4 py-3">

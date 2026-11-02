@@ -15,6 +15,10 @@ const eslintConfig = defineConfig([
     // Installed agent skills (third-party .cjs helper scripts)
     ".opencode/**",
     "design-system/**",
+    // Third-party dataset packages and generated ingestion artifacts
+    "data/**",
+    "scripts/out/**",
+    ".cache/**",
   ]),
 ]);
 
