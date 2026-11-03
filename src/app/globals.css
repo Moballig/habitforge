@@ -91,7 +91,7 @@ html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 
 body {
-  background: var(--canvas);
+  background: var(--surface);
   color: var(--ink);
   font-family: var(--font-sans);
   font-feature-settings: "tnum" 0;

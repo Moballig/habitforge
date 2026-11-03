@@ -45,7 +45,7 @@ export function SideNav() {
   return (
     <nav
       aria-label="Primary"
-      className="hidden lg:flex flex-col gap-1 w-56 shrink-0 py-6 pr-2"
+      className="hidden lg:flex flex-col gap-1 w-64 shrink-0 border-r border-border bg-surface px-3 py-6"
     >
       <Link href="/home" className="flex items-center gap-2 px-3 pb-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet text-sm font-extrabold text-white">
