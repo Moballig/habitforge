@@ -1,30 +1,57 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { Button, Field } from "@/components/forms/Forms";
 import { Chip, Range, SectionLabel, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
+import { api } from "../../../../../convex/_generated/api";
+import { todayISO } from "@/lib/foods/search";
+import type { MealSlot } from "@/lib/types";
 
-type Ingredient = { id: string; label: string; kcalPerUnit: number; unit: string };
+type Ingredient = {
+  id: string;
+  label: string;
+  kcalPerUnit: number;
+  unit: string;
+  gramsPerUnit: number;
+};
 
 // Demo ingredient table — Wave 3 replaces with FCTB-backed lib/engine recipe math.
 const INGREDIENTS: Ingredient[] = [
-  { id: "rice", label: "ভাত / Rice", kcalPerUnit: 260, unit: "bati" },
-  { id: "dal", label: "ডাল / Dal", kcalPerUnit: 150, unit: "bowl" },
-  { id: "oil", label: "তেল / Oil", kcalPerUnit: 120, unit: "tbsp" },
-  { id: "potato", label: "আলু / Potato", kcalPerUnit: 80, unit: "medium" },
-  { id: "egg", label: "ডিম / Egg", kcalPerUnit: 78, unit: "piece" },
-  { id: "chicken", label: "মুরগি / Chicken", kcalPerUnit: 165, unit: "piece" },
+  { id: "rice", label: "ভাত / Rice", kcalPerUnit: 260, unit: "bati", gramsPerUnit: 200 },
+  { id: "dal", label: "ডাল / Dal", kcalPerUnit: 150, unit: "bowl", gramsPerUnit: 150 },
+  { id: "oil", label: "তেল / Oil", kcalPerUnit: 120, unit: "tbsp", gramsPerUnit: 14 },
+  { id: "potato", label: "আলু / Potato", kcalPerUnit: 80, unit: "medium", gramsPerUnit: 100 },
+  { id: "egg", label: "ডিম / Egg", kcalPerUnit: 78, unit: "piece", gramsPerUnit: 50 },
+  { id: "chicken", label: "মুরগি / Chicken", kcalPerUnit: 165, unit: "piece", gramsPerUnit: 120 },
+];
+
+const SLOTS: { id: MealSlot; key: string }[] = [
+  { id: "breakfast", key: "log.breakfast" },
+  { id: "lunch", key: "log.lunch" },
+  { id: "snacks", key: "log.snacks" },
+  { id: "dinner", key: "log.dinner" },
 ];
 
 export default function RecipeBuilderPage() {
   const { t } = useI18n();
   const router = useRouter();
+  // Client-only date; server snapshot is "" so prerender never calls new Date()
+  const date = useSyncExternalStore(
+    () => () => {},
+    () => todayISO(),
+    () => "",
+  );
+  const createMeal = useMutation(api.mealLogs.create);
   const [servings, setServings] = useState(3);
   const [picked, setPicked] = useState<Record<string, number>>({ rice: 3, dal: 2, oil: 2 });
+  const [slot, setSlot] = useState<MealSlot>("lunch");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const total = useMemo(
     () =>
@@ -35,6 +62,14 @@ export default function RecipeBuilderPage() {
     [picked],
   );
   const perServing = servings > 0 ? total / servings : 0;
+  const totalGrams = useMemo(
+    () =>
+      Object.entries(picked).reduce((s, [id, qty]) => {
+        const ing = INGREDIENTS.find((i) => i.id === id);
+        return s + (ing ? ing.gramsPerUnit * qty : 0);
+      }, 0),
+    [picked],
+  );
 
   function bump(id: string, delta: number) {
     setPicked((p) => {
@@ -44,6 +79,36 @@ export default function RecipeBuilderPage() {
       else copy[id] = next;
       return copy;
     });
+  }
+
+  async function save() {
+    if (saved || saving || !date || total === 0) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await createMeal({
+        date,
+        slot,
+        method: "preset",
+        items: [
+          {
+            nameBn: "ভাত রান্না",
+            nameEn: "Home-cooked meal",
+            quantity: 1,
+            unit: "serving",
+            grams: Math.max(1, Math.round(totalGrams / servings)),
+            kcalLow: Math.round(perServing * 0.9),
+            kcalHigh: Math.round(perServing * 1.12),
+            sourceTag: "estimated-recipe",
+          },
+        ],
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -123,12 +188,28 @@ export default function RecipeBuilderPage() {
         body="Shared-pot cooking divides evenly. Adjust shares later if portions differ."
       />
 
+      {error && (
+        <NoticeCard tone="error" title="Could not save" body={error} />
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {SLOTS.map((s) => (
+          <Chip key={s.id} selected={slot === s.id} onClick={() => setSlot(s.id)}>
+            {t(s.key)}
+          </Chip>
+        ))}
+      </div>
+
       <div className="flex gap-3">
         <Button variant="secondary" onClick={() => router.back()}>
           {t("common.back")}
         </Button>
-        <Button full disabled={saved || total === 0} onClick={() => setSaved(true)}>
-          {saved ? `✓ ${t("states.saved")}` : t("common.save")}
+        <Button full disabled={saved || saving || total === 0} onClick={() => void save()}>
+          {saved
+            ? `✓ ${t("states.saved")}`
+            : saving
+              ? "Saving…"
+              : `${t("log.confirmSave")} ${t(`log.${slot}`)}`}
         </Button>
       </div>
     </div>

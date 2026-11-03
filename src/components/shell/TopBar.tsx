@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Search, User } from "lucide-react";
+import { BarChart3, Search, User } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -62,14 +62,13 @@ export default function TopBar({ title }: { title?: string }) {
 
       <ThemeToggle variant="top" />
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface"
+      <Link
+        href="/insights"
+        aria-label={t("nav.insights")}
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface"
       >
-        <Bell size={18} aria-hidden />
-        <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-coral" />
-      </button>
+        <BarChart3 size={18} aria-hidden />
+      </Link>
 
       <Link
         href="/settings"

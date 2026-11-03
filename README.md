@@ -41,6 +41,10 @@ bun run dev
 
 Wait for `Ready`, then open <http://localhost:3000>. Stop each server with `Ctrl+C` in its terminal.
 
+### Stale frontend after an update
+
+The service worker is production-only. Development automatically unregisters older workers and clears `deshi-health-*` caches. If the browser was already open when this fix landed, reload once; if stale UI remains, clear site data for `localhost:3000` in browser DevTools and reload.
+
 ## Gates
 
 ```bash

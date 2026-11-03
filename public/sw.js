@@ -1,5 +1,5 @@
 // Deshi Health Companion Service Worker (Wave 7 PWA)
-const CACHE_NAME = "deshi-health-v1";
+const CACHE_NAME = "deshi-health-v2";
 const STATIC_ASSETS = [
   "/",
   "/home",
@@ -69,4 +69,3 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
-

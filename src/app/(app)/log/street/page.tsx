@@ -1,42 +1,95 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { Button, Select, Field } from "@/components/forms/Forms";
 import { Range, SectionLabel, SourceTag, Chip } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
+import { api } from "../../../../../convex/_generated/api";
+import { todayISO } from "@/lib/foods/search";
+import type { MealSlot } from "@/lib/types";
 
 type StreetItem = {
   id: string;
   label: string;
   low: number;
   high: number;
+  grams: number;
   withOil?: boolean;
 };
 
 // Demo street-food table — FCTB/restaurant data lands in Wave 3.
 const ITEMS: StreetItem[] = [
-  { id: "khichuri", label: "খিচুড়ি / Khichuri plate", low: 450, high: 650 },
-  { id: "biryani", label: "বিরিয়ানি / Biriyani plate", low: 700, high: 950 },
-  { id: "fuchka", label: "ফুচকা / Fuchka (6)", low: 250, high: 350 },
-  { id: "jhal-muri", label: "ঝালমুড়ি / Jhal muri cup", low: 180, high: 280 },
-  { id: "burger", label: "বার্গার / Beef burger", low: 480, high: 680, withOil: true },
-  { id: "singara", label: "সিঙ্গারা ×2 / Samosa ×2", low: 260, high: 340 },
+  { id: "khichuri", label: "খিচুড়ি / Khichuri plate", low: 450, high: 650, grams: 350 },
+  { id: "biryani", label: "বিরিয়ানি / Biriyani plate", low: 700, high: 950, grams: 400 },
+  { id: "fuchka", label: "ফুচকা / Fuchka (6)", low: 250, high: 350, grams: 150 },
+  { id: "jhal-muri", label: "ঝালমুড়ি / Jhal muri cup", low: 200, high: 280, grams: 120 },
+  { id: "burger", label: "বার্গার / Beef burger", low: 480, high: 680, grams: 250, withOil: true },
+  { id: "singara", label: "সিঙ্গারা ×2 / Samosa ×2", low: 260, high: 340, grams: 100 },
+];
+
+const SLOTS: { id: MealSlot; key: string }[] = [
+  { id: "breakfast", key: "log.breakfast" },
+  { id: "lunch", key: "log.lunch" },
+  { id: "snacks", key: "log.snacks" },
+  { id: "dinner", key: "log.dinner" },
 ];
 
 export default function StreetFoodPage() {
   const { t } = useI18n();
   const router = useRouter();
+  // Client-only date; server snapshot is "" so prerender never calls new Date()
+  const date = useSyncExternalStore(
+    () => () => {},
+    () => todayISO(),
+    () => "",
+  );
+  const createMeal = useMutation(api.mealLogs.create);
   const [qty, setQty] = useState(1);
   const [oil, setOil] = useState<"extra" | "normal" | "less">("normal");
   const [pickedId, setPickedId] = useState("khichuri");
+  const [slot, setSlot] = useState<MealSlot>("lunch");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const item = ITEMS.find((i) => i.id === pickedId) ?? ITEMS[0];
   const oilFactor = oil === "extra" ? 1.12 : oil === "less" ? 0.92 : 1;
   const low = Math.round(item.low * qty * oilFactor);
   const high = Math.round(item.high * qty * oilFactor);
+
+  async function save() {
+    if (saved || saving || !date) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const [nameBn, nameEn] = item.label.split(" / ");
+      await createMeal({
+        date,
+        slot,
+        method: "preset",
+        items: [
+          {
+            nameBn,
+            nameEn,
+            quantity: qty,
+            unit: "serving",
+            grams: item.grams * qty,
+            kcalLow: low,
+            kcalHigh: high,
+            sourceTag: "estimated",
+          },
+        ],
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -101,12 +154,28 @@ export default function StreetFoodPage() {
         body="A 'plate' in Old Dhaka may differ from your area. Adjust qty to match what you actually got."
       />
 
+      {error && (
+        <NoticeCard tone="error" title="Could not save" body={error} />
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {SLOTS.map((s) => (
+          <Chip key={s.id} selected={slot === s.id} onClick={() => setSlot(s.id)}>
+            {t(s.key)}
+          </Chip>
+        ))}
+      </div>
+
       <div className="flex gap-3">
         <Button variant="secondary" onClick={() => router.back()}>
           {t("common.back")}
         </Button>
-        <Button full disabled={saved} onClick={() => setSaved(true)}>
-          {saved ? `✓ ${t("states.saved")}` : `${t("log.confirmSave")} · lunch`}
+        <Button full disabled={saved || saving} onClick={() => void save()}>
+          {saved
+            ? `✓ ${t("states.saved")}`
+            : saving
+              ? "Saving…"
+              : `${t("log.confirmSave")} ${t(`log.${slot}`)}`}
         </Button>
       </div>
     </div>

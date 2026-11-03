@@ -10,7 +10,7 @@ import { Range, SectionLabel, SourceTag, Chip } from "@/components/data/Primitiv
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatDate } from "@/lib/format";
-import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, HeartPulse, Leaf, Stethoscope, UtensilsCrossed, Wheat } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Leaf, UtensilsCrossed, Wheat } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
 import {

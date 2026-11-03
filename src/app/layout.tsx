@@ -19,7 +19,10 @@ const hind = Hind_Siliguri({
 });
 
 const themeScript = `(function(){try{var t=localStorage.getItem("deshi_theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
-const swScript = `(function(){if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}})();`;
+const swScript =
+  process.env.NODE_ENV === "production"
+    ? `(function(){if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){});});}})();`
+    : `(function(){if(!('serviceWorker' in navigator))return;window.addEventListener('load',function(){navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));}).then(function(){if(!('caches' in window))return;return caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k.indexOf('deshi-health-')===0;}).map(function(k){return caches.delete(k);}));});}).catch(function(){});});})();`;
 
 export const metadata: Metadata = {
   title: "Deshi Health Companion",
