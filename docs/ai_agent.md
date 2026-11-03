@@ -95,7 +95,7 @@ System rules enforced in the prompt (`convex/ai.ts`):
 
 **Privacy hard rule:** the action never receives age, weight, name or medical conditions. It only gets the message and safe categories (`mode`, `goal`, `lang`).
 
-**RAG grounding (live):** the coach page (`src/app/(app)/coach/page.tsx`) retrieves first — `embedQuery` → `rag.search` (threshold 0.8, top 5) — then calls `ai.chat` with the excerpts. The model marks sources inline as `[1]`, `[2]`; the client parses those markers into citation chips (`source — section` + page). Low/no hits → answer still returned but flagged `lowConfidence`. Stop button invalidates in-flight requests via a request counter.
+**RAG grounding (live):** the coach page (`src/app/(app)/coach/page.tsx`) retrieves first — `embedQuery` → `rag.search` (threshold 0.8, top 5; explicit indigenous/healthy-plate intents route to matching source types) — then calls `ai.chat` with the excerpts. The model marks sources inline as `[1]`, `[2]`; the client parses those markers into citation chips (`source — section` + page). No hit above threshold → localized refusal and no LLM call. `safeContext` comes from live `profile.get` and fails closed to `doctor-first` while loading. Stop invalidates in-flight requests via a request counter.
 
 ### 2.4 `ai.parseMeal` — structured meal parsing
 
@@ -528,6 +528,8 @@ bunx convex run rag:sources '{}'
 | Coach uses RAG chunks | ✅ wired — embed → `rag.search` (≥0.8, top 5) → `ai.chat` context |
 | Citation UI | ✅ `[n]` markers parsed into `CitationChip`s (source — section, p.N) |
 | Query rewrite (Bangla → English) | ✅ `ai.rewriteQuery` + merged second search (Bangla script or score < 0.8) |
+| Numeric validator | ✅ every reply digit traces to excerpts/user message; retry → fallback |
+| Wave 5 gate | ✅ 20/20 expected source in top-5; 10/10 unsafe prompts redirected |
 | Photo vision | ✅ `ai.analyzePhoto` live (FoodBD-gated, assisted mode) |
 | Voice | ⬜ Planned — Whisper |
 
@@ -535,6 +537,7 @@ bunx convex run rag:sources '{}'
 
 - Bangla/Banglish food names work well after the alias index: `alu bhorta` → 0.982, `ভর্তা` → 0.977.
 - Bangla *medical* questions rank food aliases first (`ডায়াবেটিস থাকলে ভাত কত খাব?` → panta bhat/dal bhat at 0.966, guideline only #4). Mitigated by `ai.rewriteQuery`: merged results now include 3 NDGB pages (p.88/91/105) in the top 5 — see `scripts/test_rag_rewrite.mjs`.
+- Explicit `indigenous` and healthy/balanced-plate intent routes to matching source tags; this closed the two initial Wave 5 misses and produced 20/20 in `scripts/eval_wave5.mjs`.
 - `rice-glycaemic-index-bau.pdf` is a scanned PDF with no text layer; it is the only `/data` source not in the corpus.
 
 ---

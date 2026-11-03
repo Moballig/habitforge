@@ -20,6 +20,24 @@ export type RagHit = {
   score: number;
 };
 
+/** Route only explicit corpus intents; everything else keeps hybrid retrieval. */
+export function inferRagSourceTag(query: string): RagHit["sourceTag"] | undefined {
+  const text = query.toLocaleLowerCase();
+  if (
+    text.includes("indigenous") ||
+    /দেশি\s+(?:শস্য|ডাল|খাদ্য)/u.test(text)
+  ) {
+    return "indigenous";
+  }
+  if (
+    /\b(?:healthy|balanced)\s+(?:meal|plate)\b/u.test(text) ||
+    /সুষম\s+(?:খাবার|থালা|প্লেট)/u.test(text)
+  ) {
+    return "guideline";
+  }
+  return undefined;
+}
+
 /**
  * Embeds a query with the local multilingual model (`/api/embed`).
  * Returns undefined when the model is unavailable, so callers can fall back

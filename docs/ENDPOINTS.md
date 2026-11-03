@@ -1,6 +1,6 @@
 # Deshi Health Companion — Backend Functions Documentation
 
-**Version:** 3.5 (aligned with Build Plan v3 — Waves 3 + 4 gates met)
+**Version:** 3.6 (aligned with Build Plan v3 — Waves 1–5 gates met)
 **Last Updated:** November 3, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
@@ -18,7 +18,7 @@
 
 | Module | Status | Purpose | Wave |
 |--------|--------|---------|------|
-| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice — 35 engine tests (77-test suite), property-tested | W1 |
+| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice — 35 engine tests (80-test suite), property-tested | W1 |
 | `convex/schema` | ✅ Done (v2 live) | profiles (+budgetControls), foods, mealLogs, activityLogs, budgetState (reserved), weighIns, auditLogs, weatherState, ragChunks + corpus tables | W1 |
 | `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls` — engine computes safetyMode server-side | W1 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
@@ -120,7 +120,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Convex Queries & Mutations (current — Waves 3 + 4 complete)
+## 3. Convex Queries & Mutations (current — Waves 3–5 complete)
 
 ### `profile` (Wave 1 — ✅ live)
 
@@ -222,7 +222,7 @@ await chatAction({
 // → { response: "... [1] ..." } | { error }
 ```
 
-Pipeline (✅ live): client `embedQuery` → `rag.search` (hybrid, ≥0.8, top 5) → optional `ai.rewriteQuery` when the query has Bangla script or the first pass is weak (second search, merged best-score-per-chunk) → Groq with numbered excerpts → answer with inline `[n]` markers → client parses markers into citation chips. No hits above threshold → answer flagged `lowConfidence`. **Numeric validator (FR-F-02, live):** every digit in the reply must appear in the retrieved excerpts or the user's message (`src/lib/ai/numbers.ts`) — violation → one corrective retry → language-matched template fallback.
+Pipeline (✅ live, Wave 5 gate met): client `embedQuery` → `rag.search` (hybrid, ≥0.8, top 5; explicit indigenous/healthy-plate intent routes to matching source type) → optional `ai.rewriteQuery` for Bangla/weak first pass → Groq with numbered excerpts → inline `[n]` markers → citation chips. No hit above threshold → localized `coach.lowConf` refusal; `ai.chat` is not called. `safeContext.mode/goal` comes from live `profile.get` and fails closed to `doctor-first` while loading. **Numeric validator:** every reply digit must occur in excerpts or the user's message; violation → one corrective retry → language-matched fallback. Gate: **20/20** source retrieval, **10/10** unsafe refusal (`scripts/eval_wave5.mjs`).
 
 ```ts
 await rewriteAction({ query: "ডায়াবেটিস থাকলে ভাত কত খাব?" });
@@ -278,7 +278,7 @@ await analyzePhoto({
 | Groq error / rate limit | `{ error }` or **local fallback** (tap-to-pick, cached answer, templates); logging + engine unaffected |
 | Model returns non-JSON | Fallback list / template (still success where safe) |
 | Number validator fails | **Live (FR-F-02):** untraceable digit → one corrective retry → language-matched template fallback (offenders logged: `Coach number-check retry/fallback`) |
-| Retrieval below threshold | Answer still returned but flagged `lowConfidence`; system prompt forbids invented numbers (full refusal pending) |
+| Retrieval below threshold | Client returns localized guideline refusal (`lowConfidence`) and does not call `ai.chat` |
 | Offline | Parser → tap-to-pick; coach/photo offline-only; plan + logging work from IndexedDB + `lib/engine` |
 
 **Food logging, plan, and engine must always work — even when AI is down or offline** (§6-I, Plan v3 §0).

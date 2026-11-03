@@ -1,6 +1,6 @@
 # Deshi Health Companion — System Architecture
 
-**Version:** 3.3 (aligned with Build Plan v3 — Waves 1–4 gates met, Wave 5 coach live)
+**Version:** 3.4 (aligned with Build Plan v3 — Waves 1–5 gates met)
 **Last Updated:** November 3, 2026
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md` §4, §7
 **Base platform:** existing Next.js 16 + Convex + Groq repo (formerly HabitForge — platform carries over, product pivots)
@@ -53,9 +53,9 @@ flowchart TB
 | Layer | Used for | Notes | Repo status |
 |-------|----------|-------|-------------|
 | **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
-| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 35 engine tests (77-test suite), property-tested |
-| **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; chunks carry source, section, page, language; refuse below tuned threshold | ✅ **9,447 chunks** ingested; coach chat live (embed → `rag.search` → rewrite → `ai.chat` → citation chips); 20-question gate pending |
-| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **No tool-calling today** — numbers traced post-hoc by the **numeric validator** (FR-F-02, live: digit → excerpts/user message, 1 retry → fallback); `lowConfidence` flag when retrieval is thin. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — `convex/ai.ts` `groqChat()`; `chat` (RAG pipeline: embed → `rag.search` → rewrite → chat → citations), `parseMeal`, `analyzePhoto` |
+| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 35 engine tests (80-test suite), property-tested |
+| **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; explicit indigenous/healthy-plate intents route to matching source type; chunks carry source, section, page, language | ✅ **9,447 chunks** ingested; coach chat live; Wave 5 retrieval gate **20/20** right source in top-5 |
+| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **No tool-calling today** — numeric validator traces digits → excerpts/user message (1 retry → fallback); no-hit retrieval refuses before Groq. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — RAG chat + citations; unsafe gate **10/10**; `parseMeal`, `analyzePhoto` |
 | **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — **verified live 2026-11-03**; note qwen on_demand ITPM 7k/min ⇒ compact `id|nameEn` candidates + 429 retry; assisted flow with confirm screen | ✅ `ai.analyzePhoto` live |
 
 > **Hard rules (§5.5, §7.1, Plan v3 §0):**
@@ -283,7 +283,8 @@ sequenceDiagram
     A->>G: chat.completions (numbered excerpts + no-invented-numbers rules)
     G-->>A: answer with inline [n] markers
     A-->>UI: { response } | { error }
-    UI->>U: Answer + citation chips from [n] markers<br/>(lowConfidence when below threshold)
+    UI->>U: Answer + citation chips from [n] markers
+    Note over UI: No hit above threshold → localized refusal; ai.chat skipped
     Note over UI: number validator — live: digit trace → excerpts/user msg, retry → fallback
 ```
 
@@ -347,8 +348,8 @@ habitforge/
 │   │   ├── foods/portion.ts       #    Shared-pot fraction → grams
 │   │   ├── foods/parser.test.ts   #    20 Bangla/Banglish gate lines
 │   │   ├── foods/portion.test.ts  #    Shared-pot dal gate
-│   │   ├── ai/                    #    numbers.ts (FR-F-02 validator), photo compress, rag client glue
-│   │   │   ├── numbers.ts         #    unsourcedNumbers — digit trace to sources (+ test)
+│   │   ├── ai/                    #    number validator, RAG intent routing, photo/RAG client glue (+ tests)
+│   │   │   ├── numbers.ts         #    unsourcedNumbers — digit trace to sources
 │   │   ├── i18n.tsx               #    Bangla/English + numerals
 │   │   ├── types.ts               #    UI types (SafetyMode, Profile, FoodItem)
 │   │   ├── mock/index.ts          #    Demo fixtures (/dev/components; app routes Convex-backed)
@@ -403,7 +404,7 @@ habitforge/
 | API key exposure | `GROQ_API_KEY` in **Convex deployment env vars**, read only inside actions (`"use node"`); never bundled to client |
 | Input validation | Convex validators reject bad args before handlers |
 | **LLM privacy (hard rule)** | Never send age, weight, name, or health conditions to Groq — only food text, question, and safe categories (`mode=restricted`) set by code |
-| LLM hallucinated numbers | Numeric validator (§4.4) traces every digit → retry → template fallback; plus system prompt + `lowConfidence` flag |
+| LLM hallucinated numbers | Numeric validator (§4.4) traces every digit → retry → template fallback; no-hit retrieval refuses before Groq |
 | Health data | Consent screen, delete-my-data (Convex + local cache), encrypted transport; audit log of retrievals (§6-J) |
 | XSS | React default escaping; no `dangerouslySetInnerHTML` |
 | Secrets in git | `.env*` git-ignored; no secrets in source |

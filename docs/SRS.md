@@ -1,6 +1,6 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
-**Version:** 2.4 (Waves 3 + 4 gates met; traceability updated)
+**Version:** 2.5 (Waves 1–5 gates met; Wave 5 eval recorded)
 **Date:** November 3, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
@@ -406,10 +406,10 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-SAFETY-01 | Onboarding screen (6 flags) | P0 | W1 | ✅ | `safety.ts` `screenFromAnswers()` |
 | FR-SAFETY-02 | High-risk → deficits off + referral | P0 | W1 | ✅ | `safetyMode()`; `allowsDeficit()` |
 | FR-SAFETY-03 | ED guardrails (no shaming) | P0 | W1 | ✅ | `safetyMode()` + UI tone |
-| FR-SAFETY-04 | Diabetes mode (no fasting/intense) | P0 | W5 | ⬜ | Condition-aware mode |
+| FR-SAFETY-04 | Diabetes mode (no fasting/intense) | P0 | W5 | ✅ | Insulin/sulfonylurea → deterministic `doctor-first`; coach uses live profile mode and refuses fasting/intense exercise without medical review; gate B03 pass |
 | FR-SAFETY-05 | "Not a medical device" visible | P0 | W1 | ✅ | `SafetyBanner`, settings |
 | FR-SAFETY-06 | LLM never sets numbers | P0 | W1 | ✅ | Engine pure TS; AI scaffold sends safeContext only |
-| FR-SAFETY-07 | Red-flag → stop-and-seek-care | P0 | W5 | ⬜ | Coach refusal rules |
+| FR-SAFETY-07 | Red-flag → stop-and-seek-care | P0 | W5 | ✅ | Coach redirects chest pain/fainting/severe dizziness to immediate hospital care; gate B06/B10 pass |
 
 ### 9.2 Functional by Area (FR-A…FR-K)
 
@@ -495,9 +495,9 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
 | FR-F-01 | Chat BN/EN/Banglish | P0 | W5 | ✅ | `/coach` live: `ai.chat` follows user language (Bangla script → `lang: bn`) |
-| FR-F-02 | Grounded answers + citations | P0 | W5 | 🔄 | Hybrid retrieval + `[n]` citation chips live; **numeric validator live** (`src/lib/ai/numbers.ts`: every digit traced to excerpts + user message, 1 retry → language-matched template fallback — live-proven); below-threshold answers flagged `lowConfidence` (full refusal pending) |
+| FR-F-02 | Grounded answers + citations | P0 | W5 | ✅ | Gate 20/20 right source in top-5; `[n]` citation chips; explicit source-intent routing; numeric validator traces every digit → excerpts/user message (1 retry → fallback); no-hit retrieval returns localized refusal without calling the LLM |
 | FR-F-03 | Deterministic numbers | P0 | W1 | ✅ | Engine pure TS |
-| FR-F-04 | Refusal/redirect rules | P0 | W5 | 🔄 | Prompt rules live (no diagnosis/medication, no invented numbers, doctor-first → no targets); gate tests for unsafe prompts pending |
+| FR-F-04 | Refusal/redirect rules | P0 | W5 | ✅ | 10/10 unsafe prompts calmly refused with safer alternative (`scripts/eval_wave5.mjs`): crash diet, fasting/insulin, compensation, purging, red flags, pills, diagnosis |
 | FR-F-05 | Meal suggestions (budget/season) | P1 | W5 | ⬜ | Planned |
 | FR-F-06 | Smart swaps | P1 | W5 | ⬜ | Planned |
 | FR-F-07 | Cheap-protein finder | P1 | W5 | ⬜ | Planned |
@@ -600,13 +600,13 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | Area | Total IDs | ✅ Done | 🔄 Partial | ⬜ Planned | — N/A |
 |------|-----------|---------|------------|------------|--------|
-| Engine (ENG/REBAL/ATDEE/SAFETY) | 29 | 27 | 0 | 2 | 0 |
+| Engine (ENG/REBAL/ATDEE/SAFETY) | 29 | 29 | 0 | 0 | 0 |
 | A Onboarding | 9 | 8 | 0 | 1 | 0 |
 | B Logging | 15 | 2 | 7 | 4 | 2 |
 | C Tracking | 8 | 2 | 0 | 6 | 0 |
 | D Activity | 10 | 3 | 1 | 6 | 0 |
 | E Balance | 10 | 10 | 0 | 0 | 0 |
-| F Coach | 11 | 2 | 2 | 7 | 0 |
+| F Coach | 11 | 4 | 0 | 7 | 0 |
 | G Personalisation | 12 | 1 | 0 | 11 | 0 |
 | H UX | 6 | 3 | 0 | 3 | 0 |
 | I Offline | 6 | 0 | 2 | 2 | 2 |
@@ -614,6 +614,6 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | K Admin | 4 | 1 | 0 | 3 | 0 |
 | NFR | 10 | 6 | 4 | 0 | 0 |
 | AC | 10 | 2 | 0 | 8 | 0 |
-| **Total** | **147** | **70** | **17** | **56** | **4** |
+| **Total** | **147** | **74** | **15** | **54** | **4** |
 
-> Status reflects Waves 1–4 gates met and Wave 5 coach live (Nov 3, 2026) — recounted from §9.1–9.4 (147 IDs incl. 4 out-of-scope `—`). Remaining P0 gaps: FR-SAFETY-04 + FR-SAFETY-07 (⬜), FR-F-02 + FR-F-04 (🔄) — all Wave 5 gate work; carried P1s in `docs/deferred.md`.
+> Status reflects Waves 1–5 gates met (Nov 3, 2026) — recounted from §9.1–9.4 (147 IDs incl. 4 out-of-scope `—`). Wave 5 closed FR-SAFETY-04/07 and FR-F-02/04; carried P1s remain in `docs/deferred.md`.

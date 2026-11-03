@@ -1,7 +1,7 @@
 # Deshi Health Companion — Data Flow Diagrams & Sequence Diagrams
 
-**Version:** 1.0
-**Date:** November 2, 2026 (flows updated Nov 3 for live `budget.get` / client-side RAG coach)
+**Version:** 1.1
+**Date:** November 3, 2026 (Waves 1–5 gates met; live `budget.get` / RAG coach flows)
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md` §5, §7; `docs/ARCHITECTURE.md`
 
 ---
@@ -428,13 +428,17 @@ sequenceDiagram
     opt Bangla script or top score < 0.8
         UI->>R: ai.rewriteQuery(q) → embed → second search → merged hits
     end
-    UI->>A: ai.chat({ message, safeContext, context: top excerpts })
-    Note over A: safeContext set by code from safetyMode<br/>— NEVER raw profile data
-    A->>G: chat.completions (numbered excerpts +<br/>no-invented-numbers system rules)
-    G-->>A: answer with inline [n] markers
-    A-->>UI: { response } | { error }
-    UI->>U: Answer + citation chips from [n] markers<br/>(lowConfidence when below threshold)
-    Note over UI: Number validator — live: digit trace → excerpts/user msg, retry → fallback
+    alt no hit above threshold
+        UI->>U: Localized guideline refusal (lowConfidence)<br/>ai.chat not called
+    else grounded hits
+        UI->>A: ai.chat({ message, live safeContext, context: top excerpts })
+        Note over A: safeContext from profile.safetyMode<br/>— fail closed, NEVER raw profile data
+        A->>G: chat.completions (numbered excerpts + safety rules)
+        G-->>A: answer with inline [n] markers
+        Note over A: Number validator — digit trace → excerpts/user msg<br/>retry once → fallback
+        A-->>UI: { response } | { error }
+        UI->>U: Answer + citation chips from [n] markers
+    end
 ```
 
 ### 4.6 Privacy — Delete My Data

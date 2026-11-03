@@ -50,7 +50,7 @@
 |---|---|
 | LLM computes TDEE/budgets | Rejected — nondeterministic, untestable, can be jailbroken into unsafe deficits |
 | DB stored procedures | Works, but splits logic away from the client; the browser needs the *same* math offline for the PWA |
-| **Pure TS module shared by client + Convex** ✅ | Runs in browser (offline logging), runs in actions (plan generation), 35 engine tests (77-test suite), `tsc` catches signature drift |
+| **Pure TS module shared by client + Convex** ✅ | Runs in browser (offline logging), runs in actions (plan generation), 35 engine tests (80-test suite), `tsc` catches signature drift |
 
 `src/lib/engine/` exports `bmr`, `tdee`, `adaptiveTdee`, `rebalance`, `safetyMode`, `sharedPotGrams` — all pure. Property tests assert invariants no LLM could promise (e.g., rebalance never plans below the personal floor; recovery covers 50–70% of overshoot, never 100%).
 
@@ -124,7 +124,7 @@ Three properties we needed:
 
 ### Q11 — "Where did threshold 0.8 come from? Is it calibrated?"
 
-**Empirically, on 8 probe queries — that's the honest scope.** Post-audit probes: 8/8 top-1 relevance with scores 0.927–1.004 for good hits; known-bad neighbors (e.g., FCTB "bhorta" vs alias "dim bhorta" at 0.959) show that *high score ≠ unambiguous*, which is why 0.8 is a **precision-leaning gate**: below it we show `lowConfidence` and let the model answer without invented numbers rather than injecting noise. It is *not* a probability. Proper next step: a 100-query golden set with relevance labels → pick threshold for target precision/recall (see Q53).
+**Empirically: initial 8/8 top-1 probes, then 20/20 expected-source Wave 5 gate.** Scores of 0.927–1.004 for good hits and known noisy neighbors show that *high score ≠ unambiguous*; 0.8 is a **precision-leaning gate**, not a probability. Below it the client now returns a localized refusal without calling the model. Proper next step: a 100-query golden set with relevance labels → pick threshold for target precision/recall (see Q53).
 
 ### Q12 — "Why no reranker (cross-encoder)? Isn't top-5 from a bi-encoder sloppy?"
 
@@ -250,7 +250,7 @@ Layered, and honest about limits:
 3. **Numbers don't flow into the UI engine:** chat text is *display*, not *state*. The app's numbers (budgets, grams, kcal in logs) come from the engine and parser — the LLM cannot mutate a plan by prose.
 4. **Context excerpts are server-built** from the trusted corpus — users can't inject into the `[n]` blocks.
 
-*What we don't claim:* adversarial robustness of the prose itself. A determined user can probably get the *coach text* to say something off-policy. The hard guarantees we'd add next: a numeric validator (block any digit-sequence not in an excerpt/tool result — planned, not built) + output moderation. **Never claim "injection-proof"; claim "injection can't change numbers or safety mode."**
+*What we don't claim:* adversarial robustness of the prose itself. A determined user may still find off-policy phrasing. Numeric traceability is now enforced (digit must occur in excerpts/user message; retry → fallback), and the 10-prompt unsafe gate passed; output moderation/classification remains future work. **Never claim "injection-proof"; claim "injection can't change numbers or safety mode."**
 
 ### Q26 — "Why is the coach single-turn? The UI shows a conversation."
 
@@ -286,7 +286,7 @@ Because prompts are advisory and code is tested. `safetyMode(screen)` (src/lib/e
 
 ### Q30 — "What happens when the model gives dangerous advice anyway?"
 
-Current controls: system rules (no diagnosis/medication, referral text under `doctor-first`, red-flag responses), "not a medical device" statement in product, no streak-shaming / no compensation language (tested vocabulary bans). Detection today is manual. Planned hardening (ordered): numeric validator → output classifier for medical claims → logged review queue. **No claim of clinical safety — this is a wellness product with guardrails, not a medical device.**
+Current controls: system rules (no diagnosis/medication, referral under `doctor-first`, red-flag responses), live profile-derived safety mode, no-hit refusal, numeric validator, and 10/10 unsafe-prompt gate. Planned hardening: output classifier for medical claims → logged review queue. **No claim of clinical safety — this is a wellness product with guardrails, not a medical device.**
 
 ### Q31 — "No auth? So anyone can burn your Groq key?"
 
@@ -394,9 +394,9 @@ We do **not** claim benchmark numbers we don't have.
 
 ### Q43 — "Why property-based tests for the engine?"
 
-Safety invariants are universal statements: *for all inputs*, rebalance never plans below BMR, never recovers 100% of overshoot, `sharedPotGrams` never exceeds the pot. Example-based tests (77 passing) sample the space; property tests generate inputs (extreme weights, zero days, huge overshoots) and would have caught boundary bugs a fixed fixture list misses. The engine is exactly where a bug = a user eating 800 kcal/day — worth the investment.
+Safety invariants are universal statements: *for all inputs*, rebalance never plans below BMR, never recovers 100% of overshoot, `sharedPotGrams` never exceeds the pot. Example-based tests (80 passing) sample the space; property tests generate inputs (extreme weights, zero days, huge overshoots) and would have caught boundary bugs a fixed fixture list misses. The engine is exactly where a bug = a user eating 800 kcal/day — worth the investment.
 
-### Q44 — "Is 77 tests enough?"
+### Q44 — "Is 80 tests enough?"
 
 Enough for *today's* engine + data surface (energy, rebalance, adaptive, safety, portion, parser, foods, AI-number validation), plus `tsc` + lint + build as gates. Not enough for: RAG quality (Q42), prompt/LLM behaviour (need golden transcripts), offline sync conflicts, and Convex-function tests (no convex-test suite). We'd add CI wiring (`bun run test` already excludes the vendored `data/ifct2017` JSR test that breaks root-level `bun test`).
 
@@ -420,14 +420,14 @@ ChatGPT is a better *chat*; this is a *system* where chat is one bounded compone
 
 ### Q46 — "What's the single biggest technical risk?"
 
-**Cross-lingual retrieval quality at scale of real user phrasing.** We've validated 8 probes + one rewrite ablation; Bangla users will phrase things we never tested, and the corpus has 0 pure-Bangla guideline chunks. The rewrite path is the load-bearing wall — if it underperforms, Bangla medical answers degrade to `lowConfidence` mode (safe, but less useful). Mitigations: golden-set eval in Bangla, more aliases, possibly bilingual guideline summaries.
+**Cross-lingual retrieval quality at scale of real user phrasing.** We passed 20/20 expected-source questions after the initial 8 probes + rewrite ablation, but real Bangla users will phrase things we never tested and the corpus has 0 pure-Bangla guideline chunks. Rewrite + narrow source-intent routing are load-bearing; misses degrade to a localized refusal (safe, less useful). Mitigations: a larger Bangla golden set, more aliases and bilingual guideline summaries.
 
 *Second risk:* serverless embedder cold starts (Q20) — known, mechanical, solvable with money/architecture.
 
 ### Q47 — "What would you do with four more weeks?"
 
 1. **Auth + rate limits** (unblocks production, fixes the key-burn hole).
-2. **Numeric validator** — every digit in a chat reply must exist in an excerpt or tool result; else strip/regenerate. Closes the last P1 gap.
+2. **Output moderation + safety audit** — classify medical claims, persist refusal/retrieval review events.
 3. **Golden eval set** (200 queries, bn/en/Banglish) + recall@k/MRR dashboards; threshold re-calibration.
 4. **Bangla corpus pass** — NDGB section summaries in Bangla with honest `p.N` links; alias expansion for the 135 facts missing `nameBn`.
 5. **Reranker** (small cross-encoder) if eval shows rank-1 misses.
@@ -436,7 +436,7 @@ ChatGPT is a better *chat*; this is a *system* where chat is one bounded compone
 
 ### Q48 — "Why should I trust the calorie numbers on screen?"
 
-Because every displayed number has a chain: `foods`/`foodFacts` row → `sourceTag` → documented table (FCTB/IFCT/project seed) → auditable in `datasetSources`. Engine numbers trace to published formulas (Mifflin-St Jeor, 7,700 kcal/kg) with tests. The *coach's prose* numbers are the weakest link — mitigated by the citation rule and pending validator — which is exactly why the UI never *computes* from chat text.
+Because every displayed number has a chain: `foods`/`foodFacts` row → `sourceTag` → documented table (FCTB/IFCT/project seed) → auditable in `datasetSources`. Engine numbers trace to published formulas (Mifflin-St Jeor, 7,700 kcal/kg) with tests. Coach prose numbers are post-validated against excerpts/user input, with retry → safe fallback; the UI still never computes from chat text.
 
 ### Q49 — "What would you change if you restarted?"
 
@@ -466,7 +466,7 @@ The *pieces* are standard (RAG, hybrid search, dual encoders, JSON-mode parsing,
 | Hybrid score ranges | keyword 0.50–0.80, vector 0.50–1.00, +0.05 both |
 | Context gate / limits | ≥0.80, top 5, ≤6 × 700 chars |
 | LLM / parse / rewrite temps | 0.7 / 0.1 / 0 · rewrite maxTokens 400 |
-| Tests / lint / build | 77 pass · 0 errors (4 pre-existing warnings) · 20 routes |
+| Tests / lint / build | 80 pass · 0 errors (4 pre-existing warnings) · 20 routes |
 | Ingest rate | ~4.4 chunks/s full (41 min), 14.4/s selective |
 | Groq embeddings | verified 404, no embedding endpoint |
 | Duplicate-key incident | 413 rows → fixed → 0 across 9,447 |

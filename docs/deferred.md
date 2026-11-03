@@ -29,9 +29,8 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 - **Mock fixtures still rendered**: `RightPanel` shows `TODAY_MEALS`, `/coach` opens with a `COACH_SEED` demo exchange, `/settings` uses `DEMO_PROFILE`, `/dev/components` gallery — cosmetic only; all live data paths use Convex.
 - **`/log` chips decorative**: Recents / Favourites / Same yesterday / Copy meal render but have no handlers (`listRecent`/`copyMeal` APIs are ready).
 
-## Wave 5+ (coach live; gate + P1s pending)
+## Wave 5+ (gate met; P1s pending)
 
-- **20-question guideline gate** + unsafe-prompt refusal tests — coach pipeline live (embed → hybrid search → rewrite → `ai.chat` → citation chips) and the numeric validator shipped Nov 3 (digits trace → excerpts/user message; retry → template fallback).
 - Taka-aware weekly planner + shopping list (FR-G-05), dietitian PDF export (FR-G-10).
 - PWA service worker / offline sync / data-saver (FR-I-01/04/05 — manifest only today).
 - Admin CRUD, prices/bazar module, analytics dashboard (FR-K-*).
@@ -39,7 +38,7 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 ## Quality / test gaps
 
 - **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary` verified only by live `convex run` checks during the session (values hand-checked, test rows removed after).
-- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity` (bun suite covers engine + foods/parser/portion/groups + AI numbers; 77 passing).
+- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent; 80 passing).
 - **No visual/browser check** of any page — verification is HTTP 200 + API-level only.
 - **Plate-group simplification**: mixed dishes and the "Dairy & drinks" section count as `other` in `daySummary.plate` (deliberate; revisit if plate balance gets scrutiny).
 - **`budget.whatIf` extraKcal capped at 10,000** — a single day can't exceed the weekly budget via the simulator alone when the week is empty (correct behaviour, noted so it isn't mistaken for a bug).

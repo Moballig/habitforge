@@ -9,7 +9,7 @@
 
 ## Abstract
 
-Bangladesh carries one of South Asia's highest diabetes burdens (13.2% of adults, IDF 2024) yet its users rely on global calorie trackers that lack Bangla language, Bangladeshi foods, and local dietary guidance. We present **Deshi Health Companion**, a web/PWA nutrition companion built on a strict separation of concerns: *structured data owns numbers, a deterministic engine owns decisions, a retrieval-augmented language model owns words.* The system computes energy budgets, safety gates, and food mathematics exclusively in typed, unit-tested TypeScript; a large language model (LLM) never sets a number and never receives personal identifiers — only the user's message and coarse, code-derived safety categories. A Bangladesh-first knowledge base of **9,447 text chunks** drawn from 16 sources (national dietary guidelines, food-composition tables, indigenous food tables, research papers, and market-price series) is embedded locally with a 384-dimensional multilingual E5 model and searched with a hybrid vector–keyword retriever. Because the hosting LLM provider exposes no embedding endpoint, query embeddings run in-process on commodity CPUs. A Groq-powered query rewrite closes the Bangla→English cross-lingual gap for medical questions. We report retrieval quality on eight probe queries (8/8 top-1 relevance), a 53-test deterministic engine suite, and a full production build. Limitations — recipe-corpus skew, no pure-Bangla chunks, and extraction noise — are quantified from a live data audit.
+Bangladesh carries one of South Asia's highest diabetes burdens (13.2% of adults, IDF 2024) yet its users rely on global calorie trackers that lack Bangla language, Bangladeshi foods, and local dietary guidance. We present **Deshi Health Companion**, a web/PWA nutrition companion built on a strict separation of concerns: *structured data owns numbers, a deterministic engine owns decisions, a retrieval-augmented language model owns words.* The system computes energy budgets, safety gates, and food mathematics exclusively in typed, unit-tested TypeScript; a large language model (LLM) never sets a number and never receives personal identifiers — only the user's message and coarse, code-derived safety categories. A Bangladesh-first knowledge base of **9,447 text chunks** drawn from 16 sources (national dietary guidelines, food-composition tables, indigenous food tables, research papers, and market-price series) is embedded locally with a 384-dimensional multilingual E5 model and searched with a hybrid vector–keyword retriever. Because the hosting LLM provider exposes no embedding endpoint, query embeddings run in-process on commodity CPUs. A Groq-powered query rewrite closes the Bangla→English cross-lingual gap for medical questions. Wave 5 measured **20/20** expected-source retrieval and **10/10** unsafe-prompt refusal; the code suite has **80 passing tests** (35 engine). Limitations — recipe-corpus skew, no pure-Bangla chunks, and extraction noise — are quantified from a live data audit.
 
 **Keywords:** nutrition, RAG, multilingual embeddings, Bangla, safety-critical LLM, Convex, low-resource languages
 
@@ -43,7 +43,7 @@ Concretely:
 
 ### 1.3 Contributions
 
-1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 35 passing engine tests (77-test suite).
+1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 35 passing engine tests (80-test suite).
 2. A **candidate-constrained meal parser**: the LLM may only select from ≤25 client-supplied foods and extract quantities; all math is code-side.
 3. A **Bangladesh-first RAG corpus**: 9,447 chunks + 65,275 structured rows from 16 audited sources, with per-source provenance, quality tiers, and a published defect ledger.
 4. A **local multilingual retrieval stack**: `multilingual-e5-small` (384-d, ONNX q8) embedded in the app server, hybrid vector–keyword search on Convex, and a Groq query rewrite that lifts Bangla medical queries from 1 to 3 guideline pages in the top-5.
@@ -105,7 +105,7 @@ flowchart TB
 | Layer | Owns | Must never own | Implementation |
 |---|---|---|---|
 | Structured food DB | kcal, macros, household measures, aliases, prices | prose answers | Convex `foods` (318) + bundled seed |
-| Deterministic engine | BMR/TDEE, budgets, `safetyMode`, rebalance, shared-pot grams | free text | `src/lib/engine/`, `src/lib/foods/`, `src/lib/ai/` — 77 tests |
+| Deterministic engine | BMR/TDEE, budgets, `safetyMode`, rebalance, shared-pot grams | free text | `src/lib/engine/`, `src/lib/foods/`, `src/lib/ai/` — 80 tests |
 | Vector store | guidelines, composition tables, recipes, prices | personal data | `ragChunks` (9,447 × 384-d) + 5 structured tables |
 | LLM (Groq) | understanding, candidate selection, friendly explanation, citations | **any number, any PII** | `convex/ai.ts` → `groqChat()` |
 | Embeddings (local) | passage/query vectors | network calls to paid APIs | `POST /api/embed` (ONNX, q8) |
@@ -291,7 +291,7 @@ Eight probe queries against the live deployment (hybrid search, `k=4`), evaluate
 | `roti calories` | 0.934 | FCTB Ruti, 246 kcal | ✅ (noisy runners-up) |
 | `kichuri` | 0.927 | FCTB Khichuri, 163 kcal | ✅ |
 
-**8/8 top-1 relevance** (3/8 with noisy runners-up). Scores exceed 1.0 only via the both-channels bonus.
+**Initial probe: 8/8 top-1 relevance** (3/8 with noisy runners-up). The later Wave 5 gate passed **20/20 expected source in top-5**, including explicit indigenous/healthy-plate source routing. Scores exceed 1.0 only via the both-channels bonus.
 
 **Rewrite ablation (Bangla medical query).** For `ডায়াবেটিস থাকলে ভাত কত খাব?`, single-channel retrieval returned 3 alias chunks + 1 guideline page (rank 4). After `ai.rewriteQuery` + merged search: top-5 = 2 aliases + **3 NDGB pages (p.88, p.91, p.105)**, giving the coach both dish context and guideline context. Food queries (`খিচুড়ি কত ক্যালোরি` → khichuri alias 0.995 + FCTB fact 0.960) remain correct after merging.
 
@@ -299,12 +299,13 @@ Eight probe queries against the live deployment (hybrid search, `k=4`), evaluate
 
 | Gate | Result |
 |---|---|
-| Unit/property tests (engine, foods, parser, portion, AI numbers) | **77 pass / 0 fail** (`bun run test`, ≈156k assertions) |
+| Unit/property tests (engine, foods, parser, portion, AI numbers/RAG intent) | **80 pass / 0 fail** (`bun run test`, ≈155k assertions) |
 | TypeScript (`tsc --noEmit`, client + Convex) | 0 errors |
 | ESLint | 0 errors (4 pre-existing warnings in generated files) |
 | Production build | 20 routes incl. dynamic `/api/embed` |
 | Live smoke: `/coach`, `/home`, `POST /api/embed` | 200 / 200 / 384 dims |
 | RAG data audit | 9,447 rows, **0 duplicate keys**, all embeddings 384-d |
+| Wave 5 RAG / refusal gate | **20/20** expected source in top-5 · **10/10** unsafe prompts redirected · numeric validator live |
 
 ### 8.3 Data-quality audit
 
@@ -332,7 +333,7 @@ The bottleneck is local ONNX inference at ingestion, not Convex writes; one-time
 
 **Extraction noise.** 1,100 of 1,481 book chunks (74.3%) are digit-heavy table pages — last-resort references, poor semantic matches. One source (`rice-glycaemic-index-bau.pdf`) is a scanned PDF with no text layer and is absent from the corpus.
 
-**Heuristic threshold.** The 0.80 context threshold is calibrated on eight probes, not a labelled set; hybrid scores are not probabilities. Below-threshold answers still occur, flagged `lowConfidence`.
+**Heuristic threshold.** The 0.80 context threshold began with eight probes and passed the 20-question Wave 5 gate, but hybrid scores are not probabilities. Below-threshold retrieval now returns a localized `lowConfidence` refusal without calling the LLM.
 
 **Serverless embeddings.** Running a ≈118 MB ONNX model inside a serverless function makes cold starts the main UX risk; a small always-on container (or bundled model cache) is the production answer.
 
@@ -346,7 +347,7 @@ The bottleneck is local ONNX inference at ingestion, not Convex writes; one-time
 
 Deshi Health Companion demonstrates that a nutrition assistant for a low-resource language context can be simultaneously *local* (Bangla/Banglish foods and prices), *grounded* (9,447 citable chunks from official and community sources), and *safe* (a deterministic, tested engine that the LLM cannot override and personal data it cannot see). The retrieval stack shows that the absence of an embedding API is not a blocker: a quantized multilingual encoder on commodity CPU plus hybrid search and a one-line LLM rewrite deliver credible cross-lingual recall.
 
-Immediate next steps, in order: (1) the Wave 5 gate itself — 20-question guideline eval + unsafe-prompt refusal tests (numeric validator shipped Nov 3); (2) Bangla voice logging (the last open Wave 2 P1 item — plate-photo vision shipped Nov 3 with its FoodBD gate); (3) Bangla aliases and guideline summaries to close the `bn`-chunk gap; (4) price normalisation to BDT/kg and recipe-corpus quotas; (5) OCR of the glycaemic-index PDF; (6) a `rag.stats` audit query; and (7) user testing with Bangla-speaking participants before any production move.
+Immediate next steps, in order: (1) Wave 6 personalisation (regional defaults, Ramadan/condition-aware plates, taka-aware planning); (2) Bangla voice logging (the last open Wave 2 P1 item — plate-photo vision shipped Nov 3); (3) Bangla guideline summaries to close the `bn`-chunk gap; (4) price normalisation to BDT/kg and recipe-corpus quotas; (5) OCR of the glycaemic-index PDF; (6) a `rag.stats` audit query; and (7) user testing with Bangla-speaking participants before any production move.
 
 ---
 

@@ -112,8 +112,11 @@ Rules:
 - Be warm, practical, shame-free. Never say "cheat day", "burn off", or "bad food".
 - Ground answers in Bangladeshi foods (bhat, dal, mach, dim, ruti, khichuri).
 - If safetyMode is doctor-first or restricted: no calorie targets, deficits, or exercise compensation; suggest talking to a doctor or registered dietitian.
-- Never invent precise calorie numbers. If you must mention numbers, keep them approximate and clearly labelled as rough.
-- Not a medical device. No diagnosis, no medication advice.
+- Numbers: only state a figure that literally appears in the reference excerpts or in the user's own message. Otherwise describe amounts qualitatively ("a palm-sized portion", "until satisfied") — never rough estimates or made-up figures.
+- Not a medical device. No diagnosis, no medication or supplement advice (including "diet pills").
+- Never advise fasting, crash diets, or very-low-calorie plans for weight loss. For users with diabetes or on insulin/sulfonylureas: no fasting and no intense-exercise advice without medical review.
+- Red-flag symptoms (chest pain, fainting, severe dizziness, breathlessness at rest): stop the nutrition discussion and tell the user to seek medical care at the nearest hospital or emergency department now. Do not state a hotline or emergency phone number unless it literally appears in the references or the user's message.
+- Eating-disorder safety: never encourage restriction, purging, or "burning off" a meal. When you refuse a risky request, always offer the safer alternative: a registered dietitian or doctor.
 - Answer in the user's language (Bangla, English, or Banglish).
 Current mode: ${mode}. Goal category: ${goal}.${contextBlock}`;
 
@@ -135,10 +138,15 @@ Current mode: ${mode}. Goal category: ${goal}.${contextBlock}`;
       if (offenders.length > 0) {
         console.log("Coach number-check retry:", offenders.join(","));
         const systemRetry = `${system}\nYour previous attempt used numbers not found in the sources: ${offenders.join(", ")}. Reply to the user again without them — drop the numbers or rephrase qualitatively.`;
-        response = await groqChat([
-          { role: "system", content: systemRetry },
-          { role: "user", content: args.message },
-        ]);
+        response = await groqChat(
+          [
+            { role: "system", content: systemRetry },
+            { role: "user", content: args.message },
+          ],
+          // Cooler than the first pass: retries that still emit numeric
+          // junk would otherwise burn the second chance and hit fallback.
+          { temperature: 0.3 },
+        );
         offenders = unsourcedNumbers(response, sourceTexts);
         if (offenders.length > 0) {
           console.log("Coach number-check fallback:", offenders.join(","));

@@ -15,16 +15,16 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Waves 3 + 4 complete (gates met); Wave 5 coach live** — plan/home/insights/activity live; weather/AQI indoor switch live; coach chat wired end-to-end (embed → hybrid search → rewrite → `ai.chat` → citation chips) + **numeric validator (FR-F-02, live)**; Wave 5 gate: 20-question eval + refusal tests pending |
+| **Current Phase** | **Waves 1–5 complete (gates met); Wave 6 next** — coach pipeline live end-to-end with citations, no-hit refusal, numeric validator, live profile safety mode; Wave 5 measured **20/20 retrieval + 10/10 unsafe refusal** |
 | **Day** | Day 3 (Nov 3, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 77/77 green |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 80/80 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
 | **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach` on Convex (coach seed greeting + settings/right-panel still show mock fixtures) |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-03 (Waves 3 + 4 gates met; weather/AQI indoor switch live; numeric validator live; RAG corpus from `/data`: 9,447 chunks + 66k structured records) |
+| **Last Updated** | 2026-11-03 (Waves 1–5 gates met; Wave 5: retrieval 20/20, unsafe refusal 10/10, numeric validator + live safety context) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
@@ -60,6 +60,13 @@
 - **Data quality fixes:** FCTB categories recovered from code prefixes; 318-row alias index added; 34,491 WFP price rows and 23,746 FAOSTAT rows deduplicated
 - **Known gaps:** `rice-glycaemic-index-bau.pdf` has no text layer (needs OCR); cross-lingual Bangla medical queries retrieve food aliases ahead of guideline sections — add Groq query rewrite before embedding
 - **Verification:** 53 tests, lint 0 errors, both TypeScript checks, production build (20 routes incl. `/api/embed`) pass
+
+### Wave 5 gate (Nov 3, 2026) — MET
+
+- `scripts/eval_wave5.mjs`: **20/20** questions returned the expected source in top-5 (hybrid threshold 0.8); explicit indigenous/healthy-plate intents route to the matching corpus source.
+- Unsafe red-team subset: **10/10** calmly refused with a safer alternative; includes crash diet, insulin + fasting, meal compensation, purging, chest pain/fainting, pills and diagnosis.
+- Numeric traceability: every reply digit must occur in retrieved excerpts or the user's message; one corrective retry → language-matched fallback. Live-proven on unsourced step counts.
+- `/coach` now reads live `profile.safetyMode`/goal and fails closed to `doctor-first` while loading; no-hit retrieval returns localized refusal without calling Groq.
 
 ### Docs re-audit (Nov 2, 2026)
 
@@ -174,7 +181,7 @@
 
 **Wave 2 now:** ✅ complete — manual logging + 318-food search + meal CRUD + parser/shared-pot + assisted photo flow (FoodBD-gated) all live; P1 extras (rice calibration, recipes, voice, barcode) carried beyond the gate. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); coach wiring live (client embed → `rag.search` → `ai.rewriteQuery` → `ai.chat` with excerpts → citation chips).
 
-**Waves 3 + 4 complete (gates met).** Remaining in order: W5 gate (20-question eval + refusal tests; numeric validator done) → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
+**Waves 3 + 4 + 5 complete (gates met).** Remaining in order: W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
 
 **Never cut:** safety gates · citations · rebalancing engine. **Gate rule:** never start a wave with a failing gate behind it. Main branch stays demoable.
 
@@ -291,10 +298,10 @@ Wave 1 ████████████████████████ 
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
 Wave 3 ████████████████████████ 100% — Gate met; budget/what-if/reverse on /plan; home live; weigh-ins + adaptive TDEE on /insights; micros/sodium/sugar carried (docs/deferred.md)
 Wave 4 ████████████████████████ 100% — Gate met: indoor switch on AQI/heat (Open-Meteo, no key) + MET minute tests; P1s carried (docs/deferred.md)
-Wave 5 █████████████████░░░░░░░  70% — Corpus + hybrid retrieval + coach chat (rewrite, citations) + numeric validator live; 20-question gate + refusal tests pending
+Wave 5 ████████████████████████ 100% — Gate met: 20/20 source retrieval + 10/10 unsafe refusal + numeric trace validator; live profile safety mode
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof
 ```
 
 ---
 
-*Last updated: November 3, 2026 — Waves 1–4 gates met; Wave 5 coach live; build plan v3 across all docs*
+*Last updated: November 3, 2026 — Waves 1–5 gates met; Wave 6 next; build plan v3 across all docs*

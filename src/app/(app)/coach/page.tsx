@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { Send, Square } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
-import { COACH_SEED, DEMO_PROFILE } from "@/lib/mock";
+import { COACH_SEED } from "@/lib/mock";
 import { embedQuery, type RagHit } from "@/lib/ai/rag";
 import type { Citation, CoachMessage } from "@/lib/types";
 import { MessageBubble, SuggestionChips } from "@/components/chat/Chat";
@@ -65,6 +65,7 @@ export default function CoachPage() {
   const search = useAction(api.rag.search);
   const chat = useAction(api.ai.chat);
   const rewrite = useAction(api.ai.rewriteQuery);
+  const profile = useQuery(api.profile.get, {});
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,14 +113,30 @@ export default function CoachPage() {
     }
     if (request !== requestRef.current) return;
 
+    if (lowConfidence || hits.length === 0) {
+      setMessages((m) => [
+        ...m,
+        {
+          id: `c-${Date.now()}`,
+          role: "coach",
+          text: t("coach.lowConf"),
+          time: clock(),
+          lowConfidence: true,
+        },
+      ]);
+      setThinking(false);
+      return;
+    }
+
     // 2) Answer with excerpts + safe context only (no PII).
     const lang = /[\u0980-\u09FF]/.test(q) ? "bn" : "en";
     try {
       const reply = await chat({
         message: q,
         safeContext: {
-          mode: DEMO_PROFILE.safetyMode,
-          goal: DEMO_PROFILE.goal,
+          // Fail closed while the live profile is loading or absent.
+          mode: profile?.safetyMode ?? "doctor-first",
+          goal: profile?.goal ?? "maintain",
           lang,
         },
         context: hits.map((h) => ({
@@ -188,7 +205,7 @@ export default function CoachPage() {
         </div>
       </header>
 
-      <SafetyBanner mode={DEMO_PROFILE.safetyMode} />
+      <SafetyBanner mode={profile?.safetyMode ?? "doctor-first"} />
 
       <div className="mt-4 flex-1 space-y-4 overflow-y-auto pb-4">
         {messages.length === 0 ? (

@@ -10,6 +10,7 @@ import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { ragLang, ragSourceTag } from "./schema";
 import schema from "./schema";
+import { inferRagSourceTag } from "../src/lib/ai/rag";
 
 const EMBEDDING_DIMENSIONS = 384;
 const MAX_BATCH = 100;
@@ -515,11 +516,12 @@ export const search = action({
   handler: async (ctx, args): Promise<ChunkResult[]> => {
     const limit = Math.min(Math.max(args.limit ?? 8, 1), 30);
     const merged = new Map<string, ChunkResult>();
+    const sourceTag = args.sourceTag ?? inferRagSourceTag(args.query);
 
     const keywordHits = args.query.trim()
       ? await ctx.runQuery(api.rag.keywordSearch, {
           query: args.query,
-          sourceTag: args.sourceTag,
+          sourceTag,
           lang: args.lang,
           limit,
         })
@@ -533,7 +535,6 @@ export const search = action({
 
     const embedding = args.queryEmbedding;
     if (embedding && embedding.length === EMBEDDING_DIMENSIONS) {
-      const sourceTag = args.sourceTag;
       const vectorHits = await ctx.vectorSearch("ragChunks", "by_embedding", {
         vector: embedding,
         limit: Math.min(limit * 2, 40),
