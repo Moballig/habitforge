@@ -21,7 +21,7 @@
 | Embeddings (query) | Next.js `POST /api/embed` | `Xenova/multilingual-e5-small` (ONNX, q8) | Embed the user's question | ❌ Vector only |
 | Vector search | Convex action | — | Cosine similarity over stored vectors | ❌ |
 | Keyword search | Convex query | — | Full-text fallback / merge | ❌ |
-| Vision (planned) | Convex action → Groq cloud | `qwen/qwen3.8-27b` | Plate photo → items + portion class | ✅ JSON (not built yet) |
+| Vision | Convex action → Groq cloud | `qwen/qwen3.8-27b` | Plate photo → items + portion class | ✅ JSON live (`ai.analyzePhoto`, assisted) |
 | Voice (planned) | Groq cloud | `whisper-large-v3` / `-turbo` | Bangla speech → text | ✅ Transcript (not built yet) |
 
 **Key constraint discovered:** Groq exposes **no embedding endpoint**. Verified on the live key:
@@ -236,7 +236,7 @@ flowchart TB
 
     subgraph Groq["Groq cloud"]
         Chat["openai/gpt-oss-120b<br/>chat + JSON"]
-        Vision["qwen/qwen3.8-27b<br/>(planned)"]
+        Vision["qwen/qwen3.8-27b<br/>(live)"]
     end
 
     UI --> Helper
@@ -248,7 +248,7 @@ flowchart TB
     SearchAction -->|"top chunks + citations"| UI
     UI -->|"message + safe context"| AIChat
     AIChat -->|"chat.completions"| Chat
-    AIChat -.->|"planned photo"| Vision
+    AIChat -.->|"photo (live)"| Vision
     AIChat --> Db
 ```
 
@@ -528,7 +528,7 @@ bunx convex run rag:sources '{}'
 | Coach uses RAG chunks | ✅ wired — embed → `rag.search` (≥0.8, top 5) → `ai.chat` context |
 | Citation UI | ✅ `[n]` markers parsed into `CitationChip`s (source — section, p.N) |
 | Query rewrite (Bangla → English) | ✅ `ai.rewriteQuery` + merged second search (Bangla script or score < 0.8) |
-| Photo vision | ⬜ Planned — `qwen/qwen3.8-27b` |
+| Photo vision | ✅ `ai.analyzePhoto` live (FoodBD-gated, assisted mode) |
 | Voice | ⬜ Planned — Whisper |
 
 ### Known retrieval quality notes

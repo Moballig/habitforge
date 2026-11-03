@@ -1,7 +1,7 @@
 # Deshi Health Companion — System Architecture
 
-**Version:** 3.2 (aligned with Build Plan v3 — Wave 1 live)
-**Last Updated:** November 2, 2026
+**Version:** 3.3 (aligned with Build Plan v3 — Waves 1–4 gates met, Wave 5 coach live)
+**Last Updated:** November 3, 2026
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md` §4, §7
 **Base platform:** existing Next.js 16 + Convex + Groq repo (formerly HabitForge — platform carries over, product pivots)
 
@@ -53,8 +53,8 @@ flowchart TB
 | Layer | Used for | Notes | Repo status |
 |-------|----------|-------|-------------|
 | **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
-| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 27 tests, property-tested |
-| **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; chunks carry source, section, page, language; refuse below tuned threshold | ✅ Foundation — **9,447 chunks** ingested; coach wiring pending |
+| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 67 tests, property-tested |
+| **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; chunks carry source, section, page, language; refuse below tuned threshold | ✅ **9,447 chunks** ingested; coach chat live (embed → `rag.search` → rewrite → `ai.chat` → citation chips); 20-question gate pending |
 | **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Scaffold — Groq via `convex/ai.ts` `groqChat()`; `chat` + `parseMeal` live |
 | **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — **verified live 2026-11-03**; note qwen on_demand ITPM 7k/min ⇒ compact `id|nameEn` candidates + 429 retry; assisted flow with confirm screen | ✅ `ai.analyzePhoto` live |
 
@@ -230,11 +230,11 @@ Browser `SpeechRecognition` is **Chrome-only (139+)**; Firefox/Safari unsupporte
 
 | Table | Key content | Wave | Source |
 |-------|-------------|------|--------|
-| `measures` | Household standards from kitchen-scale session (bati S/M/L, spoons, glasses, ladle, plate diameters) | W2 | Track D4 |
-| `recipes` | Ingredients, oil, servings, method; per-serving values; tag `estimated-recipe`; owner label | W2 | Track D3 |
-| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height | W3 | §3, §5.3 |
-| `priceRecords` | Bazar price/kg by season | W5–6 | Track D6 |
-| `ragChunks` | Guidelines/FCTB/FAQ text + metadata (**section, page**, language, date) — vector-indexed | W5 | §7.2 |
+| `measures` | Household standards from kitchen-scale session (bati S/M/L, spoons, glasses, ladle, plate diameters) | W2 | **Implemented inline** as `foods.measures[]` — no separate table |
+| `recipes` (user) | Per-serving values, owner label ("Amma's dal"), method | W2 | Corpus `recipes` table live (5,938 rows); user-authored fields pending |
+| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height | W3 | **`weighIns` live** (adaptive TDEE); notes/waist fields pending |
+| `priceRecords` | Bazar price/kg by season (user-entered) | W5–6 | Corpus `priceObservations` live (34,491 WFP rows); user bazar entries pending |
+| `ragChunks` | Guidelines/FCTB/FAQ text + metadata (**section, page**, language, date) — vector-indexed | W5 | **✅ Live** — 9,447 chunks, keyword + 384-dim vector indexes |
 
 **Indexes:** every hot path (by date, by user, by food). Vector search only via actions.
 
@@ -271,15 +271,20 @@ sequenceDiagram
     participant G as Groq API
 
     U->>UI: Type message (BN/EN/Banglish)
-    UI->>A: useAction()({ message, safeCategories })
-    A->>A: LLM rewrites query to English
-    A->>E: ctx.vectorSearch + keyword merge
-    E-->>A: chunks + scores (+ section/page)
-    A->>G: chat.completions (chunks + tools + safe categories only)
-    G-->>A: answer (numbers only via tools)
-    A->>A: number validator (tool/chunk match or template fallback)
-    A-->>UI: { response, sources } | { error }
-    UI->>U: Answer + citation chip "Source: <section>"
+    UI->>EM: POST /api/embed (local e5-small → 384d)
+    EM-->>UI: queryEmbedding
+    UI->>E: rag.search({ query, queryEmbedding }) → hybrid vector + keyword
+    E-->>UI: chunks + scores (+ section/page)
+    opt Bangla script or top score < 0.8
+        UI->>A: ai.rewriteQuery → embed → second search → merged hits
+    end
+    UI->>A: ai.chat({ message, safeContext, context: top excerpts })
+    Note over A: safeContext set by code from safetyMode<br/>— NEVER raw profile data
+    A->>G: chat.completions (numbered excerpts + no-invented-numbers rules)
+    G-->>A: answer with inline [n] markers
+    A-->>UI: { response } | { error }
+    UI->>U: Answer + citation chips from [n] markers<br/>(lowConfidence when below threshold)
+    Note over UI: number validator (tool/chunk match) — planned, not built
 ```
 
 ### 6.3 Parse flow (Wave 2)
@@ -331,7 +336,7 @@ habitforge/
 │   │   │   ├── rebalance.ts       #    rebalance, feastPreBank
 │   │   │   ├── adaptive.ts        #    adaptiveTdee
 │   │   │   ├── types.ts           #    Engine types
-│   │   │   └── engine.test.ts     #    27 tests, property-tested
+│   │   │   └── engine.test.ts     #    67 tests, property-tested
 │   │   ├── foods/seed.ts          #    318-row seed with source tags
 │   │   ├── foods/search.ts        #    Offline name/alias search + code-only portion math
 │   │   ├── foods/foods.test.ts    #    Seed integrity + offline search tests
@@ -409,7 +414,7 @@ flowchart LR
 |------------|-----|---------|
 | Development | `http://localhost:3000` + Convex dev deployment | Local development |
 | Preview | `https://habitforge-*.vercel.app` | PR preview deployments |
-| Production | `https://habitforge.vercel.app` | Live production app |
+| Production | — | **Not deployed yet** (Vercel deploy is a Day 4 task — see `CONTEXT.md`) |
 
 **Vercel env:** `NEXT_PUBLIC_CONVEX_URL`. **Convex env:** `GROQ_API_KEY` (+ optional `GROQ_MODEL`).
 

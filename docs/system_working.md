@@ -43,7 +43,7 @@ Concretely:
 
 ### 1.3 Contributions
 
-1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 53 passing tests.
+1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 67 passing tests.
 2. A **candidate-constrained meal parser**: the LLM may only select from ≤25 client-supplied foods and extract quantities; all math is code-side.
 3. A **Bangladesh-first RAG corpus**: 9,447 chunks + 65,275 structured rows from 16 audited sources, with per-source provenance, quality tiers, and a published defect ledger.
 4. A **local multilingual retrieval stack**: `multilingual-e5-small` (384-d, ONNX q8) embedded in the app server, hybrid vector–keyword search on Convex, and a Groq query rewrite that lifts Bangla medical queries from 1 to 3 guideline pages in the top-5.
@@ -86,7 +86,7 @@ flowchart TB
     end
 
     subgraph Ext["External / local services"]
-        G["Groq: chat · vision (planned)"]
+        G["Groq: chat · vision (live)"]
         E["POST /api/embed — local multilingual-e5-small"]
     end
 
@@ -105,7 +105,7 @@ flowchart TB
 | Layer | Owns | Must never own | Implementation |
 |---|---|---|---|
 | Structured food DB | kcal, macros, household measures, aliases, prices | prose answers | Convex `foods` (318) + bundled seed |
-| Deterministic engine | BMR/TDEE, budgets, `safetyMode`, rebalance, shared-pot grams | free text | `src/lib/engine/`, `src/lib/foods/` — 53 tests |
+| Deterministic engine | BMR/TDEE, budgets, `safetyMode`, rebalance, shared-pot grams | free text | `src/lib/engine/`, `src/lib/foods/` — 67 tests |
 | Vector store | guidelines, composition tables, recipes, prices | personal data | `ragChunks` (9,447 × 384-d) + 5 structured tables |
 | LLM (Groq) | understanding, candidate selection, friendly explanation, citations | **any number, any PII** | `convex/ai.ts` → `groqChat()` |
 | Embeddings (local) | passage/query vectors | network calls to paid APIs | `POST /api/embed` (ONNX, q8) |
@@ -251,7 +251,7 @@ Bangla medical questions embed poorly against an English-heavy corpus: `ডা�
 | Coach chat | `openai/gpt-oss-120b` (Groq, override `GROQ_MODEL`) | live |
 | Meal parsing | same model, JSON mode | live |
 | Query rewrite | same model, `temperature 0`, `max_tokens 400` | live |
-| Plate photos | `qwen/qwen3.8-27b` (JSON mode, ≤3 images) | planned |
+| Plate photos | `qwen/qwen3.8-27b` (JSON mode, ≤3 images) | live (`ai.analyzePhoto`, assisted confirm flow) |
 | Voice | `whisper-large-v3` / `-turbo` | planned |
 | Embeddings | *none on Groq* — local `multilingual-e5-small` | live |
 
@@ -299,7 +299,7 @@ Eight probe queries against the live deployment (hybrid search, `k=4`), evaluate
 
 | Gate | Result |
 |---|---|
-| Unit/property tests (engine, foods, parser, portion) | **53 pass / 0 fail** (`bun run test`, ≈154k assertions) |
+| Unit/property tests (engine, foods, parser, portion) | **67 pass / 0 fail** (`bun run test`, ≈154k assertions) |
 | TypeScript (`tsc --noEmit`, client + Convex) | 0 errors |
 | ESLint | 0 errors (4 pre-existing warnings in generated files) |
 | Production build | 20 routes incl. dynamic `/api/embed` |

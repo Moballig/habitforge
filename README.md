@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Deshi Health Companion
 
-## Getting Started
+Bangladesh-first calorie, diet & exercise-balancing app with a RAG-grounded AI coach. Built for the Ostad Presents YUNet AIgnite Buildathon 2026 (Nov 1–5, 2026).
 
-First, run the development server:
+Formerly HabitForge (AI Habit Tracker); product scope follows [`docs/bangladeshi-calorie-companion-research.md`](docs/bangladeshi-calorie-companion-research.md).
+
+## Stack
+
+- **Next.js 16** (App Router, Bun) + Tailwind v4
+- **Convex** backend (`convex/`) — dev deployment `dev:disciplined-zebra-716`
+- **Groq** for chat/vision (`GROQ_API_KEY` on Convex); **local** `Xenova/multilingual-e5-small` embeddings via `/api/embed`
+- Pure-TS deterministic engine in `src/lib/engine/` — shared by client and Convex, 67 tests, no LLM numbers
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bunx convex login
+bunx convex dev              # starts Convex + Next together (or: bun run dev)
+bunx convex env set GROQ_API_KEY=your_groq_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Gates
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx tsc --noEmit   # root + convex types
+bun run lint       # 0 errors
+bun run test       # 67 engine/foods tests
+bun run build      # production build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Docs
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Doc | Purpose |
+|-----|---------|
+| [`docs/CONTEXT.md`](docs/CONTEXT.md) | Living tracker — status, wave progress, known issues |
+| [`docs/SRS.md`](docs/SRS.md) | Requirements + traceability table |
+| [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | 8 waves with exit gates |
+| [`docs/ENDPOINTS.md`](docs/ENDPOINTS.md) | Convex functions reference |
+| [`docs/deferred.md`](docs/deferred.md) | Everything consciously not built yet |

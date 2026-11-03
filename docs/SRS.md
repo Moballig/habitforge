@@ -1,7 +1,7 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
 **Version:** 2.4 (Waves 3 + 4 gates met; traceability updated)
-**Date:** November 2, 2026
+**Date:** November 3, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md` (all sections referenced below)
@@ -329,14 +329,14 @@ Global apps (MyFitnessPal, Cronometer, MacroFactor, photo-first apps) and Indian
 | Entity | Key content | Convex table | Source |
 |--------|-------------|--------------|--------|
 | **FoodItem** | Bangla/English names, aliases, region tags, per-100g and per-serving macros/micros, **source tag** (measured/FCTB/borrowed/user/estimated), household-measure conversions, confidence range, season/price references | `foods` (318 rows) | §4.1, §6-B/K |
-| **Recipe** | Ingredients, oil, servings, cooking method; per-serving values; owner label ("Amma's dal") | ⬜ W2 | §6-B |
+| **Recipe** | Ingredients, oil, servings, cooking method; per-serving values; owner label ("Amma's dal") | `recipes` (5,938 corpus rows live; per-serving/owner fields pending) | §6-B |
 | **MealLog** | Date/time, items + quantities (household measures or grams), method (text/voice/photo/preset), editable result, confidence, source | `mealLogs` (schema + core API live) | §6-B, §7.3–7.4 |
 | **Profile** | Age, sex, height, weight, activity, goal, pace, eating style, budget band (taka), household, routine (work/prayer/commute), **safety-screen results**, home region, calibrated plate/rice portion | `profiles` (live) | §6-A, §6-G |
 | **HealthMeasure** | Weight trend entries (with notes: Eid, illness, travel, cycle), waist circumference, waist-to-height ratio; Asian BMI display (23/27.5) | `weighIns` (live) | §3, §5.3, §6-A |
-| **ActivityLog** | Activity type, duration, MET energy, net energy; steps import | `activityLogs` (schema ready) | §5.1, §6-D |
-| **BudgetState** | 7-day rolling budget, today's target, overshoot, recovery plan (window, split, daily trims/minutes), personal floor, caps | `budgetState` (schema ready) | §5.2 |
-| **PriceRecord** | Bazar price per kg for common foods, by season | ⬜ W5–6 | §4.4 |
-| **RAGChunk** | Text from guidelines/FCTB notes/FAQs + metadata (source, section, language, date) | ⬜ W5 | §7.2 |
+| **ActivityLog** | Activity type, duration, MET energy, net energy; steps import | `activityLogs` (live: `activity.*` API) | §5.1, §6-D |
+| **BudgetState** | 7-day rolling budget, today's target, overshoot, recovery plan (window, split, daily trims/minutes), personal floor, caps | computed on read by `budget.get` (`budgetState` table reserved, not written) | §5.2 |
+| **PriceRecord** | Bazar price per kg for common foods, by season | `priceObservations` (34,491 WFP rows live; user bazar entries pending) | §4.4 |
+| **RAGChunk** | Text from guidelines/FCTB notes/FAQs + metadata (source, section, language, date) | `ragChunks` (9,447 live, vector + keyword indexes) | §7.2 |
 | **AuditLog** | AI suggestion audit: what was retrieved and why | `auditLogs` (live) | §6-J |
 
 ---
@@ -494,10 +494,10 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-F-01 | Chat BN/EN/Banglish | P0 | W5 | 🔄 | `ai.chat` scaffold |
-| FR-F-02 | Grounded answers + citations | P0 | W5 | ⬜ | RAG planned |
+| FR-F-01 | Chat BN/EN/Banglish | P0 | W5 | ✅ | `/coach` live: `ai.chat` follows user language (Bangla script → `lang: bn`) |
+| FR-F-02 | Grounded answers + citations | P0 | W5 | 🔄 | Hybrid retrieval + `[n]` citation chips live; below-threshold answers flagged `lowConfidence` (not fully refused); numeric validator not built |
 | FR-F-03 | Deterministic numbers | P0 | W1 | ✅ | Engine pure TS |
-| FR-F-04 | Refusal/redirect rules | P0 | W5 | ⬜ | Planned |
+| FR-F-04 | Refusal/redirect rules | P0 | W5 | 🔄 | Prompt rules live (no diagnosis/medication, no invented numbers, doctor-first → no targets); gate tests for unsafe prompts pending |
 | FR-F-05 | Meal suggestions (budget/season) | P1 | W5 | ⬜ | Planned |
 | FR-F-06 | Smart swaps | P1 | W5 | ⬜ | Planned |
 | FR-F-07 | Cheap-protein finder | P1 | W5 | ⬜ | Planned |

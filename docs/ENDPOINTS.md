@@ -1,7 +1,7 @@
 # Deshi Health Companion — Backend Functions Documentation
 
 **Version:** 3.5 (aligned with Build Plan v3 — Waves 3 + 4 gates met)
-**Last Updated:** November 2, 2026
+**Last Updated:** November 3, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md`; build order in `docs/IMPLEMENTATION_PLAN.md`
@@ -18,8 +18,8 @@
 
 | Module | Status | Purpose | Wave |
 |--------|--------|---------|------|
-| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee — 27 tests, property-tested | W1 |
-| `convex/schema` | ✅ Done (v2 live) | profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs | W1 |
+| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice — 67 tests, property-tested | W1 |
+| `convex/schema` | ✅ Done (v2 live) | profiles (+budgetControls), foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs, weatherState, ragChunks + corpus tables | W1 |
 | `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls` — engine computes safetyMode server-side | W1 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
@@ -99,7 +99,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ### Other tables
 
-`measure` · `mealLogs` · `profiles` (+ safetyScreen, safetyMode, plate/rice calibration, budgetControls) · `activityLogs` (+ manual steps) · `budgetState` · `auditLogs` · **RAG/data corpus** (see below).
+`measure` · `mealLogs` · `profiles` (+ safetyScreen, safetyMode, plate/rice calibration, budgetControls) · `activityLogs` (+ manual steps) · `weighIns` · `budgetState` (reserved) · `weatherState` · `auditLogs` · **RAG/data corpus** (see below).
 
 ### RAG + data corpus tables (Wave 5 foundation — ✅ live)
 
@@ -120,7 +120,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Convex Queries & Mutations (current — Wave 3 complete)
+## 3. Convex Queries & Mutations (current — Waves 3 + 4 complete)
 
 ### `profile` (Wave 1 — ✅ live)
 
@@ -162,7 +162,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `mealLogs.copyMeal` | mutation | `key?`, sourceId, targetDate/slot? | "Same as yesterday" backend |
 | `mealLogs.daySummary` | query | `key?`, date | Meal count, kcal range, totals by slot, macros (protein/carb/fat/fibre), `ricePortionLabel`, plate-group kcal (seed index ranges) |
 
-### `budget` / plan (Wave 3 — 🔄 `budget.get` live, Nov 3)
+### `budget` / plan (Wave 3 — ✅ live, Nov 3)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
@@ -263,7 +263,7 @@ await analyzePhoto({
 
 | Action | Wave | Behaviour |
 |--------|------|-----------|
-| `ai.mealFit` | W3 | What-if simulator wrapper (engine numbers) |
+| `ai.mealFit` | W3 | **Not built** — superseded by the `budget.whatIf` query (engine numbers, no LLM needed) |
 | `ai.swaps` | W5 | Smart swaps + one-line why (templates + chunks) |
 | `ai.cheapProtein` | W5 | Protein per taka from `priceRecords` |
 | `ai.weeklyReview` | W5 | Friendly review, no scolding |
@@ -278,7 +278,7 @@ await analyzePhoto({
 | Groq error / rate limit | `{ error }` or **local fallback** (tap-to-pick, cached answer, templates); logging + engine unaffected |
 | Model returns non-JSON | Fallback list / template (still success where safe) |
 | Number validator fails | Regenerate once → **template answer** (never show unsourced numbers) |
-| Retrieval below threshold | **Refuse** + suggest professional (§7.2) |
+| Retrieval below threshold | Answer still returned but flagged `lowConfidence`; system prompt forbids invented numbers (full refusal + numeric validator planned) |
 | Offline | Parser → tap-to-pick; coach/photo offline-only; plan + logging work from IndexedDB + `lib/engine` |
 
 **Food logging, plan, and engine must always work — even when AI is down or offline** (§6-I, Plan v3 §0).

@@ -1,7 +1,7 @@
 # Deshi Health Companion — Data Flow Diagrams & Sequence Diagrams
 
 **Version:** 1.0
-**Date:** November 2, 2026
+**Date:** November 2, 2026 (flows updated Nov 3 for live `budget.get` / client-side RAG coach)
 **Source of truth:** `docs/bangladeshi-calorie-companion-research.md` §5, §7; `docs/ARCHITECTURE.md`
 
 ---
@@ -389,24 +389,23 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant UI as /plan page
-    participant B as budget mutation
+    participant Q as budget.get query
     participant E as lib/engine (rebalance)
-    participant DB as budgetState
+    participant DB as profiles/mealLogs/activityLogs
 
     U->>UI: View today's plan / after logging biriyani
-    UI->>B: useMutation(budget.plan)({ controls })
-    B->>DB: Read profile (BMR, TDEE, safetyMode, weight)
-    B->>DB: Read today's mealLogs (intakeKcal)
-    B->>E: rebalance({ intakeKcal, targetKcal, floorKcal,<br/>weightKg, dates, safetyMode }, controls)
-    E-->>B: RebalancePlan { plan[], overshootKcal,<br/>windowDays, intakeShare, ... }
+    UI->>Q: useQuery(budget.get, { today })
+    Q->>DB: Read profile (BMR, TDEE, safetyMode, budgetControls)
+    Q->>DB: Read week mealLogs (intake) + activityLogs (credit, FR-REBAL-08)
+    Q->>E: rebalance({ intakeKcal, targetKcal, floorKcal,<br/>weightKg, dates, safetyMode }, controls)
+    E-->>Q: RebalancePlan { plan[], overshootKcal,<br/>windowDays, intakeShare, ... }
 
     alt safetyMode = normal
-        B->>DB: insert budgetState
-        B-->>UI: plan (7 days, trims + activity min)
+        Q-->>UI: plan (computed on read — no budgetState writes)
         UI->>U: Show plan with Bangla/EN templates<br/>+ ±15% uncertainty
     else safetyMode = restricted | doctor-first
-        E-->>B: { blocked: true, plan: [] }
-        B-->>UI: blocked + reason
+        E-->>Q: { blocked: true, plan: [] }
+        Q-->>UI: blocked + reason
         UI->>U: Safety referral card (no calorie targets)
     end
 ```
@@ -417,38 +416,26 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant UI as /coach page
+    participant EM as POST /api/embed
+    participant R as rag.search + ai.rewriteQuery
     participant A as ai.chat action
-    participant E as rag.search (vector + keyword)
     participant G as Groq API
-    participant DB as auditLogs
 
     U->>UI: "diabetes thakle bhat koto khabo?"
-    UI->>A: useAction()({ message, safeContext: { mode, goal, lang } })
-    Note over A: safeContext set by code from safetyMode<br/>— NEVER raw profile data
-
-    A->>G: Rewrite query to English
-    G-->>A: "rice portion for diabetes"
-    A->>E: ctx.vectorSearch(embedding) + keyword merge
-    E-->>A: chunks[] + scores + section/page
-    A->>A: Threshold check
-
-    alt score >= threshold
-        A->>G: chat.completions<br/>(chunks + tools + system rules)
-        G-->>A: answer draft
-        A->>A: Number validator (every number<br/>must be in tool result or chunk)
-        alt numbers valid
-            A-->>UI: { response, sources: [{section, page}] }
-            UI->>U: Answer + citation chip "Source: §4.2"
-        else numbers invalid
-            A->>G: Regenerate once
-            G-->>A: new draft
-            A-->>UI: template fallback (no unsourced numbers)
-        end
-        A->>DB: auditLogs "retrieved sections + scores"
-    else score < threshold
-        A-->>UI: { refusal: true }
-        UI->>U: "I'm not sure… talk to a doctor or dietitian."
+    UI->>EM: embedQuery(q) — local e5-small, 384d
+    EM-->>UI: queryEmbedding
+    UI->>R: rag.search({ query, queryEmbedding, limit: 6 })
+    R-->>UI: hybrid hits (score, section, page)
+    opt Bangla script or top score < 0.8
+        UI->>R: ai.rewriteQuery(q) → embed → second search → merged hits
     end
+    UI->>A: ai.chat({ message, safeContext, context: top excerpts })
+    Note over A: safeContext set by code from safetyMode<br/>— NEVER raw profile data
+    A->>G: chat.completions (numbered excerpts +<br/>no-invented-numbers system rules)
+    G-->>A: answer with inline [n] markers
+    A-->>UI: { response } | { error }
+    UI->>U: Answer + citation chips from [n] markers<br/>(lowConfidence when below threshold)
+    Note over UI: Number validator (tool/chunk match) — planned, not built
 ```
 
 ### 4.6 Privacy — Delete My Data

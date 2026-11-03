@@ -26,10 +26,12 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 - **Gym-light strength plans** (FR-D-09, P2), **exercise safety warnings** (FR-D-10, P2).
 - **Water tracking**: tile/chip removed from home + activity — no `waterLogs` table or any data source ever built.
 - **Static leftovers on `/activity`**: "Next: Evening walk" stat and Active-days sparkline are still decorative (active-days number itself is live).
+- **Mock fixtures still rendered**: `RightPanel` shows `TODAY_MEALS`, `/coach` opens with a `COACH_SEED` demo exchange, `/settings` uses `DEMO_PROFILE`, `/dev/components` gallery — cosmetic only; all live data paths use Convex.
+- **`/log` chips decorative**: Recents / Favourites / Same yesterday / Copy meal render but have no handlers (`listRecent`/`copyMeal` APIs are ready).
 
-## Wave 5+ (not started beyond foundation)
+## Wave 5+ (coach live; gate + P1s pending)
 
-- Coach wiring: chat UI → `ai.chat` RAG, Groq query rewrite, citation chips, 20-question gate (corpus + hybrid retrieval are live).
+- **20-question guideline gate** + unsafe-prompt refusal tests + numeric validator (every digit must trace to a chunk/tool) — coach pipeline itself is live (embed → hybrid search → rewrite → `ai.chat` → citation chips).
 - Taka-aware weekly planner + shopping list (FR-G-05), dietitian PDF export (FR-G-10).
 - PWA service worker / offline sync / data-saver (FR-I-01/04/05 — manifest only today).
 - Admin CRUD, prices/bazar module, analytics dashboard (FR-K-*).

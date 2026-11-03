@@ -50,7 +50,7 @@
 |---|---|
 | LLM computes TDEE/budgets | Rejected — nondeterministic, untestable, can be jailbroken into unsafe deficits |
 | DB stored procedures | Works, but splits logic away from the client; the browser needs the *same* math offline for the PWA |
-| **Pure TS module shared by client + Convex** ✅ | Runs in browser (offline logging), runs in actions (plan generation), 53 unit/property tests, `tsc` catches signature drift |
+| **Pure TS module shared by client + Convex** ✅ | Runs in browser (offline logging), runs in actions (plan generation), 67 unit/property tests, `tsc` catches signature drift |
 
 `src/lib/engine/` exports `bmr`, `tdee`, `adaptiveTdee`, `rebalance`, `safetyMode`, `sharedPotGrams` — all pure. Property tests assert invariants no LLM could promise (e.g., rebalance never plans below the personal floor; recovery covers 50–70% of overshoot, never 100%).
 
@@ -394,9 +394,9 @@ We do **not** claim benchmark numbers we don't have.
 
 ### Q43 — "Why property-based tests for the engine?"
 
-Safety invariants are universal statements: *for all inputs*, rebalance never plans below BMR, never recovers 100% of overshoot, `sharedPotGrams` never exceeds the pot. Example-based tests (53 passing) sample the space; property tests generate inputs (extreme weights, zero days, huge overshoots) and would have caught boundary bugs a fixed fixture list misses. The engine is exactly where a bug = a user eating 800 kcal/day — worth the investment.
+Safety invariants are universal statements: *for all inputs*, rebalance never plans below BMR, never recovers 100% of overshoot, `sharedPotGrams` never exceeds the pot. Example-based tests (67 passing) sample the space; property tests generate inputs (extreme weights, zero days, huge overshoots) and would have caught boundary bugs a fixed fixture list misses. The engine is exactly where a bug = a user eating 800 kcal/day — worth the investment.
 
-### Q44 — "Is 53 tests enough?"
+### Q44 — "Is 67 tests enough?"
 
 Enough for *today's* engine surface (energy, rebalance, adaptive, safety, portion, parser, foods), plus `tsc` + lint + build as gates. Not enough for: RAG quality (Q42), prompt/LLM behaviour (need golden transcripts), offline sync conflicts, and the numeric validator (unbuilt). We'd add CI wiring (`bun run test` already excludes the vendored `data/ifct2017` JSR test that breaks root-level `bun test`).
 
@@ -466,7 +466,7 @@ The *pieces* are standard (RAG, hybrid search, dual encoders, JSON-mode parsing,
 | Hybrid score ranges | keyword 0.50–0.80, vector 0.50–1.00, +0.05 both |
 | Context gate / limits | ≥0.80, top 5, ≤6 × 700 chars |
 | LLM / parse / rewrite temps | 0.7 / 0.1 / 0 · rewrite maxTokens 400 |
-| Tests / lint / build | 53 pass · 0 errors (4 pre-existing warnings) · 20 routes |
+| Tests / lint / build | 67 pass · 0 errors (4 pre-existing warnings) · 20 routes |
 | Ingest rate | ~4.4 chunks/s full (41 min), 14.4/s selective |
 | Groq embeddings | verified 404, no embedding endpoint |
 | Duplicate-key incident | 413 rows → fixed → 0 across 9,447 |

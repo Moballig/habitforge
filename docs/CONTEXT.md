@@ -15,13 +15,13 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Waves 3 + 4 complete (gates met)** — plan/home/insights/activity live; weather/AQI indoor switch live; hybrid RAG retrieval live, coach UI pending |
+| **Current Phase** | **Waves 3 + 4 complete (gates met); Wave 5 coach live** — plan/home/insights/activity live; weather/AQI indoor switch live; coach chat wired end-to-end (embed → hybrid search → rewrite → `ai.chat` → citation chips); Wave 5 gate (20-question eval) pending |
 | **Day** | Day 3 (Nov 3, 2026) |
 | **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 67/67 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
-| **P0 product surface** | 🔄 Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity` on Convex; coach still on fixtures |
+| **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach` on Convex (coach seed greeting + settings/right-panel still show mock fixtures) |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
 | **Last Updated** | 2026-11-03 (Waves 3 + 4 gates met; weather/AQI indoor switch live; RAG corpus from `/data`: 9,447 chunks + 66k structured records) |
@@ -168,13 +168,13 @@
 
 ### Pivot plan — Deshi Health Companion (Plan v3 waves — see IMPLEMENTATION_PLAN.md)
 
-**Probes first (30 min each):** Qwen vision on 10 plate photos · local multilingual embeddings on Bangla/Banglish queries · Chrome `bn-BD` speech.
+**Probes (done):** Qwen vision ✓ (10 FoodBD plates, assisted gate) · local multilingual embeddings ✓ (384d Bangla) · Chrome `bn-BD` speech ⬜ not probed.
 
 **Wave 1 (foundation):** ✅ Complete. Engine, safety modes, onboarding/profile, consent/delete-data, schema and tagged food seed passed their gate.
 
-**Wave 2 now:** ✅ complete — manual logging + 318-food search + meal CRUD + parser/shared-pot + assisted photo flow (FoodBD-gated) all live; P1 extras (rice calibration, recipes, voice, barcode) carried beyond the gate. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); coach wiring live (`ai.chat` tool + query rewrite + citations).
+**Wave 2 now:** ✅ complete — manual logging + 318-food search + meal CRUD + parser/shared-pot + assisted photo flow (FoodBD-gated) all live; P1 extras (rice calibration, recipes, voice, barcode) carried beyond the gate. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); coach wiring live (client embed → `rag.search` → `ai.rewriteQuery` → `ai.chat` with excerpts → citation chips).
 
-**Then waves in order:** W3 tracking + balance engine UI → W4 activity → W5 RAG coach → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
+**Waves 3 + 4 complete (gates met).** Remaining in order: W5 gate (20-question eval + numeric validator) → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
 
 **Never cut:** safety gates · citations · rebalancing engine. **Gate rule:** never start a wave with a failing gate behind it. Main branch stays demoable.
 
@@ -209,16 +209,16 @@
 ## 💡 Improvement Ideas
 
 ### High Priority
-- [ ] Wire `ai.parseMeal` into `/log` and evaluate 20 Banglish lines
-- [ ] Implement shared-pot fraction-to-grams calculation and test dal example
-- [ ] Wire assisted photo confirmation flow and test five plates
-- [ ] Complete rice calibration and recipe persistence
+- [x] Wire `ai.parseMeal` into `/log` and evaluate 20 Banglish lines — live (20/20 + Groq smoke)
+- [x] Implement shared-pot fraction-to-grams calculation and test dal example — live + tested
+- [x] Wire assisted photo confirmation flow and test five plates — live (FoodBD gate, assisted mode)
+- [ ] Complete rice calibration (`/log/rice` page exists but does not persist `ricePortionLabel` yet) and user recipe persistence
 
 ### Medium Priority
-- [ ] Wire recents/copy-meal UI to the live backend
+- [ ] Wire recents/copy-meal UI to the live backend (`mealLogs.listRecent`/`copyMeal` ready; `/log` chips are still decorative)
 - [ ] Add favourites and report-wrong review queue
 - [ ] Probe Chrome `bn-BD` voice input
-- [ ] Begin W3 budget-state UI integration
+- [x] Begin W3 budget-state UI integration — done: `/plan` reads `budget.get` live (plan computed on read)
 
 ### Low Priority (Post-Buildathon)
 - [ ] User authentication (Convex Auth)
@@ -255,7 +255,7 @@
 | Shared-pot, photo and parser gates incomplete | High | Closed — all Wave 2 gates met (Nov 3) |
 | No authentication; profile key is demo-only | High | Medium — add Convex Auth before multi-user launch |
 | AI responses not cached | Low | Low — add Convex caching if rate-limited |
-| Bangla medical queries retrieve food aliases before guideline sections | Medium | Medium — Groq English query rewrite before embedding |
+| Bangla medical queries retrieve food aliases before guideline sections | Medium | Closed (Nov 3) — `ai.rewriteQuery` runs on Bangla/weak-score queries before the second search |
 | `rice-glycaemic-index-bau.pdf` unparsed (scanned) | Low | Low — OCR (tesseract) or manual table entry |
 
 ---
@@ -291,10 +291,10 @@ Wave 1 ████████████████████████ 
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
 Wave 3 ████████████████████████ 100% — Gate met; budget/what-if/reverse on /plan; home live; weigh-ins + adaptive TDEE on /insights; micros/sodium/sugar carried (docs/deferred.md)
 Wave 4 ████████████████████████ 100% — Gate met: indoor switch on AQI/heat (Open-Meteo, no key) + MET minute tests; P1s carried (docs/deferred.md)
-Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending
+Wave 5 ███████████████░░░░░░░░░░  60% — Corpus + hybrid retrieval + coach chat (rewrite, citations) live; 20-question gate + numeric validator pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof
 ```
 
 ---
 
-*Last updated: November 2, 2026 — Build Plan v3 (full-scope waves) adopted across all docs*
+*Last updated: November 3, 2026 — Waves 1–4 gates met; Wave 5 coach live; build plan v3 across all docs*
