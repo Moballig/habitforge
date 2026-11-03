@@ -36,12 +36,8 @@ function Row({
   onClick?: () => void;
   right?: React.ReactNode;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex min-h-14 w-full items-center gap-3 rounded-tile px-4 text-left transition hover:bg-surface-soft"
-    >
+  const content = (
+    <>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-soft text-violet">
         <Icon size={16} />
       </span>
@@ -49,7 +45,27 @@ function Row({
         <span className="block text-sm font-semibold">{label}</span>
         {value && <span className="block truncate text-xs text-ink/50">{value}</span>}
       </span>
-      {right ?? <ChevronRight size={16} className="text-ink/35" />}
+      {right ?? (onClick ? <ChevronRight size={16} className="text-ink/35" /> : null)}
+    </>
+  );
+
+  // When right is provided (e.g. interactive Toggle) or no onClick, render as <div>
+  // to avoid invalid HTML nesting of <button> inside <button>.
+  if (right || !onClick) {
+    return (
+      <div className="flex min-h-14 w-full items-center gap-3 rounded-tile px-4 text-left">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-14 w-full items-center gap-3 rounded-tile px-4 text-left transition hover:bg-surface-soft"
+    >
+      {content}
     </button>
   );
 }
@@ -184,9 +200,9 @@ export default function SettingsPage() {
       <section>
         <SectionLabel>{t("settings.routine")}</SectionLabel>
         <div className="divide-y divide-border rounded-card border border-border">
-          <Row icon={Wifi} label={t("settings.offline")} right={<SyncStatusPill queued={0} />} onClick={() => {}} />
-          <Row icon={Shield} label="Notifications" right={<Toggle label="" checked={notif} onChange={setNotif} />} onClick={() => {}} />
-          <Row icon={Database} label={t("settings.dataSaver")} right={<Toggle label="" checked={dataSaver} onChange={setDataSaver} />} onClick={() => {}} />
+          <Row icon={Wifi} label={t("settings.offline")} right={<SyncStatusPill queued={0} />} />
+          <Row icon={Shield} label="Notifications" right={<Toggle label="" checked={notif} onChange={setNotif} />} />
+          <Row icon={Database} label={t("settings.dataSaver")} right={<Toggle label="" checked={dataSaver} onChange={setDataSaver} />} />
         </div>
       </section>
 
@@ -214,13 +230,11 @@ export default function SettingsPage() {
             icon={Info}
             label={t("settings.sources")}
             value="FAO / INFS Dhaka Univ FCTB 2013, ICMR-NIN IFCT 2017, WHO SEARO 2025"
-            onClick={() => {}}
           />
           <Row
             icon={ScrollText}
             label={t("settings.report")}
             value="Report inaccurate data or nutritional discrepancies"
-            onClick={() => {}}
           />
         </div>
         <p className="mt-4 text-xs text-ink/45">{t("safety.notMedical")}</p>
