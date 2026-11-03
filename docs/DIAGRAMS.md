@@ -33,7 +33,7 @@ flowchart LR
 ```
 
 **Data stores at Level 0:**
-- Convex Tables (profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs)
+- Convex Tables (profiles, foods, mealLogs, activityLogs, weighIns, weatherState, ragChunks, auditLogs; `budgetState` reserved)
 - IndexedDB (offline queue, food JSON snapshot)
 
 ---
@@ -91,8 +91,8 @@ flowchart TB
 
     %% P4
     P4 -->|"intakeKcal, target, floor,<br/>weightKg, dates, safetyMode"| P4
-    P4 -->|"Rebalance plan (7-day budget,<br/>trims, activity minutes)"| DB
-    P4 -->|"Plan, overshoot, what-if"| U
+    P4 -.->|"reads mealLogs, profiles, weighIns"| DB
+    P4 -->|"Plan, overshoot, what-if<br/>(computed on read)"| U
 
     %% P5
     P5 -->|"Activity type, MET,<br/>net kcal"| DB
@@ -105,7 +105,7 @@ flowchart TB
     P6 -->|"vectorSearch + keyword merge"| DB
     P6 -->|"Chat completion prompt<br/>(chunks + tools + safe mode)"| Groq
     Groq -->|"Answer (numbers via tools)"| P6
-    P6 -->|"Number validator, citation attach"| P6
+    P6 -->|"Citation attach, lowConfidence flag<br/>(validator planned)"| P6
     P6 -->|"Grounded answer + source"| U
     P6 -->|"Audit: what was retrieved"| DB
 
@@ -127,7 +127,7 @@ flowchart TB
 | **P1** | Onboarding & Profile | Demographics, screening answers, consent | `safetyMode`, Asian BMI, energy (BMR/TDEE) | `profiles`, `auditLogs` |
 | **P2** | Food Logging | Meal text, photos, household measures | `mealLogs[]` with kcal ranges + source tags | `mealLogs`, `foods` |
 | **P3** | Tracking & Nutrition | Logs, weigh-ins | Daily/weekly macros, plate balance, ranges | `mealLogs`, `weighIns`, `foods` |
-| **P4** | Balance Engine | Intake, target, floor, weight, dates, safetyMode | 7-day budget, rebalance plan | `budgetState` |
+| **P4** | Balance Engine | Intake, target, floor, weight, dates, safetyMode | 7-day budget, rebalance plan | `budget.get` (on read; `budgetState` reserved) |
 | **P5** | Activity | Activity type, minutes, MET | Net kcal (engine-computed) | `activityLogs` |
 | **P6** | AI Coach | User question, safe categories | Grounded answer + citations | `ragChunks` (vector), `auditLogs` |
 | **P7** | Privacy & Admin | Admin CRUD, delete-my-data | Purged data, report queue | All tables |
@@ -195,8 +195,7 @@ flowchart TB
     P44 -->|"dailyTrim, dailyActivity<br/>(60/40 split)"| P45
     Weight["weighIns"] -->|"weightKg"| P45
     P45 -->|"clamped trims + minutes<br/>(floor=BMR, cap=200)"| P46
-    P46 -->|"Bangla/EN plan text"| DB[("budgetState")]
-    P46 -->|"Plan + ±range"| U["User"]
+    P46 -->|"Bangla/EN plan text + ±range<br/>(computed on read)"| U["User"]
 ```
 
 | Sub-process | Input | Output | Rules |
@@ -218,7 +217,7 @@ flowchart TB
         P63(("P6.3<br/>Keyword +<br/>Alias Merge"))
         P64(("P6.4<br/>Threshold<br/>Check"))
         P65(("P6.5<br/>LLM<br/>Completion"))
-        P66(("P6.6<br/>Number<br/>Validator"))
+        P66(("P6.6<br/>Number Validator<br/>(⬜ planned)"))
         P67(("P6.7<br/>Citation<br/>Attach"))
     end
 
@@ -230,9 +229,9 @@ flowchart TB
     P63 -->|"Merged + scored chunks"| P64
     P64 -->|"Above threshold → continue"| P65
     P64 -->|"Below threshold →<br/>refuse + suggest professional"| U
-    P65 -->|"Chat completion<br/>(chunks + tools + safe mode)"| Groq
+    P65 -->|"Chat completion<br/>(chunks + system prompt)"| Groq
     Groq -->|"Answer draft"| P66
-    P66 -->|"Numbers match tools/chunks → pass<br/>else regenerate once → template"| P67
+    P66 -->|"Pass (validator planned FR-F-02;<br/>today: prompt + lowConfidence)"| P67
     P67 -->|"Answer + Source: section"| U
     P67 -->|"Audit: retrieved chunks"| DB[("auditLogs")]
 ```
@@ -243,8 +242,8 @@ flowchart TB
 | P6.2 | Query text | Embedding + top chunks | Local `multilingual-e5-small` via `POST /api/embed`; `ctx.vectorSearch` |
 | P6.3 | Vector results | Merged + keyword/alias match | Hybrid retrieval |
 | P6.4 | Best score | Pass / refuse | Below threshold → refuse |
-| P6.5 | Chunks + safe mode | Answer draft | Numbers only via tools |
-| P6.6 | Draft answer | Validated answer | Every number must appear in tool result or chunk |
+| P6.5 | Chunks + safe mode | Answer draft | Prompt-instructed (no tool-calling); validator pending |
+| P6.6 | Draft answer | Validated answer | **Planned (FR-F-02)** — not built; today `lowConfidence` flag + prompt only |
 | P6.7 | Validated answer | Answer + citations | `Source: <section name>` |
 
 ### 3.4 P1 — Onboarding & Safety (Level 2)
@@ -520,7 +519,7 @@ sequenceDiagram
 | **L1** | P1 Onboarding | Demographics, screening | safetyMode, BMI, energy | profiles | Engine |
 | **L1** | P2 Logging | Meal text, photos | mealLogs | mealLogs | LLM (parse) + Code (kcal) |
 | **L1** | P3 Tracking | Logs, weigh-ins | Macros, ranges | mealLogs, weighIns | Engine |
-| **L1** | P4 Balance | Intake, target, floor | Rebalance plan | budgetState | Engine |
+| **L1** | P4 Balance | Intake, target, floor | Rebalance plan | budget.get (on read) | Engine |
 | **L1** | P5 Activity | Type, minutes, MET | Net kcal | activityLogs | Engine |
 | **L1** | P6 Coach | Question, safe mode | Answer + citations | ragChunks, auditLogs | LLM + RAG |
 | **L1** | P7 Privacy | Delete request, admin CRUD | Purged data | All tables | — |

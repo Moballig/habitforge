@@ -32,7 +32,7 @@
 - **Tests:** `bun test src/lib/engine/engine.test.ts` → **27 pass / 0 fail** (~150k assertions, 5000-case property test)
 - **Hand-check:** 70 kg, 40 min @ 4.3 MET → **154 kcal net** ✓
 - **Six safety profiles (unit + Convex `profile:save` smoke):** normal / under-18→doctor-first / low BMI→restricted / insulin→doctor-first / ED history→doctor-first / pregnancy→doctor-first
-- **Schema v2 live:** profiles (engine-derived `safetyMode`, Asian BMI), foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs; habit tables dropped
+- **Schema v2 live:** profiles (engine-derived `safetyMode`, Asian BMI), foods, mealLogs, activityLogs, budgetState (reserved), weighIns, auditLogs, weatherState, ragChunks + corpus tables; habit tables dropped
 - **Foods:** Wave 1 gate originally used 171 rows; Wave 2 now has **318** reconciled rows — FCTB 111, estimated-recipe 162, estimated 23, borrowed 21, measured 1
 - **Onboarding:** final step → `api.profile.save` (deterministic safetyMode server-side); energy query returns BMR/TDEE/floor
 - **Privacy:** `privacy:deleteMyData` + audit trail live

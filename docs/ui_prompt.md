@@ -1,5 +1,6 @@
 # UI Implementation Prompt: Deshi Health Companion (self-contained)
 
+> **Status (Nov 3): build-time artifact — completed.** All Tier A routes are live on Convex (not fixtures); `lib/mock/` remains only for the `/dev/components` gallery and `RightPanel` demo rows (see `docs/deferred.md`).
 > Paste this whole file into Claude Code (or any coding agent) at the repo root.
 > It contains **everything needed to design and build the frontend. No reference images are required.** Every visual pattern is described in words, with exact sizes, colours and layouts.
 

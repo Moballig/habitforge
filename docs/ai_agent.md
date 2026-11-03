@@ -22,7 +22,7 @@
 | Vector search | Convex action | — | Cosine similarity over stored vectors | ❌ |
 | Keyword search | Convex query | — | Full-text fallback / merge | ❌ |
 | Vision | Convex action → Groq cloud | `qwen/qwen3.8-27b` | Plate photo → items + portion class | ✅ JSON live (`ai.analyzePhoto`, assisted) |
-| Voice (planned) | Groq cloud | `whisper-large-v3` / `-turbo` | Bangla speech → text | ✅ Transcript (not built yet) |
+| Voice (planned) | Groq cloud | `whisper-large-v3` / `-turbo` | Bangla speech → text | ❌ Not built yet (Groq whisper noted; Chrome `bn-BD` STT probe-gated) |
 
 **Key constraint discovered:** Groq exposes **no embedding endpoint**. Verified on the live key:
 

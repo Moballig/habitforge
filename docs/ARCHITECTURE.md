@@ -55,7 +55,7 @@ flowchart TB
 | **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
 | **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 67 tests, property-tested |
 | **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; chunks carry source, section, page, language; refuse below tuned threshold | ✅ **9,447 chunks** ingested; coach chat live (embed → `rag.search` → rewrite → `ai.chat` → citation chips); 20-question gate pending |
-| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **Tool-calling only for numbers**; a validator blocks any number not in a tool result or retrieved chunk. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Scaffold — Groq via `convex/ai.ts` `groqChat()`; `chat` + `parseMeal` live |
+| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **No tool-calling today** — numbers live in the prompt-instructed answer; numeric validator planned (FR-F-02); `lowConfidence` flag when retrieval is thin. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — `convex/ai.ts` `groqChat()`; `chat` (RAG pipeline: embed → `rag.search` → rewrite → chat → citations), `parseMeal`, `analyzePhoto` |
 | **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — **verified live 2026-11-03**; note qwen on_demand ITPM 7k/min ⇒ compact `id|nameEn` candidates + 429 retry; assisted flow with confirm screen | ✅ `ai.analyzePhoto` live |
 
 > **Hard rules (§5.5, §7.1, Plan v3 §0):**
@@ -173,7 +173,7 @@ Pure functions shared by client and Convex: `bmr`, `tdee`, `metNetKcal`, `safety
 | **Query path** | User message → local embedding (`POST /api/embed`, multilingual-e5-small) → `rag.search` → answer with `Source: <section>` |
 | **Embeddings** | **`Xenova/multilingual-e5-small`** (384 dims, quantized, local, Bangla-capable) — Groq hosts **no** embedding models. Query prefix `query:`; passage prefix `passage:` |
 | **Refusal** | Best match below tuned similarity threshold → "I'm not sure…" + suggest a professional |
-| **Number validator** | Any number in the final reply must appear in a tool result or retrieved chunk; else regenerate once, then template fallback |
+| **Number validator** | **Planned (FR-F-02)** — any number in the final reply must appear in a tool result or retrieved chunk; today: system prompt forbids invented numbers + `lowConfidence` flag |
 | **Privacy** | Send Groq only food text + question — **never age, weight, name, or conditions**; pass safe categories (`mode=restricted`) set by code |
 
 **Answer format:** short answer, then `Source: section name`.
@@ -222,7 +222,7 @@ Browser `SpeechRecognition` is **Chrome-only (139+)**; Firefox/Safari unsupporte
 | `foods` | `nameBn`, `nameEn`, `aliases[]`, per-100g values, `measures[{label, grams}]`, `sourceTag`, `isCooked`, optional `rangeLow/rangeHigh`, region tags | `by_name_en`, `by_source` | §4.1, §6-B/K |
 | `mealLogs` | Date/time, items + quantities, method (text/voice/photo/preset), editable result, confidence, source | `by_profile_and_date`, `by_date` | §6-B |
 | `activityLogs` | Type, duration, MET energy, net energy, source (manual/steps/preset) | `by_profile_and_date` | §6-D |
-| `budgetState` | 7-day rolling budget, target, overshoot, recovery plan, floor, caps, safetyMode | `by_profile_and_week` | §5.2 |
+| `budgetState` | **Reserved — not written.** Plan/target/overshoot computed on read by `budget.get` (FR-REBAL-08 credit included) | `by_profile_and_week` | §5.2 |
 | `weighIns` | Weight trend entries | `by_profile_and_date` | §3, §5.3 |
 | `auditLogs` | Consent/AI audit trail | `by_profile` | §6-J |
 
@@ -335,9 +335,12 @@ habitforge/
 │   │   │   ├── safety.ts          #    safetyMode, screenFromAnswers, allowsDeficit
 │   │   │   ├── rebalance.ts       #    rebalance, feastPreBank
 │   │   │   ├── adaptive.ts        #    adaptiveTdee
+│   │   │   ├── mets.ts            #    Compendium METs, stepsToMinutes, netKcalRange ±15%
+│   │   │   ├── context.ts         #    outdoorAdvice (AQI/feels-like gate)
 │   │   │   ├── types.ts           #    Engine types
 │   │   │   └── engine.test.ts     #    67 tests, property-tested
 │   │   ├── foods/seed.ts          #    318-row seed with source tags
+│   │   ├── foods/groups.ts         #    Plate-group kcal ranges (bySlot)
 │   │   ├── foods/search.ts        #    Offline name/alias search + code-only portion math
 │   │   ├── foods/foods.test.ts    #    Seed integrity + offline search tests
 │   │   ├── foods/parser.ts        #    Clause/quantity/unit extraction + candidate pool/fallback
@@ -346,7 +349,7 @@ habitforge/
 │   │   ├── foods/portion.test.ts  #    Shared-pot dal gate
 │   │   ├── i18n.tsx               #    Bangla/English + numerals
 │   │   ├── types.ts               #    UI types (SafetyMode, Profile, FoodItem)
-│   │   ├── mock/index.ts          #    Demo fixtures (until W2+ wiring)
+│   │   ├── mock/index.ts          #    Demo fixtures (/dev/components; app routes Convex-backed)
 │   │   ├── format.ts / nav.ts
 │   ├── components/
 │   │   ├── shell/                 #    AppFrame, NavRail, SideNav, BottomTabs, TopBar, RightPanel, Banners
@@ -364,11 +367,18 @@ habitforge/
 │   └── convex/_generated/         #    Auto-generated Convex bindings
 │
 ├── convex/                        # ☁️ Convex backend
-│   ├── schema.ts                  #    profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs
-│   ├── profile.ts                 #    ✅ get, save, energy
+│   ├── schema.ts                  #    profiles, foods, mealLogs, activityLogs, budgetState (reserved),
+│   │                              #    weighIns, auditLogs, weatherState, ragChunks + corpus tables
+│   ├── profile.ts                 #    ✅ get, save, energy, setBudgetControls
 │   ├── foods.ts                   #    ✅ seed, count, search, getById, upsert
+│   ├── mealLogs.ts                #    ✅ create/list/remove (photo confirm writes here)
+│   ├── activity.ts                #    ✅ create/remove/listWeek (MET presets, manual, steps)
+│   ├── budget.ts                  #    ✅ get (on-read plan + activity credit), whatIf
+│   ├── weights.ts                 #    ✅ add/remove/trend → adaptiveTdee
+│   ├── weather.ts                 #    ✅ refresh/get (Open-Meteo AQI/feels, 30-min TTL)
+│   ├── rag.ts                     #    ✅ search (vector + keyword merge)
 │   ├── privacy.ts                 #    ✅ recordConsent, deleteMyData, auditTrail
-│   ├── ai.ts                      #    ✅ groqChat() + chat, parseMeal
+│   ├── ai.ts                      #    ✅ groqChat() + chat, parseMeal, analyzePhoto, rewriteQuery
 │   ├── _generated/                #    Auto-generated
 │   └── tsconfig.json
 │
@@ -391,7 +401,7 @@ habitforge/
 | API key exposure | `GROQ_API_KEY` in **Convex deployment env vars**, read only inside actions (`"use node"`); never bundled to client |
 | Input validation | Convex validators reject bad args before handlers |
 | **LLM privacy (hard rule)** | Never send age, weight, name, or health conditions to Groq — only food text, question, and safe categories (`mode=restricted`) set by code |
-| LLM hallucinated numbers | Tool-calling + **number validator** (§4.4) |
+| LLM hallucinated numbers | System prompt forbids unsourced numbers + `lowConfidence` flag; numeric validator planned (§4.4, FR-F-02) |
 | Health data | Consent screen, delete-my-data (Convex + local cache), encrypted transport; audit log of retrievals (§6-J) |
 | XSS | React default escaping; no `dangerouslySetInnerHTML` |
 | Secrets in git | `.env*` git-ignored; no secrets in source |
