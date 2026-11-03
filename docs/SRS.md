@@ -598,22 +598,22 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 ### 9.5 Summary
 
-| Area | Total IDs | ✅ Done | 🔄 Partial | ⬜ Planned |
-|------|-----------|---------|------------|------------|
-| Engine (ENG/REBAL/ATDEE/SAFETY) | 32 | 24 | 3 | 5 |
-| A Onboarding | 9 | 8 | 0 | 1 |
-| B Logging | 15 | 2 | 6 | 7 |
-| C Tracking | 8 | 0 | 2 | 6 |
-| D Activity | 10 | 1 | 1 | 8 |
-| E Balance | 10 | 4 | 3 | 3 |
-| F Coach | 11 | 1 | 1 | 9 |
-| G Personalisation | 12 | 1 | 0 | 11 |
-| H UX | 6 | 3 | 0 | 3 |
-| I Offline | 6 | 0 | 2 | 4 |
-| J Privacy | 7 | 5 | 1 | 1 |
-| K Admin | 4 | 1 | 0 | 3 |
-| NFR | 10 | 6 | 2 | 2 |
-| AC | 10 | 2 | 0 | 8 |
-| **Total** | **140** | **58** | **21** | **61** |
+| Area | Total IDs | ✅ Done | 🔄 Partial | ⬜ Planned | — N/A |
+|------|-----------|---------|------------|------------|--------|
+| Engine (ENG/REBAL/ATDEE/SAFETY) | 29 | 27 | 0 | 2 | 0 |
+| A Onboarding | 9 | 8 | 0 | 1 | 0 |
+| B Logging | 15 | 2 | 7 | 4 | 2 |
+| C Tracking | 8 | 2 | 0 | 6 | 0 |
+| D Activity | 10 | 3 | 1 | 6 | 0 |
+| E Balance | 10 | 10 | 0 | 0 | 0 |
+| F Coach | 11 | 2 | 2 | 7 | 0 |
+| G Personalisation | 12 | 1 | 0 | 11 | 0 |
+| H UX | 6 | 3 | 0 | 3 | 0 |
+| I Offline | 6 | 0 | 2 | 2 | 2 |
+| J Privacy | 7 | 3 | 1 | 3 | 0 |
+| K Admin | 4 | 1 | 0 | 3 | 0 |
+| NFR | 10 | 6 | 4 | 0 | 0 |
+| AC | 10 | 2 | 0 | 8 | 0 |
+| **Total** | **147** | **70** | **17** | **56** | **4** |
 
-> Status reflects Wave 1 and Wave 2 completion (photo gate passed Nov 3, 2026).
+> Status reflects Waves 1–4 gates met and Wave 5 coach live (Nov 3, 2026) — recounted from §9.1–9.4 (147 IDs incl. 4 out-of-scope `—`). Remaining P0 gaps: FR-SAFETY-04 + FR-SAFETY-07 (⬜), FR-F-02 + FR-F-04 (🔄) — all Wave 5 gate work; carried P1s in `docs/deferred.md`.
