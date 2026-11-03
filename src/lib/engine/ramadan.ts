@@ -124,3 +124,4 @@ export function clampRamadanBudget(
     note: "Normal energy target active.",
   };
 }
+
