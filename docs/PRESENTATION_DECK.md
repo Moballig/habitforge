@@ -76,3 +76,4 @@
   - On-device offline voice logging in regional dialects (Sylheti, Chittagonian).
   - Integration with continuous glucose monitors (CGM) and bluetooth weighing scales.
   - Live DAM (Department of Agricultural Marketing) daily wholesale market API sync across all 64 districts of Bangladesh.
+
