@@ -43,7 +43,7 @@ Concretely:
 
 ### 1.3 Contributions
 
-1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 67 passing tests.
+1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 35 passing engine tests (77-test suite).
 2. A **candidate-constrained meal parser**: the LLM may only select from ≤25 client-supplied foods and extract quantities; all math is code-side.
 3. A **Bangladesh-first RAG corpus**: 9,447 chunks + 65,275 structured rows from 16 audited sources, with per-source provenance, quality tiers, and a published defect ledger.
 4. A **local multilingual retrieval stack**: `multilingual-e5-small` (384-d, ONNX q8) embedded in the app server, hybrid vector–keyword search on Convex, and a Groq query rewrite that lifts Bangla medical queries from 1 to 3 guideline pages in the top-5.
@@ -105,7 +105,7 @@ flowchart TB
 | Layer | Owns | Must never own | Implementation |
 |---|---|---|---|
 | Structured food DB | kcal, macros, household measures, aliases, prices | prose answers | Convex `foods` (318) + bundled seed |
-| Deterministic engine | BMR/TDEE, budgets, `safetyMode`, rebalance, shared-pot grams | free text | `src/lib/engine/`, `src/lib/foods/` — 67 tests |
+| Deterministic engine | BMR/TDEE, budgets, `safetyMode`, rebalance, shared-pot grams | free text | `src/lib/engine/`, `src/lib/foods/`, `src/lib/ai/` — 77 tests |
 | Vector store | guidelines, composition tables, recipes, prices | personal data | `ragChunks` (9,447 × 384-d) + 5 structured tables |
 | LLM (Groq) | understanding, candidate selection, friendly explanation, citations | **any number, any PII** | `convex/ai.ts` → `groqChat()` |
 | Embeddings (local) | passage/query vectors | network calls to paid APIs | `POST /api/embed` (ONNX, q8) |
@@ -299,7 +299,7 @@ Eight probe queries against the live deployment (hybrid search, `k=4`), evaluate
 
 | Gate | Result |
 |---|---|
-| Unit/property tests (engine, foods, parser, portion) | **67 pass / 0 fail** (`bun run test`, ≈154k assertions) |
+| Unit/property tests (engine, foods, parser, portion, AI numbers) | **77 pass / 0 fail** (`bun run test`, ≈156k assertions) |
 | TypeScript (`tsc --noEmit`, client + Convex) | 0 errors |
 | ESLint | 0 errors (4 pre-existing warnings in generated files) |
 | Production build | 20 routes incl. dynamic `/api/embed` |
@@ -336,7 +336,7 @@ The bottleneck is local ONNX inference at ingestion, not Convex writes; one-time
 
 **Serverless embeddings.** Running a ≈118 MB ONNX model inside a serverless function makes cold starts the main UX risk; a small always-on container (or bundled model cache) is the production answer.
 
-**LLM numerics.** Despite prompts, chat responses can still carry rough approximate numbers (labelled as such). Strict numeric validation against retrieved chunks — the "number validator" from the original plan — is not yet implemented.
+**LLM numerics.** The numeric validator is now live (`src/lib/ai/numbers.ts`): every digit in a coach reply is traced against the retrieved excerpts and the user's message; an untraceable digit triggers one corrective retry, then a language-matched template fallback (proven live: "8000 steps" → retry → fallback). Rough numbers still appear only when they literally occur in a retrieved chunk or the user's own message — which is the gate's traceability rule.
 
 **Not yet evaluated:** photo vision, voice, authentication, production deployment, and any clinical validation. The system is explicitly not a medical device.
 
@@ -346,7 +346,7 @@ The bottleneck is local ONNX inference at ingestion, not Convex writes; one-time
 
 Deshi Health Companion demonstrates that a nutrition assistant for a low-resource language context can be simultaneously *local* (Bangla/Banglish foods and prices), *grounded* (9,447 citable chunks from official and community sources), and *safe* (a deterministic, tested engine that the LLM cannot override and personal data it cannot see). The retrieval stack shows that the absence of an embedding API is not a blocker: a quantized multilingual encoder on commodity CPU plus hybrid search and a one-line LLM rewrite deliver credible cross-lingual recall.
 
-Immediate next steps, in order: (1) Bangla voice logging (the last open Wave 2 P1 item — plate-photo vision shipped Nov 3 with its FoodBD gate); (2) a numeric validator that blocks any figure absent from a tool result or retrieved chunk; (3) Bangla aliases and guideline summaries to close the `bn`-chunk gap; (4) price normalisation to BDT/kg and recipe-corpus quotas; (5) OCR of the glycaemic-index PDF; (6) a `rag.stats` audit query; and (7) user testing with Bangla-speaking participants before any production move.
+Immediate next steps, in order: (1) the Wave 5 gate itself — 20-question guideline eval + unsafe-prompt refusal tests (numeric validator shipped Nov 3); (2) Bangla voice logging (the last open Wave 2 P1 item — plate-photo vision shipped Nov 3 with its FoodBD gate); (3) Bangla aliases and guideline summaries to close the `bn`-chunk gap; (4) price normalisation to BDT/kg and recipe-corpus quotas; (5) OCR of the glycaemic-index PDF; (6) a `rag.stats` audit query; and (7) user testing with Bangla-speaking participants before any production move.
 
 ---
 

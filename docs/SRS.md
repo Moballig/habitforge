@@ -495,7 +495,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
 | FR-F-01 | Chat BN/EN/Banglish | P0 | W5 | ✅ | `/coach` live: `ai.chat` follows user language (Bangla script → `lang: bn`) |
-| FR-F-02 | Grounded answers + citations | P0 | W5 | 🔄 | Hybrid retrieval + `[n]` citation chips live; below-threshold answers flagged `lowConfidence` (not fully refused); numeric validator not built |
+| FR-F-02 | Grounded answers + citations | P0 | W5 | 🔄 | Hybrid retrieval + `[n]` citation chips live; **numeric validator live** (`src/lib/ai/numbers.ts`: every digit traced to excerpts + user message, 1 retry → language-matched template fallback — live-proven); below-threshold answers flagged `lowConfidence` (full refusal pending) |
 | FR-F-03 | Deterministic numbers | P0 | W1 | ✅ | Engine pure TS |
 | FR-F-04 | Refusal/redirect rules | P0 | W5 | 🔄 | Prompt rules live (no diagnosis/medication, no invented numbers, doctor-first → no targets); gate tests for unsafe prompts pending |
 | FR-F-05 | Meal suggestions (budget/season) | P1 | W5 | ⬜ | Planned |

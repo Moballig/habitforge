@@ -2,6 +2,7 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
+import { unsourcedNumbers } from "../src/lib/ai/numbers";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -116,11 +117,34 @@ Rules:
 - Answer in the user's language (Bangla, English, or Banglish).
 Current mode: ${mode}. Goal category: ${goal}.${contextBlock}`;
 
+    // FR-F-02 numeric traceability: every digit must appear in a source
+    // (retrieved excerpts with their labels, or the user's own message).
+    const sourceTexts = [args.message, ...excerpts];
+    const bangla =
+      args.safeContext?.lang === "bn" || /[\u0980-\u09FF]/.test(args.message);
+    const fallback = bangla
+      ? "উৎসের সাথে সংখ্যাটি মিলিয়ে যাচাই করতে পারিনি, তাই উল্লেখ করছি না। আবার জিজ্ঞেস করুন — নির্দিষ্ট সংখ্যার জন্য নিবন্ধিত ডায়েটিশিয়ানের সাথে কথা বলুন।"
+      : "I couldn't verify those numbers against the sources, so I won't quote them. Ask me again, or speak to a registered dietitian for exact figures.";
+
     try {
-      const response = await groqChat([
+      let response = await groqChat([
         { role: "system", content: system },
         { role: "user", content: args.message },
       ]);
+      let offenders = unsourcedNumbers(response, sourceTexts);
+      if (offenders.length > 0) {
+        console.log("Coach number-check retry:", offenders.join(","));
+        const systemRetry = `${system}\nYour previous attempt used numbers not found in the sources: ${offenders.join(", ")}. Reply to the user again without them — drop the numbers or rephrase qualitatively.`;
+        response = await groqChat([
+          { role: "system", content: systemRetry },
+          { role: "user", content: args.message },
+        ]);
+        offenders = unsourcedNumbers(response, sourceTexts);
+        if (offenders.length > 0) {
+          console.log("Coach number-check fallback:", offenders.join(","));
+          response = fallback;
+        }
+      }
       return { response };
     } catch (error) {
       console.error("Coach action error:", error);

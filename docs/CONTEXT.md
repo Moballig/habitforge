@@ -15,16 +15,16 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Waves 3 + 4 complete (gates met); Wave 5 coach live** — plan/home/insights/activity live; weather/AQI indoor switch live; coach chat wired end-to-end (embed → hybrid search → rewrite → `ai.chat` → citation chips); Wave 5 gate (20-question eval) pending |
+| **Current Phase** | **Waves 3 + 4 complete (gates met); Wave 5 coach live** — plan/home/insights/activity live; weather/AQI indoor switch live; coach chat wired end-to-end (embed → hybrid search → rewrite → `ai.chat` → citation chips) + **numeric validator (FR-F-02, live)**; Wave 5 gate: 20-question eval + refusal tests pending |
 | **Day** | Day 3 (Nov 3, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 67/67 green |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 77/77 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
 | **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach` on Convex (coach seed greeting + settings/right-panel still show mock fixtures) |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-03 (Waves 3 + 4 gates met; weather/AQI indoor switch live; RAG corpus from `/data`: 9,447 chunks + 66k structured records) |
+| **Last Updated** | 2026-11-03 (Waves 3 + 4 gates met; weather/AQI indoor switch live; numeric validator live; RAG corpus from `/data`: 9,447 chunks + 66k structured records) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
@@ -174,7 +174,7 @@
 
 **Wave 2 now:** ✅ complete — manual logging + 318-food search + meal CRUD + parser/shared-pot + assisted photo flow (FoodBD-gated) all live; P1 extras (rice calibration, recipes, voice, barcode) carried beyond the gate. **Wave 5 data foundation is already live** (9,447 chunks + hybrid search); coach wiring live (client embed → `rag.search` → `ai.rewriteQuery` → `ai.chat` with excerpts → citation chips).
 
-**Waves 3 + 4 complete (gates met).** Remaining in order: W5 gate (20-question eval + numeric validator) → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
+**Waves 3 + 4 complete (gates met).** Remaining in order: W5 gate (20-question eval + refusal tests; numeric validator done) → W6 personalisation → W7 offline/PWA/admin → W8 proof/deploy/deck.
 
 **Never cut:** safety gates · citations · rebalancing engine. **Gate rule:** never start a wave with a failing gate behind it. Main branch stays demoable.
 
@@ -291,7 +291,7 @@ Wave 1 ████████████████████████ 
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
 Wave 3 ████████████████████████ 100% — Gate met; budget/what-if/reverse on /plan; home live; weigh-ins + adaptive TDEE on /insights; micros/sodium/sugar carried (docs/deferred.md)
 Wave 4 ████████████████████████ 100% — Gate met: indoor switch on AQI/heat (Open-Meteo, no key) + MET minute tests; P1s carried (docs/deferred.md)
-Wave 5 ███████████████░░░░░░░░░░  60% — Corpus + hybrid retrieval + coach chat (rewrite, citations) live; 20-question gate + numeric validator pending
+Wave 5 █████████████████░░░░░░░  70% — Corpus + hybrid retrieval + coach chat (rewrite, citations) + numeric validator live; 20-question gate + refusal tests pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof
 ```
 

@@ -105,7 +105,7 @@ flowchart TB
     P6 -->|"vectorSearch + keyword merge"| DB
     P6 -->|"Chat completion prompt<br/>(chunks + tools + safe mode)"| Groq
     Groq -->|"Answer (numbers via tools)"| P6
-    P6 -->|"Citation attach, lowConfidence flag<br/>(validator planned)"| P6
+    P6 -->|"Citation attach, lowConfidence flag,<br/>number validator (live)"| P6
     P6 -->|"Grounded answer + source"| U
     P6 -->|"Audit: what was retrieved"| DB
 
@@ -217,7 +217,7 @@ flowchart TB
         P63(("P6.3<br/>Keyword +<br/>Alias Merge"))
         P64(("P6.4<br/>Threshold<br/>Check"))
         P65(("P6.5<br/>LLM<br/>Completion"))
-        P66(("P6.6<br/>Number Validator<br/>(⬜ planned)"))
+        P66(("P6.6<br/>Number Validator<br/>(✅ live)"))
         P67(("P6.7<br/>Citation<br/>Attach"))
     end
 
@@ -231,7 +231,7 @@ flowchart TB
     P64 -->|"Below threshold →<br/>refuse + suggest professional"| U
     P65 -->|"Chat completion<br/>(chunks + system prompt)"| Groq
     Groq -->|"Answer draft"| P66
-    P66 -->|"Pass (validator planned FR-F-02;<br/>today: prompt + lowConfidence)"| P67
+    P66 -->|"Pass → P6.7; else retry once,<br/>then template fallback"| P67
     P67 -->|"Answer + Source: section"| U
     P67 -->|"Audit: retrieved chunks"| DB[("auditLogs")]
 ```
@@ -242,8 +242,8 @@ flowchart TB
 | P6.2 | Query text | Embedding + top chunks | Local `multilingual-e5-small` via `POST /api/embed`; `ctx.vectorSearch` |
 | P6.3 | Vector results | Merged + keyword/alias match | Hybrid retrieval |
 | P6.4 | Best score | Pass / refuse | Below threshold → refuse |
-| P6.5 | Chunks + safe mode | Answer draft | Prompt-instructed (no tool-calling); validator pending |
-| P6.6 | Draft answer | Validated answer | **Planned (FR-F-02)** — not built; today `lowConfidence` flag + prompt only |
+| P6.5 | Chunks + safe mode | Answer draft | Prompt-instructed (no tool-calling) |
+| P6.6 | Draft answer | Validated answer | **Live (FR-F-02)** — every digit must appear in excerpts or the user's message; 1 retry → template fallback |
 | P6.7 | Validated answer | Answer + citations | `Source: <section name>` |
 
 ### 3.4 P1 — Onboarding & Safety (Level 2)
@@ -434,7 +434,7 @@ sequenceDiagram
     G-->>A: answer with inline [n] markers
     A-->>UI: { response } | { error }
     UI->>U: Answer + citation chips from [n] markers<br/>(lowConfidence when below threshold)
-    Note over UI: Number validator (tool/chunk match) — planned, not built
+    Note over UI: Number validator — live: digit trace → excerpts/user msg, retry → fallback
 ```
 
 ### 4.6 Privacy — Delete My Data

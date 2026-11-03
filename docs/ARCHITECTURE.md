@@ -53,9 +53,9 @@ flowchart TB
 | Layer | Used for | Notes | Repo status |
 |-------|----------|-------|-------------|
 | **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
-| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 67 tests, property-tested |
+| **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 35 engine tests (77-test suite), property-tested |
 | **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; chunks carry source, section, page, language; refuse below tuned threshold | ✅ **9,447 chunks** ingested; coach chat live (embed → `rag.search` → rewrite → `ai.chat` → citation chips); 20-question gate pending |
-| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **No tool-calling today** — numbers live in the prompt-instructed answer; numeric validator planned (FR-F-02); `lowConfidence` flag when retrieval is thin. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — `convex/ai.ts` `groqChat()`; `chat` (RAG pipeline: embed → `rag.search` → rewrite → chat → citations), `parseMeal`, `analyzePhoto` |
+| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **No tool-calling today** — numbers traced post-hoc by the **numeric validator** (FR-F-02, live: digit → excerpts/user message, 1 retry → fallback); `lowConfidence` flag when retrieval is thin. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — `convex/ai.ts` `groqChat()`; `chat` (RAG pipeline: embed → `rag.search` → rewrite → chat → citations), `parseMeal`, `analyzePhoto` |
 | **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — **verified live 2026-11-03**; note qwen on_demand ITPM 7k/min ⇒ compact `id|nameEn` candidates + 429 retry; assisted flow with confirm screen | ✅ `ai.analyzePhoto` live |
 
 > **Hard rules (§5.5, §7.1, Plan v3 §0):**
@@ -173,7 +173,7 @@ Pure functions shared by client and Convex: `bmr`, `tdee`, `metNetKcal`, `safety
 | **Query path** | User message → local embedding (`POST /api/embed`, multilingual-e5-small) → `rag.search` → answer with `Source: <section>` |
 | **Embeddings** | **`Xenova/multilingual-e5-small`** (384 dims, quantized, local, Bangla-capable) — Groq hosts **no** embedding models. Query prefix `query:`; passage prefix `passage:` |
 | **Refusal** | Best match below tuned similarity threshold → "I'm not sure…" + suggest a professional |
-| **Number validator** | **Planned (FR-F-02)** — any number in the final reply must appear in a tool result or retrieved chunk; today: system prompt forbids invented numbers + `lowConfidence` flag |
+| **Number validator** | **Live (FR-F-02, Nov 3)** — every digit in the reply must appear in the retrieved excerpts (incl. labels) or the user's message (`src/lib/ai/numbers.ts`); 1 corrective retry, then language-matched template fallback |
 | **Privacy** | Send Groq only food text + question — **never age, weight, name, or conditions**; pass safe categories (`mode=restricted`) set by code |
 
 **Answer format:** short answer, then `Source: section name`.
@@ -284,7 +284,7 @@ sequenceDiagram
     G-->>A: answer with inline [n] markers
     A-->>UI: { response } | { error }
     UI->>U: Answer + citation chips from [n] markers<br/>(lowConfidence when below threshold)
-    Note over UI: number validator (tool/chunk match) — planned, not built
+    Note over UI: number validator — live: digit trace → excerpts/user msg, retry → fallback
 ```
 
 ### 6.3 Parse flow (Wave 2)
@@ -338,7 +338,7 @@ habitforge/
 │   │   │   ├── mets.ts            #    Compendium METs, stepsToMinutes, netKcalRange ±15%
 │   │   │   ├── context.ts         #    outdoorAdvice (AQI/feels-like gate)
 │   │   │   ├── types.ts           #    Engine types
-│   │   │   └── engine.test.ts     #    67 tests, property-tested
+│   │   │   └── engine.test.ts     #    35 tests, property-tested
 │   │   ├── foods/seed.ts          #    318-row seed with source tags
 │   │   ├── foods/groups.ts         #    Plate-group kcal ranges (bySlot)
 │   │   ├── foods/search.ts        #    Offline name/alias search + code-only portion math
@@ -347,6 +347,8 @@ habitforge/
 │   │   ├── foods/portion.ts       #    Shared-pot fraction → grams
 │   │   ├── foods/parser.test.ts   #    20 Bangla/Banglish gate lines
 │   │   ├── foods/portion.test.ts  #    Shared-pot dal gate
+│   │   ├── ai/                    #    numbers.ts (FR-F-02 validator), photo compress, rag client glue
+│   │   │   ├── numbers.ts         #    unsourcedNumbers — digit trace to sources (+ test)
 │   │   ├── i18n.tsx               #    Bangla/English + numerals
 │   │   ├── types.ts               #    UI types (SafetyMode, Profile, FoodItem)
 │   │   ├── mock/index.ts          #    Demo fixtures (/dev/components; app routes Convex-backed)
@@ -401,7 +403,7 @@ habitforge/
 | API key exposure | `GROQ_API_KEY` in **Convex deployment env vars**, read only inside actions (`"use node"`); never bundled to client |
 | Input validation | Convex validators reject bad args before handlers |
 | **LLM privacy (hard rule)** | Never send age, weight, name, or health conditions to Groq — only food text, question, and safe categories (`mode=restricted`) set by code |
-| LLM hallucinated numbers | System prompt forbids unsourced numbers + `lowConfidence` flag; numeric validator planned (§4.4, FR-F-02) |
+| LLM hallucinated numbers | Numeric validator (§4.4) traces every digit → retry → template fallback; plus system prompt + `lowConfidence` flag |
 | Health data | Consent screen, delete-my-data (Convex + local cache), encrypted transport; audit log of retrievals (§6-J) |
 | XSS | React default escaping; no `dangerouslySetInnerHTML` |
 | Secrets in git | `.env*` git-ignored; no secrets in source |
