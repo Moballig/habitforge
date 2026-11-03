@@ -1,6 +1,6 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
-**Version:** 2.3 (Wave 3 complete, Wave 4 P0s live; traceability updated)
+**Version:** 2.4 (Waves 3 + 4 gates met; traceability updated)
 **Date:** November 2, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
@@ -468,7 +468,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-D-02 | Manual steps entry | P0 | W4 | ✅ | steps input → `stepsToMinutes()` (~100/min), `source: "steps"` |
 | FR-D-03 | Net-calorie logic | P0 | W4 | ✅ | `metNetKcal()` |
 | FR-D-04 | No-equipment plans | P1 | W4 | ⬜ | Planned |
-| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | ⬜ | Planned |
+| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | 🔄 | AQI + heat live (`weather.refresh` Open-Meteo → `outdoorAdvice` → indoor-first `/activity`); rain/load-shedding/daylight pending sources |
 | FR-D-06 | Prayer/Ramadan scheduling | P1 | W4/W6 | ⬜ | Planned |
 | FR-D-07 | Women-friendly privacy | P1 | W4 | ⬜ | Planned |
 | FR-D-08 | Beginner progression | P1 | W4 | ⬜ | Planned |

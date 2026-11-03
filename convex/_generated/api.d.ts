@@ -16,6 +16,7 @@ import type * as mealLogs from "../mealLogs.js";
 import type * as privacy from "../privacy.js";
 import type * as profile from "../profile.js";
 import type * as rag from "../rag.js";
+import type * as weather from "../weather.js";
 import type * as weights from "../weights.js";
 
 import type {
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   privacy: typeof privacy;
   profile: typeof profile;
   rag: typeof rag;
+  weather: typeof weather;
   weights: typeof weights;
 }>;
 

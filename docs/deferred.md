@@ -16,7 +16,9 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 
 ## Wave 4 (activity) — remaining
 
-- **AQI/heat context-aware suggestions** (FR-D-05) — the *other half of the Wave 4 gate*. Blocked on picking and verifying a weather/AQI API.
+- **FR-D-05 remainder**: rain, load-shedding and daylight context (no sources picked yet). AQI + heat are live (Open-Meteo, `convex/weather.ts`).
+- **Region → coordinates**: `weather.ts` hardcodes Dhaka coords — `homeRegion` is never collected in onboarding, so there is nothing to map yet.
+- **Local AQI scale**: thresholds use US AQI (≥151) per EPA; swap for a Bangla/DAQMS scale when localizing (noted in `src/lib/engine/context.ts`.
 - **No-equipment / small-space plans** (FR-D-04, P1) — rooftop/balcony/room/low-noise options.
 - **Prayer-time & Ramadan slots** (FR-D-06, P1) — needs prayer-time library/API.
 - **Women-friendly privacy mode** (FR-D-07, P1) — home-only plans, no leaderboard.
@@ -35,7 +37,7 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 ## Quality / test gaps
 
 - **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary` verified only by live `convex run` checks during the session (values hand-checked, test rows removed after).
-- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity` (bun tests cover engine + foods only; 65 passing).
+- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity` (bun tests cover engine + foods only; 67 passing).
 - **No visual/browser check** of any page — verification is HTTP 200 + API-level only.
 - **Plate-group simplification**: mixed dishes and the "Dairy & drinks" section count as `other` in `daySummary.plate` (deliberate; revisit if plate balance gets scrutiny).
 - **`budget.whatIf` extraKcal capped at 10,000** — a single day can't exceed the weekly budget via the simulator alone when the week is empty (correct behaviour, noted so it isn't mistaken for a bug).

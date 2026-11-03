@@ -134,6 +134,8 @@
     "weekMinutes": "Active minutes this week",
     "onTrack": "Good work — you are on track this week",
     "indoor": "Air quality or heat suggests indoor options today.",
+    "indoorAqi": "US AQI {aqi} — unhealthy air. Home workout, yoga or chores first today.",
+    "indoorHeat": "Feels like {temp}°C — very hot. Home workout, yoga or chores first today.",
     "privacyBadge": "Home-only plans · no public leaderboard",
     "netKcal": "Net calories", "empty": "Nothing logged yet — tap an activity above."
   },

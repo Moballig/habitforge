@@ -324,6 +324,16 @@ export default defineSchema({
     source: v.union(v.literal("manual"), v.literal("steps"), v.literal("preset")),
   }).index("by_profile_and_date", ["profileKey", "date"]),
 
+  // ─── Weather / AQI cache (W4) ─────────────────────────
+  weatherState: defineTable({
+    key: v.string(),
+    aqi: v.number(),
+    pm25: v.number(),
+    tempC: v.number(),
+    feelsC: v.number(),
+    fetchedAt: v.number(),
+  }).index("by_key", ["key"]),
+
   // ─── Budget state (W3) ─────────────────────────────────
   budgetState: defineTable({
     profileKey: v.string(),

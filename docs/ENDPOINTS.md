@@ -1,6 +1,6 @@
 # Deshi Health Companion — Backend Functions Documentation
 
-**Version:** 3.4 (aligned with Build Plan v3 — Wave 3 complete; Wave 4 P0s live)
+**Version:** 3.5 (aligned with Build Plan v3 — Waves 3 + 4 gates met)
 **Last Updated:** November 2, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
@@ -29,6 +29,7 @@
 | `convex/activity` | ✅ Live | `create` (preset/manual/steps, MET + net kcal), `remove`, `listWeek` (gauge totals) | W4 |
 | `convex/rag` | ✅ Live | `rag.search` (action: vector + keyword merge), `rag.keywordSearch` | W5 |
 | `convex/weights` | ✅ Live | `add` (upsert per date), `remove`, `trend` (weigh-ins + adaptive TDEE) | W3 |
+| `convex/weather` | ✅ Live | `refresh` (action: Open-Meteo AQI + feels-like, 30-min TTL cache), `get` (cached row) — indoor switch for FR-D-05 | W4 |
 | `convex/prices` | ⬜ Planned | Bazar prices, taka queries | W5–6 |
 | `convex/admin` | ⬜ Planned | Foods/recipes/prices CRUD, report queue | W7 |
 
@@ -183,6 +184,13 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `activity.create` | mutation | `key?`, date, type, minutes, source (preset/manual/steps) | MET from `mets.ts`; net kcal ±15% via `netKcalRange` (FR-D-03); steps source: raw count → `stepsToMinutes` (~100/min), validated 1–100,000 before conversion |
 | `activity.remove` | mutation | `key?`, id | Key ownership check |
 | `activity.listWeek` | query | `key?`, `today` | Mon–Sun week: weekMinutes, net kcal totals, activeDays, entries with ids (feeds `/activity` gauge + chips) |
+
+### `weather` (Wave 4 gate — ✅ live)
+
+| Function | Type | Args | Notes |
+|----------|------|------|-------|
+| `weather.refresh` | action | — | Fetches Open-Meteo US AQI + pm2.5 + temp/feels-like (Dhaka coords); skips network when cache < 30 min; on fetch failure serves last-good row; writes `weatherState` |
+| `weather.get` | query | — | Cached `{ aqi, pm25, tempC, feelsC, fetchedAt }` or null; feeds `outdoorAdvice()` indoor switch on `/activity` |
 
 ### `rag` (Wave 5 foundation — ✅ live)
 

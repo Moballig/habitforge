@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { SemiGauge, BarRangeChart } from "@/components/data/Charts";
 import { PastelTile, StatTile } from "@/components/data/Cards";
 import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
-import { ACTIVITY_METS, DEFAULT_MINUTES, stepsToMinutes } from "@/lib/engine";
+import { ACTIVITY_METS, DEFAULT_MINUTES, outdoorAdvice, stepsToMinutes } from "@/lib/engine";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName } from "@/lib/format";
 import {
@@ -21,7 +21,7 @@ import {
   ListTodo,
   Flame,
 } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
 
 const WEEK_GOAL = 150; // WHO: 150 min moderate activity per week
@@ -40,6 +40,12 @@ const TILES: Array<{
   { type: "chores", labelKey: "activity.chores", tone: "sky", icon: House },
 ];
 
+// FR-D-05 gate: these need outdoors — muted and pushed back when AQI/heat is bad.
+const OUTDOOR_TYPES = new Set<string>(["walk", "cycle", "cricket"]);
+function isOutdoor(type: string): boolean {
+  return OUTDOOR_TYPES.has(type);
+}
+
 export default function ActivityPage() {
   const { t, lang } = useI18n();
   const today = useSyncExternalStore(
@@ -51,6 +57,12 @@ export default function ActivityPage() {
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
   const createActivity = useMutation(api.activity.create);
   const removeActivity = useMutation(api.activity.remove);
+  const weather = useQuery(api.weather.get);
+  const refreshWeather = useAction(api.weather.refresh);
+  useEffect(() => {
+    void refreshWeather();
+  }, [refreshWeather]);
+  const advice = outdoorAdvice(weather?.aqi ?? null, weather?.feelsC ?? null);
   const [steps, setSteps] = useState("");
   const [error, setError] = useState("");
 
@@ -172,22 +184,42 @@ export default function ActivityPage() {
 
       <section>
         <SectionLabel>{t("activity.exercise")}</SectionLabel>
+        {advice.indoor && weather && (
+          <div className="mb-3">
+            <NoticeCard
+              tone="info"
+              title={t("activity.indoor")}
+              body={
+                advice.reason === "aqi"
+                  ? t("activity.indoorAqi").replace("{aqi}", String(weather.aqi))
+                  : t("activity.indoorHeat").replace("{temp}", String(weather.feelsC))
+              }
+            />
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {TILES.map((tile) => {
+          {(advice.indoor
+            ? [...TILES].sort(
+                (a, b) => Number(isOutdoor(b.type)) - Number(isOutdoor(a.type)),
+              )
+            : TILES
+          ).map((tile) => {
             const loggedToday = todayEntries.some((e) => e.type === tile.type);
             const Icon = tile.icon;
+            const muted = advice.indoor && isOutdoor(tile.type);
             return (
-              <PastelTile
-                key={tile.type}
-                tone={tile.tone}
-                icon={Icon}
-                label={t(tile.labelKey)}
-                sublabel={
-                  loggedToday
-                    ? `✓ ${DEFAULT_MINUTES[tile.type]} min`
-                    : `+ ${DEFAULT_MINUTES[tile.type]} min`}
-                onClick={() => void log(tile.type)}
-              />
+              <div key={tile.type} className={muted ? "opacity-55" : undefined}>
+                <PastelTile
+                  tone={tile.tone}
+                  icon={Icon}
+                  label={t(tile.labelKey)}
+                  sublabel={
+                    loggedToday
+                      ? `✓ ${DEFAULT_MINUTES[tile.type]} min`
+                      : `+ ${DEFAULT_MINUTES[tile.type]} min`}
+                  onClick={() => void log(tile.type)}
+                />
+              </div>
             );
           })}
         </div>

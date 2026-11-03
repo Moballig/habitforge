@@ -10,6 +10,7 @@ import {
   metNetKcal,
   metNetKcalMinutes,
   netKcalRange,
+  outdoorAdvice,
   stepsToMinutes,
   proteinBandGPerKg,
   rebalance,
@@ -474,5 +475,21 @@ describe("gate: MET activity", () => {
   test("steps convert at ~100 steps/min", () => {
     expect(stepsToMinutes(8000)).toBe(80);
     expect(stepsToMinutes(0)).toBe(1); // never 0 minutes
+  });
+});
+
+// ─── Gate: indoor switch (Wave 4 AQI/heat half) ───────────
+describe("gate: indoor switch", () => {
+  test("US AQI ≥151 or feels-like ≥38°C → indoor advice", () => {
+    expect(outdoorAdvice(151, 30)).toEqual({ indoor: true, reason: "aqi" });
+    expect(outdoorAdvice(100, 38)).toEqual({ indoor: true, reason: "heat" });
+    expect(outdoorAdvice(180, 40)).toEqual({ indoor: true, reason: "aqi" });
+  });
+
+  test("safe conditions or missing readings → no switch", () => {
+    expect(outdoorAdvice(150, 37.9)).toEqual({ indoor: false, reason: null });
+    expect(outdoorAdvice(null, null)).toEqual({ indoor: false, reason: null });
+    expect(outdoorAdvice(null, 40)).toEqual({ indoor: true, reason: "heat" });
+    expect(outdoorAdvice(160, null)).toEqual({ indoor: true, reason: "aqi" });
   });
 });
