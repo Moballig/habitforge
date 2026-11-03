@@ -12,14 +12,34 @@ Formerly HabitForge (AI Habit Tracker); product scope follows [`docs/bangladeshi
 - Pure-TS deterministic engine in `src/lib/engine/` — shared by client and Convex; 80-test suite, no untraced LLM numbers
 - Wave 5 RAG gate: **20/20** expected-source retrieval, **10/10** unsafe refusals, numeric trace validator
 
-## Setup
+## First-time setup
 
 ```bash
 bun install
 bunx convex login
-bunx convex dev              # starts Convex + Next together (or: bun run dev)
-bunx convex env set GROQ_API_KEY=your_groq_key
+mkdir -p .tmp
+CONVEX_TMPDIR="$PWD/.tmp" bunx convex env set GROQ_API_KEY=your_groq_key
 ```
+
+## Start development
+
+Run these in **two separate visible terminals**. Keep both terminals open; do not use `nohup`, `setsid`, or append `&`.
+
+**Terminal 1 — Convex backend**
+
+```bash
+CONVEX_TMPDIR="$PWD/.tmp" bunx convex dev
+```
+
+Wait for `Convex functions ready!`.
+
+**Terminal 2 — Next.js frontend**
+
+```bash
+bun run dev
+```
+
+Wait for `Ready`, then open <http://localhost:3000>. Stop each server with `Ctrl+C` in its terminal.
 
 ## Gates
 
