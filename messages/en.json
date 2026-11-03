@@ -57,6 +57,15 @@
     "noMeals": "Nothing logged yet. Start with breakfast.",
     "logMeal": "Log a meal"
   },
+  "insights": {
+    "weighIn": "Weigh-in", "addWeighIn": "Save weigh-in", "weight": "Weight",
+    "trend": "Weight trend", "noWeighIns": "Add your first weigh-in to see the trend.",
+    "statusFormula": "Formula estimate", "statusSettled": "Estimate settled",
+    "needsWeighIns": "Needs {n} more weigh-ins before trusting the blend",
+    "confidence": "Confidence", "avgIntake": "Average intake", "delta": "Change",
+    "noise": "Scale weight moves with water, salt, feasts and your cycle — trust the trend, not one day.",
+    "saved": "Saved"
+  },
   "log": {
     "title": "Log food",
     "ph": "Type in Bangla, English or Banglish (e.g. bhat dal alu bhorta)",

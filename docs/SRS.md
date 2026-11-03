@@ -402,7 +402,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-ATDEE-01 | Start from formula estimate | P1 | W3 | ✅ | `adaptive.ts` `adaptiveTdee()` |
 | FR-ATDEE-02 | Weekly compare weight vs intake | P1 | W3 | ✅ | `adaptive.ts` formula |
 | FR-ATDEE-03 | Blend + honesty states | P1 | W3 | ✅ | `adaptive.ts` confidence/status |
-| FR-ATDEE-04 | Warn Eid/sodium/cycle noise | P1 | W3 | ⬜ | UI notes |
+| FR-ATDEE-04 | Warn Eid/sodium/cycle noise | P1 | W3 | ✅ | noise note on `/insights` (`weights.trend`) |
 | FR-SAFETY-01 | Onboarding screen (6 flags) | P0 | W1 | ✅ | `safety.ts` `screenFromAnswers()` |
 | FR-SAFETY-02 | High-risk → deficits off + referral | P0 | W1 | ✅ | `safetyMode()`; `allowsDeficit()` |
 | FR-SAFETY-03 | ED guardrails (no shaming) | P0 | W1 | ✅ | `safetyMode()` + UI tone |
@@ -488,7 +488,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-E-07 | Adaptive TDEE + confidence | P1 | W3 | ✅ | `adaptiveTdee()` |
 | FR-E-08 | What-if simulator | P1 | W3 | ✅ | `budget.whatIf` query (extraKcal, clamped 0–10k) + live stepper on `/plan` |
 | FR-E-09 | Reverse mode | P1 | W3 | ⬜ | Planned |
-| FR-E-10 | Weight trend chart | P2 | W3 | ⬜ | `weighIns` table ready |
+| FR-E-10 | Weight trend chart | P2 | W3 | ✅ | `weights.add`/`trend` + `AreaChart` on `/insights` |
 
 #### F. AI Coach
 

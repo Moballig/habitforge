@@ -289,7 +289,7 @@
 ```
 Wave 1 ████████████████████████  100% — Foundation gate met
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
-Wave 3 ██████████████░░░░░░░░░░░ 65% — Gate met; budget + what-if live on /plan; home live (macros, plate, rice, next action); insights/micros remain
+Wave 3 █████████████████░░░░░░░  75% — Gate met; budget + what-if on /plan; home live; weigh-ins + adaptive TDEE on /insights; micros/sodium/sugar remain
 Wave 4 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Activity
 Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof

@@ -25,10 +25,10 @@
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
 | `convex/ai` | ✅ Live | `chat` (+RAG `context`, `[n]` citations), `parseMeal` (candidate pick), `rewriteQuery` | W2/5 |
 | `convex/mealLogs` | ✅ Core live | List/create/update/remove/copy/day summary; profile-key checks | W2 |
-| `convex/budget` | ⬜ Planned | 7-day budget, overshoot, spread plan (engine-backed) | W3 |
+| `convex/budget` | ✅ Live | `get` (7-day budget, overshoot, spread plan), `whatIf` simulator — engine-backed, computed on read | W3 |
 | `convex/activity` | ⬜ Planned | MET logging, manual steps | W4 |
 | `convex/rag` | ⬜ Planned | `ctx.vectorSearch` + keyword merge (action only) | W5 |
-| `convex/weights` | ⬜ Planned | Weigh-ins, adaptive TDEE inputs | W3 |
+| `convex/weights` | ✅ Live | `add` (upsert per date), `remove`, `trend` (weigh-ins + adaptive TDEE) | W3 |
 | `convex/prices` | ⬜ Planned | Bazar prices, taka queries | W5–6 |
 | `convex/admin` | ⬜ Planned | Foods/recipes/prices CRUD, report queue | W7 |
 
@@ -166,7 +166,14 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 |----------|------|------|-------|
 | `budget.get` | query | `today` (YYYY-MM-DD) | Live weekly aggregation from mealLogs → TDEE/gentle-change target → `rebalance()` plan; returns overshoot, safety mode, 7-day series, plan days, profile name. Replaces the planned `budget.state` + `budget.plan` split (plan is computed on read, no budgetState writes) |
 | `budget.whatIf` | query | `today`, `extraKcal` (0–10,000) | FR-E-08: same view as `budget.get` with simulated extra intake today (shared `computeBudget`); live on `/plan` stepper |
-| `weights.add` / `weights.trend` | mutation/query | — | Adaptive TDEE inputs |
+
+### `weights` (Wave 3 — ✅ live, Nov 3)
+
+| Function | Type | Args | Notes |
+|----------|------|------|-------|
+| `weights.add` | mutation | `key?`, date, weightKg (20–300) | Upsert per profile+date; feeds FR-ATDEE-* |
+| `weights.remove` | mutation | `key?`, id | Key ownership check (same pattern as `mealLogs.remove`) |
+| `weights.trend` | query | `key?`, `today` | Last ≤14 days of weigh-ins (ascending) + `adaptiveTdee()` blend: estimate, confidence, status (formula/improving/settled), more-weigh-ins count, noise note; avg intake over the window. No profile → null |
 
 ### `activity` (Wave 4 — ⬜ planned)
 
