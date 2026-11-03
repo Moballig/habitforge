@@ -100,6 +100,8 @@
     "window": "Recovery days",
     "floor": "Daily floor (never below)",
     "cap": "Activity cap",
+    "dayActivity": "{min} min {exercise} ≈ {kcal} kcal ±15%",
+    "exWalk": "fast walk",
     "feast": "Planned feast",
     "whatIf": "If I eat this…",
     "reverse": "To eat that on…", "feastDate": "Feast day", "feastExtra": "Extra kcal", "pickFuture": "Pick a future day — calories get banked before it.", "banked": "banked",

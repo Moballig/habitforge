@@ -395,9 +395,9 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-REBAL-05 | Never 100% compensation (50–70%) | P0 | W3 | ✅ | `rebalance.ts` coverShare clamp; property test |
 | FR-REBAL-06 | Cap activity net 200 kcal/day | P0 | W3 | ✅ | `rebalance.ts` activityCapNet |
 | FR-REBAL-07 | Never below floor (BMR) | P0 | W3 | ✅ | `rebalance.ts` floor clamp; property test |
-| FR-REBAL-08 | Forgive / re-spread silently | P0 | W3 | ⬜ | UX copy + rebalance re-run |
+| FR-REBAL-08 | Forgive / re-spread silently | P0 | W3 | ✅ | `budget.get` credits logged activity net against weekly excess; plan recomputes on read, no nag UI |
 | FR-REBAL-09 | Planned feast mode | P1 | W3 | ✅ | `rebalance.ts` `feastPreBank()` |
-| FR-REBAL-10 | Plain Bangla with ±range | P0 | W3 | ⬜ | Templates in plan UI |
+| FR-REBAL-10 | Plain Bangla with ±range | P0 | W3 | ✅ | plan day line `plan.dayActivity` i18n template (min/exercise/kcal ±15%) |
 | FR-REBAL-11 | User controls (window, split, days off) | P0 | W3 | ✅ | window + split live: `profile.setBudgetControls` → `/plan` steppers; exercise types/days off pending engine (deferred) |
 | FR-ATDEE-01 | Start from formula estimate | P1 | W3 | ✅ | `adaptive.ts` `adaptiveTdee()` |
 | FR-ATDEE-02 | Weekly compare weight vs intake | P1 | W3 | ✅ | `adaptive.ts` formula |

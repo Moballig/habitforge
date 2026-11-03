@@ -241,7 +241,11 @@ export default function PlanPage() {
                     <p className="mt-0.5 text-sm text-ink/60">
                       trim <Range low={day.trimKcal} high={day.trimKcal} unit="kcal" /> ·{" "}
                       <span className="inline-flex items-center gap-1">
-                        <Footprints size={13} /> {day.activityMin} min (~{day.activityKcal} kcal)
+                        <Footprints size={13} />{" "}
+                        {t("plan.dayActivity")
+                          .replace("{min}", String(day.activityMin))
+                          .replace("{exercise}", t("plan.exWalk"))
+                          .replace("{kcal}", String(day.activityKcal))}
                       </span>
                     </p>
                     {day.floorNote && (

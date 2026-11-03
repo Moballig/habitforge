@@ -83,6 +83,7 @@ async function computeBudget(
   const series: Array<{ date: string; kcal: number; target: number }> = [];
   let weeklyUsed = 0;
   let loggedDays = 0;
+  let activityNet = 0;
 
   for (const date of dates) {
     const meals = await ctx.db
@@ -100,6 +101,15 @@ async function computeBudget(
     if (meals.length > 0) loggedDays += 1;
     weeklyUsed += dayKcal;
     series.push({ date, kcal: Math.round(dayKcal), target: 0 }); // target filled below
+
+    // FR-REBAL-08: done activity silently credits the week's excess
+    const acts = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_profile_and_date", (q) =>
+        q.eq("profileKey", key).eq("date", date),
+      )
+      .take(50);
+    for (const a of acts) activityNet += (a.netKcalLow + a.netKcalHigh) / 2;
   }
   weeklyUsed += extraKcal;
 
@@ -115,7 +125,9 @@ async function computeBudget(
 
   // Weekly excess fed to the day-shaped engine as a single representative
   // overshoot day; floor/cap clamps then run on real daily numbers.
-  const excess = Math.max(0, Math.round(weeklyUsed) - weeklyBudget);
+  // FR-REBAL-08: logged activity is subtracted first — never a red banner,
+  // the plan just re-spreads the smaller remainder on next read.
+  const excess = Math.max(0, Math.round(weeklyUsed - activityNet) - weeklyBudget);
   const futureDates = Array.from({ length: 7 }, (_, i) =>
     toISODate(addDays(parseISODate(today), i + 1)),
   );

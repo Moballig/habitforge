@@ -165,7 +165,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `budget.get` | query | `today` (YYYY-MM-DD) | Live weekly aggregation from mealLogs → TDEE/gentle-change target → `rebalance()` plan; returns overshoot, safety mode, 7-day series, plan days, profile name. Replaces the planned `budget.state` + `budget.plan` split (plan is computed on read, no budgetState writes) |
+| `budget.get` | query | `today` (YYYY-MM-DD) | Live weekly aggregation from mealLogs → TDEE/gentle-change target → `rebalance()` plan; activity logs credited against excess (FR-REBAL-08); returns overshoot, safety mode, 7-day series, plan days, profile name. Replaces the planned `budget.state` + `budget.plan` split (plan is computed on read, no budgetState writes) |
 | `budget.whatIf` | query | `today`, `extraKcal` (0–10,000) | FR-E-08: same view as `budget.get` with simulated extra intake today (shared `computeBudget`); live on `/plan` stepper |
 
 ### `weights` (Wave 3 — ✅ live, Nov 3)
