@@ -15,7 +15,7 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Wave 2 complete + RAG data foundation** — logging/parser/shared-pot/photo gate pass; 9,447-chunk corpus ingested; coach wired |
+| **Current Phase** | **Wave 2 complete; Wave 3 gate met** — logging/photo live; `budget.get` + `/plan` live on real mealLogs; RAG coach wired |
 | **Day** | Day 3 (Nov 3, 2026) |
 | **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 56/56 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
@@ -289,7 +289,7 @@
 ```
 Wave 1 ████████████████████████  100% — Foundation gate met
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
-Wave 3 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Tracking + balance UI
+Wave 3 ███████████░░░░░░░░░░░░░░░   40% — Gate met (Friday-biriyani · 5,000 sims · feast floor); budget live on /plan; insights/micros remain
 Wave 4 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Activity
 Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof

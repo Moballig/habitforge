@@ -3,6 +3,8 @@ import {
   adaptiveTdee,
   asianBmiBand,
   bmr,
+  feastPreBank,
+  gentleDeficitKcal,
   metNetKcal,
   metNetKcalMinutes,
   proteinBandGPerKg,
@@ -390,4 +392,61 @@ describe("property: rebalance safety", () => {
       expect(plan.plan.length).toBe(plan.windowDays);
     }
   }, 60_000);
+});
+
+// ─── Gate: Friday biriyani (Wave 3) ──────────────────────
+describe("gate: Friday biriyani", () => {
+  test("hand calculation: +800 feast day recovers over 4 days", () => {
+    // Target 2000, Friday intake 2800 (biryani + extras) → 800 over.
+    // Cover 60% = 480; 60/40 split → 288 trim + 192 activity over 4 days
+    // = 72 trim + 48 activity per day. Floor 1500, cap 200 net.
+    const plan = rebalance(
+      {
+        intakeKcal: 2800,
+        targetKcal: 2000,
+        floorKcal: 1500,
+        weightKg: 70,
+        dates: dates(4),
+        safetyMode: "normal",
+      },
+      { windowDays: 4, intakeShare: 0.6, coverShare: 0.6, floorKcal: 1500 },
+    );
+    expect(plan.overshootKcal).toBe(800);
+    expect(plan.coveredKcal).toBe(480);
+    const planned = plan.plan.reduce((s, d) => s + d.trimKcal + d.activityKcal, 0);
+    expect(planned).toBeLessThan(800); // never 100%
+    expect(planned).toBeGreaterThanOrEqual(470); // ≈480 ± rounding
+    const day = plan.plan[0];
+    expect(day.trimKcal).toBeGreaterThanOrEqual(65);
+    expect(day.trimKcal).toBeLessThanOrEqual(80); // ≈72
+    expect(day.activityKcal).toBeGreaterThanOrEqual(42);
+    expect(day.activityKcal).toBeLessThanOrEqual(55); // ≈48
+    expect(day.activityKcal).toBeLessThanOrEqual(200); // cap
+    expect(2000 - day.trimKcal).toBeGreaterThanOrEqual(1500); // floor
+    expect(day.activityMin).toBeGreaterThanOrEqual(10);
+    expect(day.activityMin).toBeLessThanOrEqual(15);
+  });
+});
+
+// ─── Gate: feast pre-bank (Wave 3) ───────────────────────
+describe("gate: feast pre-bank", () => {
+  test("per-day trim ≤ target − floor so feast week stays above floor", () => {
+    // 2400 extra × 0.6 cover / 4 days = 360 ≤ headroom 500
+    expect(
+      feastPreBank({ feastExtraKcal: 2400, daysBefore: 4, floorKcal: 1500, targetKcal: 2000 }),
+    ).toBe(360);
+    // Huge feast, tiny headroom → clamped to target − floor
+    expect(
+      feastPreBank({ feastExtraKcal: 9000, daysBefore: 7, floorKcal: 1900, targetKcal: 2000 }),
+    ).toBe(100);
+    // Floor = target → no room to pre-bank
+    expect(
+      feastPreBank({ feastExtraKcal: 1000, daysBefore: 3, floorKcal: 1800, targetKcal: 1800 }),
+    ).toBe(0);
+  });
+});
+
+test("FR-ENG-05: gentle deficit = 0.5 kg/week ≈ 550 kcal/day", () => {
+  expect(gentleDeficitKcal()).toBe(550);
+  expect(gentleDeficitKcal(1)).toBe(1100);
 });

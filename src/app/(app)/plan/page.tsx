@@ -1,22 +1,55 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { BarRangeChart } from "@/components/data/Charts";
 import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
-import { OVERSHOOT_BUDGET, WEEK, DEMO_PROFILE } from "@/lib/mock";
+import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatShortDate } from "@/lib/format";
 import { Footprints, Utensils, HeartPulse, CalendarClock, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { api } from "../../../../convex/_generated/api";
 
 export default function PlanPage() {
   const { t, lang } = useI18n();
-  const budget = OVERSHOOT_BUDGET;
-  const mode = DEMO_PROFILE.safetyMode;
+  // Client-only date; server snapshot is "" so prerender never calls new Date()
+  const today = useSyncExternalStore(
+    () => () => {},
+    () => todayISO(),
+    () => "",
+  );
+  const budget = useQuery(api.budget.get, today ? { today } : "skip");
   const [whatIf, setWhatIf] = useState(1); // meal units over
 
+  if (budget === undefined) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-extrabold md:text-3xl">{t("plan.title")}</h1>
+        <div className="tile h-40 animate-pulse" aria-busy="true" aria-label="Loading budget" />
+      </div>
+    );
+  }
+
+  if (budget === null) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-extrabold md:text-3xl">{t("plan.title")}</h1>
+        <NoticeCard
+          tone="info"
+          title={t("states.empty")}
+          body="Set up your profile to see the 7-day budget."
+        />
+        <Link href="/onboarding">
+          <Button>{t("nav.onboarding")}</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const mode = budget.safetyMode;
   const usedPct = Math.min((budget.weeklyUsed / budget.weeklyBudget) * 100, 100);
 
   if (mode === "doctor-first") {
@@ -83,6 +116,14 @@ export default function PlanPage() {
 
           <section>
             <SectionLabel>{t("plan.spread")}</SectionLabel>
+            {budget.plan.length === 0 ? (
+              <NoticeCard
+                tone="gentle"
+                title={t("plan.noPlan")}
+                body={`${t("plan.used")}: ${Math.round(usedPct)}% · ${t("plan.budget")}`}
+              />
+            ) : (
+              <>
             <p className="mb-3 text-sm text-ink/60">{t("plan.split")}</p>
             <ul className="space-y-2">
               {budget.plan.map((day) => (
@@ -101,7 +142,7 @@ export default function PlanPage() {
                       </span>
                     </p>
                     {day.floorNote && (
-                      <p className="mt-1 text-xs text-ink/45">{day.floorNote}</p>
+                      <p className="mt-1 text-xs text-ink/45">{t("plan.floor")}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -113,6 +154,8 @@ export default function PlanPage() {
                 </li>
               ))}
             </ul>
+              </>
+            )}
           </section>
 
           <section>
@@ -160,9 +203,9 @@ export default function PlanPage() {
               </p>
               <div className="mt-4">
                 <BarRangeChart
-                  days={WEEK.map((w) => formatDayName(w.date, lang))}
-                  values={WEEK.map((w) => w.kcal)}
-                  targets={WEEK.map((w) => w.target)}
+                  days={budget.series.map((w) => formatDayName(w.date, lang))}
+                  values={budget.series.map((w) => w.kcal)}
+                  targets={budget.series.map((w) => w.target)}
                   highlightToday
                 />
               </div>

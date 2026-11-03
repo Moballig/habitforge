@@ -9,6 +9,7 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as budget from "../budget.js";
 import type * as foods from "../foods.js";
 import type * as mealLogs from "../mealLogs.js";
 import type * as privacy from "../privacy.js";
@@ -23,6 +24,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  budget: typeof budget;
   foods: typeof foods;
   mealLogs: typeof mealLogs;
   privacy: typeof privacy;

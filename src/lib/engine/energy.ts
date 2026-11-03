@@ -40,6 +40,11 @@ export function metNetKcalMinutes(met: number, weightKg: number, minutes: number
 /** Energy per kg of body-weight change (FR-ENG-04). */
 export const KCAL_PER_KG = 7700;
 
+/** Daily deficit for a 0.5 kg/week loss (FR-ENG-05 band: ~0.5–1 kg/week). */
+export function gentleDeficitKcal(kgPerWeek = 0.5): number {
+  return Math.round((KCAL_PER_KG * kgPerWeek) / 7);
+}
+
 /** Protein guidance band during a deficit, g/kg/day (FR-ENG-06) — information only. */
 export function proteinBandGPerKg(weightKg: number): { low: number; high: number } {
   return { low: Math.round(weightKg * 1.6), high: Math.round(weightKg * 2.2) };

@@ -91,7 +91,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Progress (Nov 3):** ✅ 318-row reconciled seed · indexed BN/EN server search + bundled offline alias search · live meal CRUD/day-summary · `/log` saves through Convex · 20 deterministic Bangla/Banglish parser cases pass + live Groq candidate smoke passes · shared-pot 1/5 dal math/UI passes · **`ai.analyzePhoto` live (qwen vision, ITPM-aware compact prompt + 429 retry) + `/log/photo` wired (compress → analyze → chips/toggle/slot → save)** · FoodBD gate run (10 images: 49% recall / 55% precision / 123 kcal mean error → assisted mode confirmed). P1 extras (rice calibrator, recipe builder, voice, barcode) carried beyond the gate.
 
-### Wave 3: Tracking and the balance engine — ⬜
+### Wave 3: Tracking and the balance engine — 🔄 GATE MET (Nov 3, 2026)
 
 | Item | Ref |
 |---|---|
@@ -107,6 +107,8 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 | Home screen: calories, rice portion, plate balance, one next action | §6-H |
 
 **Gate:** Friday-biriyani scenario yields a plan matching a hand calculation; zero violations in 5,000 simulated overshoots; feast mode never pushes a day below the floor.
+
+**Progress (Nov 3):** ✅ all three gate tests pass (`engine.test.ts`: Friday-biriyani hand calc, 5,000-sim property test, feast pre-bank floor clamp) · `gentleDeficitKcal()` (FR-ENG-05) · **`budget.get` live** — weekly aggregation from mealLogs, TDEE/gentle-change target, `rebalance()` spread plan; `/plan` reads live data (loading + no-profile states, gentle `noPlan` copy). ⬜ Insights/micronutrients/sodium/sugar/GL, what-if simulator, reverse mode, weight trend, adaptive-TDEE UI, home-screen balance remain.
 
 ### Wave 4: Activity — ⬜
 
@@ -207,7 +209,7 @@ Report the sample size beside every number and state limits found (mixed dishes,
 |------|-------|------|--------|
 | 1 | Foundation (engine, safety, profile, data) | 6 safety profiles · property test · 150+ foods · 154 kcal | ✅ **Done** (Nov 2, 2026) |
 | 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | ✅ **Done** (Nov 3, 2026) — parser 20/20 · shared-pot dal pass · assisted photo gate run on 10 FoodBD plates |
-| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | ⬜ |
+| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | 🔄 **Gate met** (Nov 3) — all three gate tests pass; `budget.get` live on `/plan` (real mealLogs → overshoot → spread). Insights/micros/what-if remain |
 | 4 | Activity | AQI/heat → indoor · MET minutes match formula | ⬜ |
 | 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | 🔄 Data + hybrid retrieval live; coach wiring pending |
 | 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ⬜ |

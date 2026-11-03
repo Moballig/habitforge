@@ -385,10 +385,10 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-ENG-02 | TDEE = BMR × activity factor | P0 | W1 | ✅ | `energy.ts` `tdee()` |
 | FR-ENG-03 | MET energy: gross & net | P0 | W1 | ✅ | `energy.ts` `metNetKcal()`, `metNetKcalMinutes()` |
 | FR-ENG-04 | 7,700 kcal per kg | P0 | W1 | ✅ | `energy.ts` `KCAL_PER_KG` |
-| FR-ENG-05 | Rate of loss ~0.5–1 kg/week | P0 | W3 | ⬜ | Will use in budget.plan |
+| FR-ENG-05 | Rate of loss ~0.5–1 kg/week | P0 | W3 | ✅ | `energy.ts` `gentleDeficitKcal()`; applied in `budget.get` target |
 | FR-ENG-06 | Protein band 1.6–2.2 g/kg | P1 | W1 | ✅ | `energy.ts` `proteinBandGPerKg()` |
 | FR-ENG-07 | Exercise ±15% uncertainty note | P0 | W1 | ✅ | UI shows `Range` with ±15% |
-| FR-REBAL-01 | 7-day rolling energy budget | P0 | W3 | 🔄 | `rebalance.ts` ready; `budgetState` table ready |
+| FR-REBAL-01 | 7-day rolling energy budget | P0 | W3 | ✅ | `convex/budget.ts` `budget.get` computes live from mealLogs + profile |
 | FR-REBAL-02 | Overshoot when intake−target > 100 | P0 | W3 | ✅ | `rebalance.ts` tolerance logic |
 | FR-REBAL-03 | Recovery plan 3–7 days | P0 | W3 | ✅ | `rebalance.ts` windowDays clamp |
 | FR-REBAL-04 | 60/40 split (intake/activity) | P0 | W3 | ✅ | `rebalance.ts` intakeShare |
@@ -479,9 +479,9 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-E-01 | 7-day rolling budget | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
-| FR-E-02 | Overshoot detection + gentle message | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
-| FR-E-03 | Spread plan with maths ± range | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
+| FR-E-01 | 7-day rolling budget | P0 | W3 | ✅ | `budget.get` + `/plan` live |
+| FR-E-02 | Overshoot detection + gentle message | P0 | W3 | ✅ | tolerance 100 in `budget.get`; `plan.noPlan` gentle copy |
+| FR-E-03 | Spread plan with maths ± range | P0 | W3 | ✅ | `rebalance()` plan rendered with `Range` on `/plan` |
 | FR-E-04 | User controls | P0 | W3 | ✅ | `RebalanceControls` |
 | FR-E-05 | Hard safety floors/caps | P0 | W1 | ✅ | Property test |
 | FR-E-06 | Planned feast mode | P1 | W3 | ✅ | `feastPreBank()` |
