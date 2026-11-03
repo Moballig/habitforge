@@ -289,7 +289,7 @@
 ```
 Wave 1 ████████████████████████  100% — Foundation gate met
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
-Wave 3 ███████████░░░░░░░░░░░░░░░   40% — Gate met (Friday-biriyani · 5,000 sims · feast floor); budget live on /plan; insights/micros remain
+Wave 3 ██████████████░░░░░░░░░░░ 60% — Gate met; budget live on /plan; home live (macros, plate, rice, next action); insights/micros remain
 Wave 4 ░░░░░░░░░░░░░░░░░░░░░░░░    0% — Activity
 Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof

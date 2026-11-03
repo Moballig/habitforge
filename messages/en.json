@@ -40,7 +40,7 @@
     "restrictedNote": "We will keep guidance gentle — no deficit plans for now."
   },
   "home": {
-    "hello": "Hello",
+    "hello": "Hello", "setup": "Set up your profile",
     "overview": "Today",
     "eaten": "Eaten",
     "guide": "Today's guide",
@@ -49,7 +49,7 @@
     "plate": "Plate balance",
     "plateWhy": "A balanced plate has vegetables, protein and grains.",
     "nextAction": "One next action",
-    "logLunch": "Log lunch",
+    "logLunch": "Log lunch", "logBreakfast": "Log breakfast", "logDinner": "Log dinner",
     "walk15": "Take a 15-minute walk after dinner",
     "overshoot": "A bigger day than planned. Here is a gentle way to spread it",
     "mealsToday": "Today's meals",

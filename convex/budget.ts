@@ -38,6 +38,7 @@ export const get = query({
   returns: v.union(
     v.null(),
     v.object({
+      name: v.optional(v.string()),
       weekStart: v.string(),
       weekEnd: v.string(),
       weeklyBudget: v.number(),
@@ -130,6 +131,7 @@ export const get = query({
     );
 
     return {
+      name: profile.name,
       weekStart: dates[0],
       weekEnd: dates[6],
       weeklyBudget,

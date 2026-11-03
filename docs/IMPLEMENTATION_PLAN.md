@@ -108,7 +108,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** Friday-biriyani scenario yields a plan matching a hand calculation; zero violations in 5,000 simulated overshoots; feast mode never pushes a day below the floor.
 
-**Progress (Nov 3):** ✅ all three gate tests pass (`engine.test.ts`: Friday-biriyani hand calc, 5,000-sim property test, feast pre-bank floor clamp) · `gentleDeficitKcal()` (FR-ENG-05) · **`budget.get` live** — weekly aggregation from mealLogs, TDEE/gentle-change target, `rebalance()` spread plan; `/plan` reads live data (loading + no-profile states, gentle `noPlan` copy). ⬜ Insights/micronutrients/sodium/sugar/GL, what-if simulator, reverse mode, weight trend, adaptive-TDEE UI, home-screen balance remain.
+**Progress (Nov 3):** ✅ all three gate tests pass (`engine.test.ts`: Friday-biriyani hand calc, 5,000-sim property test, feast pre-bank floor clamp) · `gentleDeficitKcal()` (FR-ENG-05) · **`budget.get` live** — weekly aggregation from mealLogs, TDEE/gentle-change target, `rebalance()` spread plan; `/plan` reads live data (loading + no-profile states, gentle `noPlan` copy) · **Home live (FR-H-01, FR-C-01, FR-C-02)** — `daySummary` returns macros (seed × grams), `ricePortionLabel`, plate-group kcal via seed index ranges (`groups.ts`, 318-row boundary test); `/home` reads `daySummary` + `budget.get` (overshoot notice, next-action from bySlot, live week chart); fixtures removed. ⬜ Insights/micronutrients/sodium/sugar/GL, what-if simulator, reverse mode, weight trend, adaptive-TDEE UI remain.
 
 ### Wave 4: Activity — ⬜
 

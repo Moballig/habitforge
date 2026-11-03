@@ -43,7 +43,7 @@ export default function PlanPage() {
           body="Set up your profile to see the 7-day budget."
         />
         <Link href="/onboarding">
-          <Button>{t("nav.onboarding")}</Button>
+          <Button>{t("home.setup")}</Button>
         </Link>
       </div>
     );

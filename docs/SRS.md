@@ -451,8 +451,8 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-C-01 | Daily/weekly calories + macros | P0 | W3 | 🔄 | Engine ready; UI on fixtures |
-| FR-C-02 | Plate-balance view | P0 | W3 | 🔄 | `PlateBalance` chart exists |
+| FR-C-01 | Daily/weekly calories + macros | P0 | W3 | ✅ | `daySummary` computes macros from seed × grams; live on `/home` |
+| FR-C-02 | Plate-balance view | P0 | W3 | ✅ | `PlateBalance` fed by `daySummary.plate` (seed index → group ranges) |
 | FR-C-03 | Micronutrients as ranges | P1 | W3 | ⬜ | FCTB ranges in seed |
 | FR-C-04 | Sodium/oil awareness | P1 | W3 | ⬜ | Planned |
 | FR-C-05 | Sugar as spoons | P1 | W3 | ⬜ | Planned |
@@ -527,7 +527,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-H-01 | Fast home screen | P0 | W1 | ✅ | `/home` on fixtures |
+| FR-H-01 | Fast home screen | P0 | W1 | ✅ | Live: `daySummary` + `budget.get` (calories, rice label, plate, next action, overshoot notice); fixtures removed |
 | FR-H-02 | Non-judgemental language | P0 | W1 | ✅ | Design system + copy |
 | FR-H-03 | Forgiving streaks | P1 | W7 | ⬜ | Planned |
 | FR-H-04 | Widget / quick-log | P1 | W7 | ⬜ | PWA |

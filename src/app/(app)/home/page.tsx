@@ -1,31 +1,87 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { AreaChart, CalorieRing, PlateBalance } from "@/components/data/Charts";
 import { HeroCard, PastelTile, StatTile } from "@/components/data/Cards";
 import { Range, SectionLabel, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
-import {
-  DEMO_PROFILE,
-  TODAY_SUMMARY,
-  WEEK,
-} from "@/lib/mock";
+import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatDate } from "@/lib/format";
-import { Droplet, Footprints, Leaf, UtensilsCrossed, Wheat } from "lucide-react";
-import { useState } from "react";
+import { Leaf, UtensilsCrossed, Wheat } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
+import { api } from "../../../../convex/_generated/api";
 
 export default function HomePage() {
   const { t, lang } = useI18n();
+  const router = useRouter();
   const [overshootDismissed, setOvershootDismissed] = useState(false);
-  const s = TODAY_SUMMARY;
-  const mode = DEMO_PROFILE.safetyMode;
+  // Client-only date; server snapshot is "" so prerender never calls new Date()
+  const today = useSyncExternalStore(
+    () => () => {},
+    () => todayISO(),
+    () => "",
+  );
+  const summary = useQuery(api.mealLogs.daySummary, today ? { date: today } : "skip");
+  const budget = useQuery(api.budget.get, today ? { today } : "skip");
+
+  if (summary === undefined || budget === undefined) {
+    return (
+      <div className="space-y-6">
+        <div className="tile h-24 animate-pulse" aria-busy="true" aria-label="Loading home" />
+        <div className="tile h-64 animate-pulse" aria-busy="true" />
+      </div>
+    );
+  }
+
+  if (budget === null) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-extrabold md:text-3xl">{t("home.hello")} 👋</h1>
+        <NoticeCard
+          tone="info"
+          title={t("states.empty")}
+          body="Set up your profile to see today's overview."
+        />
+        <Link href="/onboarding">
+          <span className="font-bold underline">{t("home.setup")}</span>
+        </Link>
+      </div>
+    );
+  }
+
+  const s = summary;
+  const mode = budget.safetyMode;
+  const targetLow = Math.round(budget.dailyTargetKcal * 0.9);
+  const targetHigh = Math.round(budget.dailyTargetKcal * 1.1);
+  const showOvershoot =
+    mode === "normal" &&
+    !overshootDismissed &&
+    budget.overshootKcal > budget.toleranceKcal;
+
+  const nextSlot = !s.bySlot.breakfast
+    ? "breakfast"
+    : !s.bySlot.lunch
+      ? "lunch"
+      : !s.bySlot.dinner
+        ? "dinner"
+        : null;
+  const nextLabel = nextSlot
+    ? nextSlot === "breakfast"
+      ? t("home.logBreakfast")
+      : nextSlot === "lunch"
+        ? t("home.logLunch")
+        : t("home.logDinner")
+    : t("home.walk15");
+  const nextSub = nextSlot ? t("home.walk15") : t("home.plateWhy");
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-extrabold md:text-3xl">
-          {t("home.hello")}, {DEMO_PROFILE.name} 👋
+          {t("home.hello")}{budget.name ? `, ${budget.name}` : ""} 👋
         </h1>
         <p className="mt-1 text-sm text-ink/55">{formatDate(s.date, lang)}</p>
       </header>
@@ -54,8 +110,8 @@ export default function HomePage() {
                 <CalorieRing
                   eatenLow={s.kcalLow}
                   eatenHigh={s.kcalHigh}
-                  targetLow={s.targetLow}
-                  targetHigh={s.targetHigh}
+                  targetLow={targetLow}
+                  targetHigh={targetHigh}
                   size={150}
                   animate
                 />
@@ -68,23 +124,23 @@ export default function HomePage() {
                     <Range low={s.kcalLow} high={s.kcalHigh} className="font-bold" />
                     <span className="mx-2 opacity-50">/</span>
                     <span className="opacity-80">
-                      {s.targetLow}–{s.targetHigh}
+                      {targetLow}–{targetHigh}
                     </span>
                   </div>
                   <AreaChart
-                    data={WEEK.map((w) => w.kcal)}
-                    target={WEEK[0].target}
-                    labels={WEEK.map((w) => formatDayName(w.date, lang))}
-                    highlightIndex={WEEK.length - 1}
+                    data={budget.series.map((w) => w.kcal)}
+                    target={budget.dailyTargetKcal}
+                    labels={budget.series.map((w) => formatDayName(w.date, lang))}
+                    highlightIndex={budget.series.length - 1}
                     animate
                     height={110}
                   />
                   <div className="mt-2 flex gap-1.5">
-                    {WEEK.map((w, i) => (
+                    {budget.series.map((w, i) => (
                       <span
                         key={w.date}
                         className={`flex-1 rounded-full px-1 py-1 text-center text-[10px] font-bold ${
-                          i === WEEK.length - 1 ? "bg-white text-violet" : "text-white/60"
+                          i === budget.series.length - 1 ? "bg-white text-violet" : "text-white/60"
                         }`}
                       >
                         {formatDayName(w.date, lang)}
@@ -108,18 +164,22 @@ export default function HomePage() {
               value={s.ricePortionLabel ?? "—"}
               spark={[1, 1.5, 1.2, 1.5, 1.5, 2, 1.5]}
             />
-            <StatTile icon={Droplet} label={t("home.water")} value={(s.waterMl / 1000).toFixed(1)} unit="L" spark={[0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.2]} />
-            <StatTile icon={Footprints} label={t("home.steps")} value={s.steps.toLocaleString()} spark={[2, 3, 4, 3, 5, 4, 4]} />
-            <StatTile icon={Leaf} label={t("home.fibre")} value={s.fibreG} unit="g" spark={[12, 14, 15, 13, 16, 17, 18]} />
+            <StatTile
+              icon={Leaf}
+              label={t("home.fibre")}
+              value={s.macro.fiber}
+              unit="g"
+              spark={[12, 14, 15, 13, 16, 17, 18]}
+            />
           </div>
         </div>
       )}
 
-      {mode === "normal" && !overshootDismissed && (
+      {showOvershoot && (
         <NoticeCard
           tone="gentle"
           title={t("home.overshoot")}
-          body="শুক্রবার একটু বেশি খাওয়া হয়েছে। চলুন, পরের ৪ দিনে ধীরে ধীরে সামলে নিই।"
+          body={`${budget.overshootKcal} kcal · ${t("plan.spread")}`}
           action={
             <Link href="/plan" className="inline-flex min-h-11 items-center text-sm font-bold underline">
               {t("plan.spread")} →
@@ -141,16 +201,6 @@ export default function HomePage() {
           />
           <div className="min-w-0 flex-1">
             <p className="text-sm text-ink/60">{t("home.plateWhy")}</p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {Object.entries(s.micros).map(([k, v]) => (
-                <span
-                  key={k}
-                  className="rounded-full bg-surface-soft px-2.5 py-1 text-[11px] font-semibold text-ink/60"
-                >
-                  {k}: {v}
-                </span>
-              ))}
-            </div>
             <p className="mt-3 flex gap-2">
               <SourceTag tag="fctb" />
               <SourceTag tag="estimated-recipe" />
@@ -164,9 +214,9 @@ export default function HomePage() {
         <PastelTile
           tone="sky"
           icon={UtensilsCrossed}
-          label={t("home.logLunch")}
-          sublabel={t("home.walk15")}
-          onClick={() => {}}
+          label={nextLabel}
+          sublabel={nextSub}
+          onClick={() => router.push(nextSlot ? "/log" : "/activity")}
         />
       </section>
     </div>

@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import schema from "./schema";
+import { FOOD_SEED } from "../src/lib/foods/seed";
+import { plateGroupFor } from "../src/lib/foods/groups";
 
 const DEFAULT_KEY = "default";
 
@@ -205,6 +207,19 @@ export const daySummary = query({
       snacks: v.number(),
       dinner: v.number(),
     }),
+    macro: v.object({
+      protein: v.number(),
+      carb: v.number(),
+      fat: v.number(),
+      fiber: v.number(),
+    }),
+    ricePortionLabel: v.optional(v.string()),
+    plate: v.object({
+      veg: v.number(),
+      protein: v.number(),
+      grains: v.number(),
+      other: v.number(),
+    }),
   }),
   handler: async (ctx, args) => {
     requireDate(args.date);
@@ -216,8 +231,15 @@ export const daySummary = query({
       )
       .take(100);
 
+    const seedByName = new Map(FOOD_SEED.map((f) => [f.nameEn, f]));
     let kcalLow = 0;
     let kcalHigh = 0;
+    let protein = 0;
+    let carb = 0;
+    let fat = 0;
+    let fiber = 0;
+    let riceGrams = 0;
+    const plate = { veg: 0, protein: 0, grains: 0, other: 0 };
     const bySlot = {
       breakfast: 0,
       lunch: 0,
@@ -230,6 +252,19 @@ export const daySummary = query({
         kcalLow += item.kcalLow;
         kcalHigh += item.kcalHigh;
         bySlot[meal.slot] += item.kcalLow;
+        const mid = (item.kcalLow + item.kcalHigh) / 2;
+        const seed = seedByName.get(item.nameEn);
+        if (seed) {
+          const per100 = item.grams / 100;
+          protein += seed.proteinPer100 * per100;
+          carb += seed.carbPer100 * per100;
+          fat += seed.fatPer100 * per100;
+          fiber += (seed.fiberPer100 ?? 0) * per100;
+          if (seed.nameEn === "Steamed rice") riceGrams += item.grams;
+          plate[plateGroupFor(item.nameEn)] += mid;
+        } else {
+          plate.other += mid;
+        }
       }
     }
 
@@ -239,6 +274,16 @@ export const daySummary = query({
       kcalLow: Math.round(kcalLow),
       kcalHigh: Math.round(kcalHigh),
       bySlot,
+      macro: {
+        protein: Math.round(protein),
+        carb: Math.round(carb),
+        fat: Math.round(fat),
+        fiber: Math.round(fiber),
+      },
+      ...(riceGrams > 0
+        ? { ricePortionLabel: `about ${Math.round((riceGrams / 200) * 10) / 10} bati` }
+        : {}),
+      plate,
     };
   },
 });

@@ -158,14 +158,13 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `mealLogs.update` | mutation | `key?`, id, items?/slot?/date? | Always editable; key ownership check |
 | `mealLogs.remove` | mutation | `key?`, id | Key ownership check |
 | `mealLogs.copyMeal` | mutation | `key?`, sourceId, targetDate/slot? | "Same as yesterday" backend |
-| `mealLogs.daySummary` | query | `key?`, date | Meal count, kcal range, totals by slot |
+| `mealLogs.daySummary` | query | `key?`, date | Meal count, kcal range, totals by slot, macros (protein/carb/fat/fibre), `ricePortionLabel`, plate-group kcal (seed index ranges) |
 
-### `budget` / plan (Wave 3 — ⬜ planned)
+### `budget` / plan (Wave 3 — 🔄 `budget.get` live, Nov 3)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `budget.state` | query | date | 7-day rolling state |
-| `budget.plan` | mutation | controls | Calls `engine.rebalance`; Bangla/EN templates |
+| `budget.get` | query | `today` (YYYY-MM-DD) | Live weekly aggregation from mealLogs → TDEE/gentle-change target → `rebalance()` plan; returns overshoot, safety mode, 7-day series, plan days, profile name. Replaces the planned `budget.state` + `budget.plan` split (plan is computed on read, no budgetState writes) |
 | `budget.whatIf` | query | proposedIntake | Simulator (P1) |
 | `weights.add` / `weights.trend` | mutation/query | — | Adaptive TDEE inputs |
 
