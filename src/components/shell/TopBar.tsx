@@ -14,6 +14,7 @@ const TITLES: Record<string, string> = {
   "/activity": "nav.activity",
   "/settings": "nav.settings",
   "/insights": "nav.insights",
+  "/family": "nav.family",
 };
 
 export default function TopBar({ title }: { title?: string }) {

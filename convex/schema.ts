@@ -106,6 +106,22 @@ export default defineSchema({
     homeRegion: v.optional(v.string()),
     calibratedPlate: v.optional(v.string()),
     ricePortionLabel: v.optional(v.string()),
+    // FR-G-06 family/caregiver mode: one shared menu, per-person portions
+    familyMembers: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          relation: v.union(
+            v.literal("child"),
+            v.literal("teen"),
+            v.literal("adult"),
+            v.literal("elder"),
+          ),
+          condition: v.optional(v.union(v.literal("diabetes"), v.literal("hypertension"))),
+        }),
+      ),
+    ),
     // FR-E-04 user controls for the recovery plan (window 3–7 d, intake share)
     budgetControls: v.optional(
       v.object({ windowDays: v.number(), intakeShare: v.number() }),

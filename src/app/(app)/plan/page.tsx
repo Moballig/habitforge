@@ -359,6 +359,11 @@ export default function PlanPage() {
           </section>
 
           <div className="flex flex-wrap gap-3">
+            <Link href="/family">
+              <Button variant="secondary">
+                {lang === "bn" ? "পারিবারিক মেনু" : "Family menu"}
+              </Button>
+            </Link>
             <Link href="/activity">
               <Button variant="secondary">{t("activity.title")}</Button>
             </Link>

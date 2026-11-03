@@ -9,7 +9,7 @@ Formerly HabitForge (AI Habit Tracker); product scope follows [`docs/bangladeshi
 - **Next.js 16** (App Router, Bun) + Tailwind v4
 - **Convex** backend (`convex/`) — dev deployment `dev:disciplined-zebra-716`
 - **Groq** for chat/vision (`GROQ_API_KEY` on Convex); **local** `Xenova/multilingual-e5-small` embeddings via `/api/embed`
-- Pure-TS deterministic engine in `src/lib/engine/` — shared by client and Convex; 80-test suite, no untraced LLM numbers
+- Pure-TS deterministic engine in `src/lib/engine/` — shared by client and Convex; 98-test suite, no untraced LLM numbers
 - Wave 5 RAG gate: **20/20** expected-source retrieval, **10/10** unsafe refusals, numeric trace validator
 
 ## First-time setup
@@ -50,7 +50,7 @@ The service worker is production-only. Development automatically unregisters old
 ```bash
 npx tsc --noEmit   # root + convex types
 bun run lint       # 0 errors
-bun run test       # 80 engine/foods/AI tests
+bun run test       # 98 engine/foods/AI tests
 bun run build      # production build
 ```
 

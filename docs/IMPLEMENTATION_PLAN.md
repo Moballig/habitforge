@@ -145,7 +145,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** 20 guideline questions return the right section; unsafe prompts are refused with a safer alternative; every number in replies traces to a tool or chunk.
 
-### Wave 6: Personalisation (the "why us" layer) — ⬜
+### Wave 6: Personalisation (the "why us" layer) — ✅ DONE (Nov 4, 2026)
 
 | Item | Ref |
 |---|---|
@@ -214,7 +214,7 @@ Report the sample size beside every number and state limits found (mixed dishes,
 | 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | ✅ **Done** (Nov 3, 2026) — gate tests pass; `budget.get`/`whatIf` live on `/plan`; user controls (window stepper + split toggle → `profile.setBudgetControls`); `/home` live (macros/plate/rice/next action); weigh-ins + adaptive TDEE on `/insights`; reverse-mode pre-bank on `/plan`; FR-REBAL-08 (activity credit) + FR-REBAL-10 (plain-language ±15%) closed. Micros/sodium/sugar/GL carried beyond the gate (see `docs/deferred.md`) |
 | 4 | Activity | AQI/heat → indoor · MET minutes match formula | ✅ **Done** (Nov 3, 2026) — gate tests pass; MET logging/steps/gauge live; `weather.refresh` (Open-Meteo) → `outdoorAdvice` indoor switch on `/activity`. P1s carried beyond the gate (see `docs/deferred.md`) |
 | 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | ✅ **Done** (Nov 3, 2026) — 20/20 right source · 10/10 unsafe refused · numeric trace validator live · no-hit refusal · live profile safety mode |
-| 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ⬜ |
+| 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ✅ **Done** (Nov 4, 2026) — Ramadan zero-deficit guardrail (engine test + `/insights` fasting mode); family mode one menu with per-person portions (`/family`, `profile.saveFamilyMembers`, 6 gate tests); condition plates with doctor note on `/home`. Taka planner, festival calendar, region/plate wiring and FR-G-04 exercise timing carried beyond the gate (see `docs/deferred.md`) |
 | 7 | Offline/privacy/admin | Airplane mode persists · delete-my-data clears | ⬜ |
 | 8 | Proof, red-team, packaging | Report sample sizes · state limits | ⬜ |
 

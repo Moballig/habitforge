@@ -1,5 +1,5 @@
 {
-  "nav": { "home": "Home", "plan": "Plan", "log": "Log", "coach": "Coach", "activity": "Activity", "settings": "Settings", "insights": "Insights" },
+  "nav": { "home": "Home", "plan": "Plan", "log": "Log", "coach": "Coach", "activity": "Activity", "settings": "Settings", "insights": "Insights", "family": "Family" },
   "common": {
     "save": "Save", "cancel": "Cancel", "back": "Back", "next": "Next", "retry": "Try again",
     "loading": "Loading…", "search": "Search", "edit": "Edit", "remove": "Remove", "confirm": "Confirm",

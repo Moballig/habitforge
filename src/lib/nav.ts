@@ -23,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const SIDEBAR_EXTRA = [
+  { href: "/family", labelKey: "nav.family" },
   { href: "/settings", labelKey: "nav.settings" },
   { href: "/insights", labelKey: "nav.insights" },
 ];

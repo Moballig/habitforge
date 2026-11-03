@@ -1,5 +1,5 @@
 {
-  "nav": { "home": "হোম", "plan": "প্ল্যান", "log": "লগ", "coach": "কোচ", "activity": "নড়াচড়া", "settings": "সেটিংস", "insights": "অন্তর্দৃষ্টি" },
+  "nav": { "home": "হোম", "plan": "প্ল্যান", "log": "লগ", "coach": "কোচ", "activity": "নড়াচড়া", "settings": "সেটিংস", "insights": "অন্তর্দৃষ্টি", "family": "পরিবার" },
   "common": {
     "save": "সেভ", "cancel": "বাতিল", "back": "পিছনে", "next": "পরবর্তী", "retry": "আবার চেষ্টা করুন",
     "loading": "লোড হচ্ছে…", "search": "খুঁজুন", "edit": "সম্পাদনা", "remove": "সরান", "confirm": "নিশ্চিত করুন",

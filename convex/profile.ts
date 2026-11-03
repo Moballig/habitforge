@@ -167,6 +167,44 @@ export const save = mutation({
   },
 });
 
+/** FR-G-06: family/caregiver members — one shared menu, per-person portions. */
+export const saveFamilyMembers = mutation({
+  args: {
+    key: v.optional(v.string()),
+    members: v.array(
+      v.object({
+        id: v.string(),
+        name: v.string(),
+        relation: v.union(
+          v.literal("child"),
+          v.literal("teen"),
+          v.literal("adult"),
+          v.literal("elder"),
+        ),
+        condition: v.optional(v.union(v.literal("diabetes"), v.literal("hypertension"))),
+      }),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    if (args.members.length > 8) throw new Error("at most 8 family members");
+    for (const m of args.members) {
+      if (!m.name.trim()) throw new Error("member name required");
+    }
+    const key = args.key ?? DEFAULT_KEY;
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    if (!profile) throw new Error("Set up your profile first");
+    await ctx.db.patch(profile._id, {
+      familyMembers: args.members,
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
 /** FR-E-04: user controls for the recovery plan (window 3–7 d, intake share). */
 export const setBudgetControls = mutation({
   args: {

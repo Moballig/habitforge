@@ -513,11 +513,11 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-G-01 | Deshi-first food intelligence | P0 | W1 | ✅ | 318-row seed |
 | FR-G-02 | Regional variants | P1 | W6 | ⬜ | `regionTags` in seed |
 | FR-G-03 | Plate personalisation | P1 | W6 | ⬜ | `calibratedPlate` in profile |
-| FR-G-04 | Ramadan mode | P1 | W6 | ⬜ | Planned |
-| FR-G-05 | Taka weekly planner | P1 | W6 | ⬜ | Planned |
-| FR-G-06 | Family/caregiver mode | P1 | W6 | ⬜ | Planned |
+| FR-G-04 | Ramadan mode | P1 | W6 | 🔄 | `lib/engine/ramadan.ts` (zero-deficit guardrail test) + `/insights` fasting mode (sehri/iftar pacing, hydration); light-exercise timing pending |
+| FR-G-05 | Taka weekly planner | P1 | W6 | ⬜ | Planned (carried — `docs/deferred.md`) |
+| FR-G-06 | Family/caregiver mode | P1 | W6 | ✅ | `lib/engine/family.ts` + `/family` — one menu, per-person portions, condition doctor notes; `profile.saveFamilyMembers`; 6 gate tests |
 | FR-G-07 | Festival calendar | P1 | W6 | ⬜ | Planned |
-| FR-G-08 | Condition-aware modes | P1 | W6 | ⬜ | Planned |
+| FR-G-08 | Condition-aware modes | P1 | W6 | ✅ | `lib/engine/conditionPlates.ts` + `/home` presets with `clinicalDisclaimer` doctor note |
 | FR-G-09 | Para/office challenges | P2 | W6 | ⬜ | Planned |
 | FR-G-10 | Dietitian PDF export | P2 | W6 | ⬜ | Planned |
 | FR-G-11 | Lab-report OCR | P2 | W6 | ⬜ | Planned |
@@ -607,13 +607,13 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | D Activity | 10 | 3 | 1 | 6 | 0 |
 | E Balance | 10 | 10 | 0 | 0 | 0 |
 | F Coach | 11 | 4 | 0 | 7 | 0 |
-| G Personalisation | 12 | 1 | 0 | 11 | 0 |
+| G Personalisation | 12 | 3 | 1 | 8 | 0 |
 | H UX | 6 | 3 | 0 | 3 | 0 |
 | I Offline | 6 | 0 | 2 | 2 | 2 |
 | J Privacy | 7 | 3 | 1 | 3 | 0 |
 | K Admin | 4 | 1 | 0 | 3 | 0 |
 | NFR | 10 | 6 | 4 | 0 | 0 |
 | AC | 10 | 2 | 0 | 8 | 0 |
-| **Total** | **147** | **74** | **15** | **54** | **4** |
+| **Total** | **147** | **76** | **16** | **51** | **4** |
 
-> Status reflects Waves 1–5 gates met (Nov 3, 2026) — recounted from §9.1–9.4 (147 IDs incl. 4 out-of-scope `—`). Wave 5 closed FR-SAFETY-04/07 and FR-F-02/04; carried P1s remain in `docs/deferred.md`.
+> Status reflects Waves 1–6 gates met (Nov 4, 2026) — recounted from §9.1–9.4 (147 IDs incl. 4 out-of-scope `—`). Wave 5 closed FR-SAFETY-04/07 and FR-F-02/04; Wave 6 gate closed FR-G-06/08 and moved FR-G-04 to partial; carried P1s remain in `docs/deferred.md`.

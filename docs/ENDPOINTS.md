@@ -20,7 +20,7 @@
 |--------|--------|---------|------|
 | `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice — 35 engine tests (80-test suite), property-tested | W1 |
 | `convex/schema` | ✅ Done (v2 live) | profiles (+budgetControls), foods, mealLogs, activityLogs, budgetState (reserved), weighIns, auditLogs, weatherState, ragChunks + corpus tables | W1 |
-| `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls` — engine computes safetyMode server-side | W1 |
+| `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls`, `saveFamilyMembers` — engine computes safetyMode server-side | W1+6 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
 | `convex/ai` | ✅ Live | `chat` (+RAG `context`, `[n]` citations), `parseMeal` (candidate pick), `rewriteQuery` | W2/5 |
@@ -120,7 +120,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Convex Queries & Mutations (current — Waves 3–5 complete)
+## 3. Convex Queries & Mutations (current — Waves 3–6 complete)
 
 ### `profile` (Wave 1 — ✅ live)
 
@@ -130,6 +130,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `profile.save` | mutation | demographics + screening + consent | `{ id, safetyMode, asianBmiBand }` | Engine computes `safetyMode` server-side |
 | `profile.energy` | query | `key?` | `{ bmrKcal, tdeeKcal, floorKcal, allowsDeficit, ... }` | Deterministic; no LLM |
 | `profile.setBudgetControls` | mutation | `windowDays` (3–7), `intakeShare` (0.3–0.9) | null | FR-E-04: persisted on profile; `budget.get`/`whatIf` pass them to `rebalance()` |
+| `profile.saveFamilyMembers` | mutation | `members[]` (max 8: `id`, `name`, `relation`, `condition?`) | null | FR-G-06: persisted on profile; `/family` renders one menu with per-person portions via `lib/engine/family.ts` |
 
 ### `foods` (Wave 1–2 — ✅ live, 318 rows)
 
