@@ -486,7 +486,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-E-05 | Hard safety floors/caps | P0 | W1 | ✅ | Property test |
 | FR-E-06 | Planned feast mode | P1 | W3 | ✅ | `feastPreBank()` |
 | FR-E-07 | Adaptive TDEE + confidence | P1 | W3 | ✅ | `adaptiveTdee()` |
-| FR-E-08 | What-if simulator | P1 | W3 | ⬜ | Planned |
+| FR-E-08 | What-if simulator | P1 | W3 | ✅ | `budget.whatIf` query (extraKcal, clamped 0–10k) + live stepper on `/plan` |
 | FR-E-09 | Reverse mode | P1 | W3 | ⬜ | Planned |
 | FR-E-10 | Weight trend chart | P2 | W3 | ⬜ | `weighIns` table ready |
 

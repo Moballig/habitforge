@@ -22,7 +22,13 @@ export default function PlanPage() {
     () => "",
   );
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
-  const [whatIf, setWhatIf] = useState(1); // meal units over
+  const [extraMeals, setExtraMeals] = useState(1); // meal units of 600 kcal
+  const sim = useQuery(
+    api.budget.whatIf,
+    extraMeals > 0 && today
+      ? { today, extraKcal: extraMeals * 600 }
+      : "skip",
+  );
 
   if (budget === undefined) {
     return (
@@ -169,16 +175,16 @@ export default function PlanPage() {
                   <button
                     type="button"
                     className="h-10 w-10 rounded-full bg-surface-soft font-bold"
-                    onClick={() => setWhatIf(Math.max(0, whatIf - 1))}
+                    onClick={() => setExtraMeals(Math.max(0, extraMeals - 1))}
                     aria-label="Less"
                   >
                     −
                   </button>
-                  <span className="font-num w-6 text-center font-extrabold tabular">{whatIf}</span>
+                  <span className="font-num w-6 text-center font-extrabold tabular">{extraMeals}</span>
                   <button
                     type="button"
                     className="h-10 w-10 rounded-full bg-surface-soft font-bold"
-                    onClick={() => setWhatIf(Math.min(5, whatIf + 1))}
+                    onClick={() => setExtraMeals(Math.min(5, extraMeals + 1))}
                     aria-label="More"
                   >
                     +
@@ -187,7 +193,15 @@ export default function PlanPage() {
               </div>
               <div className="flex items-center gap-3 rounded-tile bg-peach px-4 py-3 text-sm font-semibold text-peach-ink">
                 <Sparkles size={16} />
-                ≈ +{whatIf * 600} kcal · balanced by trimming {whatIf * 60} kcal/day over 4 days
+                {extraMeals === 0
+                  ? `≈ +0 kcal · ${t("plan.noPlan")}`
+                  : !sim
+                    ? "…"
+                    : sim.blocked
+                      ? "≈ +600 kcal · maintenance only in this mode"
+                      : sim.plan.length === 0
+                        ? `≈ +${extraMeals * 600} kcal · within the weekly budget — no plan needed`
+                        : `≈ +${extraMeals * 600} kcal · ${sim.overshootKcal} kcal over → trim ${sim.plan[0]!.trimKcal} kcal/day over ${sim.plan.length} days`}
               </div>
               <p className="text-xs text-ink/50">
                 Never below the floor ({budget.floorKcal} kcal) and never beyond the activity cap.
