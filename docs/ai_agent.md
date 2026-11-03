@@ -545,7 +545,7 @@ bunx convex run rag:sources '{}'
 ## 10. Privacy and safety rules
 
 1. **Never send PII to Groq:** no name, age, weight, height, conditions, or profile IDs. Only meal text, questions, photos, and code-set safe categories.
-2. **Numbers never come from the LLM:** grams and kcal are computed in `src/lib/engine` and `src/lib/foods`; the LLM may only choose from candidates or quote retrieved chunks.
+2. **Numbers never come from the LLM:** grams and kcal are computed in `src/lib/engine` and `src/lib/foods`; chat may only quote retrieved chunks or repeat a user-provided figure, enforced post-response.
 3. **Safety modes are server-side:** `normal` / `restricted` / `doctor-first` are derived by the engine, not accepted from the LLM.
 4. **No diagnosis, no medication advice:** refusal + safer alternative + referral.
 5. **Citations:** every RAG answer should carry `source`, `section`, and `page`.
@@ -566,6 +566,7 @@ bunx convex run rag:sources '{}'
 | `scripts/ingest_rag.mjs` | Local embedding + batched Convex push |
 | `scripts/test_rag.mjs` | End-to-end retrieval smoke test |
 | `scripts/test_rag_rewrite.mjs` | Simulates coach flow: original + rewritten embeddings, merged |
+| `scripts/eval_wave5.mjs` | 20-question retrieval gate + 10 unsafe-prompt refusal gate |
 | `next.config.ts` | `serverExternalPackages` for transformers/onnxruntime |
 | `.cache/transformers/` | Cached ONNX model files (git-ignored) |
 | `data/` | Source datasets and provenance inventory |

@@ -17,7 +17,7 @@
 | Why hybrid search? | Vectors handle paraphrase, keyword handles exact terms, Bangla script, and numbers; either alone lost real queries in our probes. |
 | Why does an LLM never set numbers? | Because it's safety-critical math; the engine is property-tested, the model is not — and we can prove no PII reaches it (the action schema has no such fields). |
 | Why candidate-list meal parsing instead of tool calling? | The model can only *pick* from ≤25 foods we supply; validation is trivial and doesn't depend on tool-schema adherence. |
-| What's your biggest honest weakness? | Corpus is 88% English with 0 pure-Bangla chunks — Bangla recall rests on aliases + a rewrite step, validated on 8 probes, not a golden set. |
+| What's your biggest honest weakness? | Corpus is 88% English with 0 pure-Bangla chunks — aliases/rewrite passed the 20-question gate, but that is still not a large real-user golden set. |
 | What broke when you built it? | A real bug: re-ingesting a 913-chunk doc duplicated rows 500–912 (a `.take(500)` window in upsert). Found by probe, fixed with a composite index + self-healing delete, verified 0 duplicates across 9,447 rows. |
 
 ---
@@ -302,7 +302,7 @@ Three mechanisms:
 
 1. **Provenance + tiers.** Every chunk carries `sourceTag`, `source`, `section`, `page`, `lang`, `keywords`, `url`. Sources are graded A (official FCTB/NDGB/indigenous/WFP) → C (recipe dataset) in `docs/rag_database.md`.
 2. **Quantitative audit** (2026-11-03, exported table): 9,447 rows, 0 duplicate keys, all embeddings 384-d; composition (recipes 62.9%, food-table 28.7%…), lang split (88.4% en / 11.6% mixed / 0 bn), metadata coverage (keywords 100%, page 21.7%, license 0%), 21 content-dup pairs, 80 chunks >2k chars. We publish the bad numbers.
-3. **Behavioral probes.** 8 queries with expected hits (Q8 in the paper) — a regression smoke for retrieval, runnable: `node scripts/test_rag.mjs "…"`.
+3. **Behavioral probes.** Initial 8-query smoke plus the reproducible Wave 5 gate: 20/20 expected source in top-5 and 10/10 unsafe refusal (`node scripts/eval_wave5.mjs`).
 
 ### Q33 — "Walk me through a real bug you found and fixed." — the D1 duplicate-chunk incident
 
@@ -398,7 +398,7 @@ Safety invariants are universal statements: *for all inputs*, rebalance never pl
 
 ### Q44 — "Is 80 tests enough?"
 
-Enough for *today's* engine + data surface (energy, rebalance, adaptive, safety, portion, parser, foods, AI-number validation), plus `tsc` + lint + build as gates. Not enough for: RAG quality (Q42), prompt/LLM behaviour (need golden transcripts), offline sync conflicts, and Convex-function tests (no convex-test suite). We'd add CI wiring (`bun run test` already excludes the vendored `data/ifct2017` JSR test that breaks root-level `bun test`).
+Enough for *today's* engine + data surface (energy, rebalance, adaptive, safety, portion, parser, foods, AI-number validation), plus `tsc` + lint + build as gates. Not enough for: full-scale RAG quality (the 20-question gate is a smoke set), broader prompt/LLM behaviour, offline sync conflicts, and Convex-function tests (no convex-test suite). We'd add CI wiring (`bun run test` already excludes the vendored `data/ifct2017` JSR test that breaks root-level `bun test`).
 
 ---
 
@@ -451,7 +451,7 @@ The *pieces* are standard (RAG, hybrid search, dual encoders, JSON-mode parsing,
 
 ## Appendix A — Answer delivery tips
 
-- **Numbers beat adjectives.** "9,447 chunks, 0 duplicate keys, 8/8 probes" > "high-quality RAG."
+- **Numbers beat adjectives.** "9,447 chunks, 0 duplicate keys, 20/20 retrieval, 10/10 refusals" > "high-quality RAG."
 - **Lead with the trade-off** — senior engineers trust you faster when you say what you *gave up* (Q11, Q13, Q26, Q35) before what you gained.
 - **If we didn't measure it, say so** (Q22, Q38, Q42). Invented benchmarks are how teams lose judge trust.
 - **The D1 story (Q33) is your best answer** — it shows audit → root cause → keyed fix → verification. Use it for any "tell me about testing/quality" question.

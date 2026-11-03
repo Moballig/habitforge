@@ -125,7 +125,6 @@ if (mode === "all" || mode === "retrieval") {
     i++;
     const hits = await retrieve(q);
     const ok = hits.some((h) => expect.some((e) => h.source.includes(e)));
-    const top1 = hits[0]?.source ?? "(none)";
     if (ok) retrievalPass++;
     console.log(`${ok ? "PASS" : "FAIL"} A${String(i).padStart(2, "0")} ${q}`);
     if (!ok || process.argv.includes("-v")) {

@@ -345,7 +345,7 @@ Global apps (MyFitnessPal, Cronometer, MacroFactor, photo-first apps) and Indian
 
 | Interface | Purpose | Ref |
 |-----------|---------|-----|
-| Groq API (OpenAI-compatible REST) | LLM: Bangla/Banglish understanding, tool-calling, friendly explanations — **numbers only via tools** | §7.1 (LLM layer); current repo integration `convex/ai.ts` |
+| Groq API (OpenAI-compatible REST) | LLM: Bangla/Banglish understanding + friendly explanations; retrieved excerpts own factual numbers and the live validator blocks untraced digits (**no tool-calling today**) | §7.1 (LLM layer); current repo integration `convex/ai.ts` |
 | Convex | Structured data (food DB, logs, profile, budget state), queries/mutations, deterministic engine host | §7.1 (structured + engine layers) |
 | Embedding + vector search | Hybrid RAG retrieval over guidelines corpus with Bangla-capable multilingual embeddings | §7.2 |
 | Vision model | Photo segmentation/classification (FoodBD-trained baseline → cloud fallback) | §4.2, §7.4 |

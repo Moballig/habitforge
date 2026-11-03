@@ -43,7 +43,7 @@ flowchart TB
     UI -- "useQuery / useMutation" --> Q
     UI -- "useAction" --> A
     A -- "ctx.vectorSearch (actions only) + keyword merge" --> VI
-    A -- "tool-calling; numbers only from engine/tools" --> GroqAPI
+    A -- "RAG prompt; reply digits post-validated" --> GroqAPI
     A -- "GROQ_API_KEY server-side" --> GroqAPI
     IDB -. "last-write-wins queue" .-> M
 ```
@@ -55,7 +55,7 @@ flowchart TB
 | **Structured food DB** | Calories, macros, micronutrients, household measures, prices, aliases | Single source of truth. Every row has a **source tag** (§4.1, §6-K) | ✅ Convex `foods` + bundled client seed (318 rows live) |
 | **Deterministic engine** | BMR/TDEE, MET net energy, budget banking, `safetyMode`, rebalance, adaptive TDEE | Pure TypeScript in **`src/lib/engine/`**, shared by client and Convex, unit + property tested. **No LLM** | ✅ Done — 35 engine tests (80-test suite), property-tested |
 | **Vector store (RAG)** | Guidelines, FCTB/IFCT documentation, indigenous food tables, recipes, research papers, price/FAOSTAT summaries | **Convex `.vectorIndex()`** (actions only via `ctx.vectorSearch`, 384 dims) **merged with keyword** retrieval; explicit indigenous/healthy-plate intents route to matching source type; chunks carry source, section, page, language | ✅ **9,447 chunks** ingested; coach chat live; Wave 5 retrieval gate **20/20** right source in top-5 |
-| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, tool-call, write friendly explanations | **No tool-calling today** — numeric validator traces digits → excerpts/user message (1 retry → fallback); no-hit retrieval refuses before Groq. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — RAG chat + citations; unsafe gate **10/10**; `parseMeal`, `analyzePhoto` |
+| **LLM** | Understand Bangla/Banglish input, **choose from candidate lists**, write friendly explanations | **No tool-calling today** — numeric validator traces digits → excerpts/user message (1 retry → fallback); no-hit retrieval refuses before Groq. Privacy: never receives age/weight/name/conditions — only safe categories like `mode=restricted` | ✅ Live — RAG chat + citations; unsafe gate **10/10**; `parseMeal`, `analyzePhoto` |
 | **Vision model** | Propose food items + relative portion class from photos | **`qwen/qwen3.8-27b`** on Groq (JSON mode, ≤3 images/request) — **verified live 2026-11-03**; note qwen on_demand ITPM 7k/min ⇒ compact `id|nameEn` candidates + 429 retry; assisted flow with confirm screen | ✅ `ai.analyzePhoto` live |
 
 > **Hard rules (§5.5, §7.1, Plan v3 §0):**
@@ -189,6 +189,7 @@ data/ ──► scripts/prepare_rag_data.py ──► scripts/out/*.jsonl ──
 - `ingest_rag.mjs` embeds passages in batches (quantized model cached in `.cache/transformers`) and upserts through token-guarded Convex mutations (`RAG_INGEST_TOKEN`).
 - Re-runs require `--fresh`; the script refuses to duplicate chunks otherwise.
 - `scripts/test_rag.mjs` runs representative Bangla/English queries end-to-end.
+- `scripts/eval_wave5.mjs` reproduces the exit gate: 20 retrieval questions + 10 unsafe prompts.
 
 ### 4.6 Guardrails (§7.5)
 

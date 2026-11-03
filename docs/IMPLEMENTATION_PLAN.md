@@ -17,7 +17,7 @@
 | Topic | Decision |
 |---|---|
 | Engine | Pure TypeScript in `lib/engine/`, shared by client and Convex, unit-tested, plus a property test (thousands of random overshoots never break the floor or caps) |
-| Numbers | Calories, floors, exercise minutes come from code only. A validator blocks any number in an LLM reply that is not in a tool result or retrieved chunk |
+| Numbers | Calories, floors and exercise minutes come from code only. A validator blocks any reply digit absent from retrieved excerpts and the user's own message; chat never computes health numbers |
 | Plan text | Bangla and English **templates**, not LLM output |
 | UI | Replace HabitForge screens. Routes: `/onboarding /home /log /plan /coach /activity /settings` plus new ones as waves add them |
 | Parser | Fuzzy search gives top 5 candidates; LLM picks from them (JSON mode); code computes; tap-to-pick fallback |

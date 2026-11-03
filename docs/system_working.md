@@ -339,7 +339,7 @@ The bottleneck is local ONNX inference at ingestion, not Convex writes; one-time
 
 **LLM numerics.** The numeric validator is now live (`src/lib/ai/numbers.ts`): every digit in a coach reply is traced against the retrieved excerpts and the user's message; an untraceable digit triggers one corrective retry, then a language-matched template fallback (proven live: "8000 steps" → retry → fallback). Rough numbers still appear only when they literally occur in a retrieved chunk or the user's own message — which is the gate's traceability rule.
 
-**Not yet evaluated:** photo vision, voice, authentication, production deployment, and any clinical validation. The system is explicitly not a medical device.
+**Not yet evaluated at final benchmark scale:** photo vision (10-image assisted gate only), voice, authentication, production deployment, and any clinical validation. The system is explicitly not a medical device.
 
 ---
 
@@ -400,6 +400,7 @@ Immediate next steps, in order: (1) Wave 6 personalisation (regional defaults, R
 | Companion documents | `docs/ARCHITECTURE.md`, `docs/SRS.md`, `docs/ENDPOINTS.md`, `docs/ai_agent.md`, `docs/rag_database.md`, `docs/DIAGRAMS.md` |
 | Live deployment | Convex dev `disciplined-zebra-716` (never prod without explicit consent) |
 | Reproduce retrieval probes | `node scripts/test_rag.mjs "query" …` |
+| Reproduce Wave 5 gate | `node scripts/eval_wave5.mjs` (20 retrieval + 10 refusal cases) |
 | Run the test suite | `bun run test` (= `bun test --path-ignore-patterns="data/**"` — excludes the vendored `data/ifct2017` package test, which needs JSR) |
 | Reproduce rewrite ablation | `node scripts/test_rag_rewrite.mjs "ডায়াবেটিস থাকলে ভাত কত খাব?"` |
 | Reproduce ingest | `python3 scripts/prepare_rag_data.py && node scripts/ingest_rag.mjs --fresh` |

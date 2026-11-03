@@ -172,6 +172,7 @@ Chunks are built with a page-first sliding window (~1,400 chars, 180 overlap). E
 - Scores can exceed 1.0 because the merge adds `+0.05` when a chunk is both a keyword and vector hit (max ~1.05).
 - Bangla keyword search works through aliases: `ভাত` and `bhorta` return alias chunks; `diabetes` returns NDGB pages.
 - **Bangla medical query + English rewrite merge** (`node scripts/test_rag_rewrite.mjs`): `ডায়াবেটিস থাকলে ভাত কত খাব?` → rewrite `type 2 diabetes rice portion size`; merged top-5 = 2 aliases + 3 NDGB pages (p.88/91/105) vs only 1 guideline page before.
+- **Wave 5 gate** (`node scripts/eval_wave5.mjs`): 20/20 questions returned the expected source in top-5 after narrow source-intent routing for explicit indigenous/healthy-plate requests; 10/10 unsafe prompts redirected safely.
 
 ### 4.3 Strengths
 

@@ -103,8 +103,8 @@ flowchart TB
     P6 -->|"Rewrite query, embed"| Groq
     Groq -->|"Embeddings"| P6
     P6 -->|"vectorSearch + keyword merge"| DB
-    P6 -->|"Chat completion prompt<br/>(chunks + tools + safe mode)"| Groq
-    Groq -->|"Answer (numbers via tools)"| P6
+    P6 -->|"Chat completion prompt<br/>(chunks + safe mode)"| Groq
+    Groq -->|"Answer (numbers from excerpts/user msg)"| P6
     P6 -->|"Citation attach, lowConfidence flag,<br/>number validator (live)"| P6
     P6 -->|"Grounded answer + source"| U
     P6 -->|"Audit: what was retrieved"| DB
