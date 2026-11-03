@@ -226,3 +226,48 @@ export const energy = query({
     };
   },
 });
+
+/** Clear all user data (privacy right to erasure). */
+export const clearData = mutation({
+  args: { key: v.optional(v.string()) },
+  returns: v.object({ ok: v.boolean() }),
+  handler: async (ctx, args) => {
+    const key = args.key ?? DEFAULT_KEY;
+    const meals = await ctx.db
+      .query("mealLogs")
+      .withIndex("by_profile_and_date", (q) => q.eq("profileKey", key))
+      .collect();
+    for (const m of meals) {
+      await ctx.db.delete(m._id);
+    }
+    const activities = await ctx.db
+      .query("activityLogs")
+      .withIndex("by_profile_and_date", (q) => q.eq("profileKey", key))
+      .collect();
+    for (const a of activities) {
+      await ctx.db.delete(a._id);
+    }
+    const weights = await ctx.db
+      .query("weighIns")
+      .withIndex("by_profile_and_date", (q) => q.eq("profileKey", key))
+      .collect();
+    for (const w of weights) {
+      await ctx.db.delete(w._id);
+    }
+    const budgets = await ctx.db
+      .query("budgetState")
+      .withIndex("by_profile_and_week", (q) => q.eq("profileKey", key))
+      .collect();
+    for (const b of budgets) {
+      await ctx.db.delete(b._id);
+    }
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    if (profile) {
+      await ctx.db.delete(profile._id);
+    }
+    return { ok: true };
+  },
+});

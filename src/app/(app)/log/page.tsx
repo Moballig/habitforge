@@ -49,6 +49,27 @@ export default function LogPage() {
   const removeMeal = useMutation(api.mealLogs.remove);
   const parseMeal = useAction(api.ai.parseMeal);
 
+  const yesterdayISO = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return d.toISOString().slice(0, 10);
+    },
+    () => "",
+  );
+
+  const recentMeals = useQuery(api.mealLogs.listRecent, { limit: 10 });
+  const yesterdayMeals = useQuery(
+    api.mealLogs.listByDate,
+    yesterdayISO ? { date: yesterdayISO } : "skip",
+  );
+
+  const [recentSheetOpen, setRecentSheetOpen] = useState(false);
+  const [favSheetOpen, setFavSheetOpen] = useState(false);
+  const [copyMealSheetOpen, setCopyMealSheetOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   const [query, setQuery] = useState("");
   const [slot, setSlot] = useState<MealSlot>("lunch");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -66,11 +87,51 @@ export default function LogPage() {
 
   const candidates = useMemo(() => searchFoods(query), [query]);
 
+  const favouriteFoods = useMemo(() => {
+    const staples = ["bhat", "dal", "dim", "roti", "rui", "murgi", "alu bhorta", "cha"];
+    const res: FoodItem[] = [];
+    for (const s of staples) {
+      const found = searchFoods(s)[0];
+      if (found && !res.some((x) => x.id === found.id)) {
+        res.push(found);
+      }
+    }
+    return res;
+  }, []);
+
   function selectFood(f: FoodItem) {
     setPicked(f);
     setUnit(f.measures[0]?.label ?? "portion");
     setQty(1);
     setSheetOpen(true);
+  }
+
+  function handleSameYesterday() {
+    if (!yesterdayMeals || yesterdayMeals.length === 0) {
+      setToastMessage("No meals recorded yesterday");
+      setToast(true);
+      setTimeout(() => setToast(false), 2500);
+      return;
+    }
+    const matching = yesterdayMeals.filter((m) => m.slot === slot);
+    const mealsToCopy = matching.length > 0 ? matching : yesterdayMeals;
+    const itemsToCopy: LoggedItem[] = mealsToCopy.flatMap((m) =>
+      m.items.map((i) => ({
+        foodId: (i.foodId as string) ?? `${i.nameEn}-${Math.random()}`,
+        nameBn: i.nameBn,
+        nameEn: i.nameEn,
+        quantity: i.quantity,
+        unit: i.unit,
+        grams: i.grams,
+        kcalLow: i.kcalLow,
+        kcalHigh: i.kcalHigh,
+        sourceTag: i.sourceTag,
+      })),
+    );
+    setPending((cur) => [...cur, ...itemsToCopy]);
+    setToastMessage(`Copied ${itemsToCopy.length} item(s) from yesterday!`);
+    setToast(true);
+    setTimeout(() => setToast(false), 2500);
   }
 
   function confirmAdd() {
@@ -265,10 +326,10 @@ export default function LogPage() {
       />
 
       <div className="flex flex-wrap gap-2">
-        <Chip>{t("log.recents")}</Chip>
-        <Chip>{t("log.favourites")}</Chip>
-        <Chip>{t("log.sameYesterday")}</Chip>
-        <Chip>{t("log.copyMeal")}</Chip>
+        <Chip onClick={() => setRecentSheetOpen(true)}>{t("log.recents")}</Chip>
+        <Chip onClick={() => setFavSheetOpen(true)}>{t("log.favourites")}</Chip>
+        <Chip onClick={handleSameYesterday}>{t("log.sameYesterday")}</Chip>
+        <Chip onClick={() => setCopyMealSheetOpen(true)}>{t("log.copyMeal")}</Chip>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -393,9 +454,161 @@ export default function LogPage() {
 
       {toast && (
         <div role="status" className="toast-in fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-5 py-3 text-sm font-bold text-white md:bottom-8">
-          {t("states.saved")}
+          {toastMessage ?? t("states.saved")}
         </div>
       )}
+
+      {/* Recents Sheet */}
+      <Sheet
+        open={recentSheetOpen}
+        onClose={() => setRecentSheetOpen(false)}
+        title={t("log.recents")}
+      >
+        <div className="space-y-3">
+          {!recentMeals || recentMeals.length === 0 ? (
+            <NoticeCard
+              tone="info"
+              title="No recent meals"
+              body="Meals you log will appear here for fast re-logging."
+            />
+          ) : (
+            recentMeals.map((m) => (
+              <div key={m._id} className="tile space-y-2 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-ink/50">
+                    {m.date} · {m.slot}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const itemsToCopy: LoggedItem[] = m.items.map((i) => ({
+                        foodId: (i.foodId as string) ?? `${i.nameEn}-${Math.random()}`,
+                        nameBn: i.nameBn,
+                        nameEn: i.nameEn,
+                        quantity: i.quantity,
+                        unit: i.unit,
+                        grams: i.grams,
+                        kcalLow: i.kcalLow,
+                        kcalHigh: i.kcalHigh,
+                        sourceTag: i.sourceTag,
+                      }));
+                      setPending((cur) => [...cur, ...itemsToCopy]);
+                      setRecentSheetOpen(false);
+                      setToastMessage(`Added ${itemsToCopy.length} items from ${m.slot} to pending`);
+                      setToast(true);
+                      setTimeout(() => setToast(false), 2500);
+                    }}
+                    className="rounded-full bg-surface-soft px-3 py-1 text-xs font-bold text-violet hover:bg-violet hover:text-white"
+                  >
+                    + Add to pending
+                  </button>
+                </div>
+                <p className="text-sm font-semibold">
+                  {m.items.map((i) => `${i.nameEn} (${i.quantity} ${i.unit})`).join(", ")}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      </Sheet>
+
+      {/* Favourites Sheet */}
+      <Sheet
+        open={favSheetOpen}
+        onClose={() => setFavSheetOpen(false)}
+        title={t("log.favourites")}
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-ink/60">
+            Frequently eaten Deshi staples. Tap to select portions:
+          </p>
+          <ul className="space-y-2">
+            {favouriteFoods.map((f) => (
+              <li key={f.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFavSheetOpen(false);
+                    selectFood(f);
+                  }}
+                  className="tile flex w-full items-center justify-between gap-3 p-3 text-left transition hover:bg-surface-soft"
+                >
+                  <div>
+                    <p className="text-sm font-bold">{f.nameBn}</p>
+                    <p className="text-xs text-ink/50">{f.nameEn}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-xs font-semibold text-ink/55">
+                      ~{Math.round(f.kcalPer100 * ((f.measures[0]?.grams ?? 100) / 100))} kcal
+                    </span>
+                    <SourceTag tag={f.sourceTag} />
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Sheet>
+
+      {/* Copy Meal Sheet */}
+      <Sheet
+        open={copyMealSheetOpen}
+        onClose={() => setCopyMealSheetOpen(false)}
+        title={t("log.copyMeal")}
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-ink/60">
+            Duplicate a previous meal into today&apos;s {t(`log.${slot}`)}:
+          </p>
+          {!recentMeals || recentMeals.length === 0 ? (
+            <NoticeCard
+              tone="info"
+              title="No previous meals"
+              body="Log a meal first, then you can quickly copy it to other days."
+            />
+          ) : (
+            recentMeals.map((m) => (
+              <div
+                key={m._id}
+                className="tile flex items-center justify-between gap-3 p-3"
+              >
+                <div className="min-w-0">
+                  <span className="text-xs font-bold uppercase text-ink/50">
+                    {m.date} · {m.slot}
+                  </span>
+                  <p className="truncate text-sm font-semibold">
+                    {m.items.map((i) => i.nameEn).join(", ")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const itemsToCopy: LoggedItem[] = m.items.map((i) => ({
+                      foodId: (i.foodId as string) ?? `${i.nameEn}-${Math.random()}`,
+                      nameBn: i.nameBn,
+                      nameEn: i.nameEn,
+                      quantity: i.quantity,
+                      unit: i.unit,
+                      grams: i.grams,
+                      kcalLow: i.kcalLow,
+                      kcalHigh: i.kcalHigh,
+                      sourceTag: i.sourceTag,
+                    }));
+                    setPending((cur) => [...cur, ...itemsToCopy]);
+                    setCopyMealSheetOpen(false);
+                    setToastMessage(`Copied meal into ${t(`log.${slot}`)}`);
+                    setToast(true);
+                    setTimeout(() => setToast(false), 2500);
+                  }}
+                  className="shrink-0 rounded-full bg-violet px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                >
+                  Copy
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </Sheet>
 
       <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={picked ? `${picked.nameBn} · ${picked.nameEn}` : ""}>
         {picked && (

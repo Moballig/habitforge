@@ -15,16 +15,15 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Waves 1–5 complete (gates met); Wave 6 next** — coach pipeline live end-to-end with citations, no-hit refusal, numeric validator, live profile safety mode; Wave 5 measured **20/20 retrieval + 10/10 unsafe refusal** |
+| **Current Phase** | **Waves 1–7 complete (all gates met); Wave 8 Buildathon Packaging active** — Cheap-Protein Economics, Ramadan mode, Condition-aware Plate Presets (Diabetes & Hypertension), /log quick actions, PWA Service Worker, and Buildathon presentation deck ready |
 | **Day** | Day 3 (Nov 3, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 80/80 green |
-| **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
-| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
-| **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
-| **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach` on Convex (coach seed greeting + settings/right-panel still show mock fixtures) |
-| **Deployment** | ⬜ Not deployed to Vercel |
-| **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-03 (Waves 1–5 gates met; Wave 5: retrieval 20/20, unsafe refusal 10/10, numeric validator + live safety context) |
+| **Build Status** | ✅ `bun run build` passes 100% (20/20 static/dynamic routes), TypeScript check 0 errors, `bun test src/` 92/92 green |
+| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets on /home; live settings & right-panel |
+| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`, `mealLogs`, `weighIns`, `profiles` |
+| **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b`; **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` |
+| **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach`, `/settings` all connected to live Convex backend with zero mock fixtures |
+| **PWA & Offline** | ✅ Service worker `public/sw.js` registered, offline food search across 318 Deshi staples, standalone manifest |
+| **Last Updated** | 2026-11-03 (Waves 1–7 complete; 92 tests green; presentation deck in docs/PRESENTATION_DECK.md) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 

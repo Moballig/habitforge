@@ -6,18 +6,27 @@ import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { AreaChart, CalorieRing, PlateBalance } from "@/components/data/Charts";
 import { HeroCard, PastelTile, StatTile } from "@/components/data/Cards";
-import { Range, SectionLabel, SourceTag } from "@/components/data/Primitives";
+import { Range, SectionLabel, SourceTag, Chip } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatDate } from "@/lib/format";
-import { Leaf, UtensilsCrossed, Wheat } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, HeartPulse, Leaf, Stethoscope, UtensilsCrossed, Wheat } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
+import {
+  CONDITION_PLATE_PRESETS,
+  getPlatePresetForProfile,
+  evaluatePlateBalance,
+  type HealthCondition,
+} from "@/lib/engine/conditionPlates";
 
 export default function HomePage() {
   const { t, lang } = useI18n();
   const router = useRouter();
   const [overshootDismissed, setOvershootDismissed] = useState(false);
+  const [selectedCondition, setSelectedCondition] = useState<HealthCondition | null>(null);
+  const [showPlateDetails, setShowPlateDetails] = useState(false);
+
   // Client-only date; server snapshot is "" so prerender never calls new Date()
   const today = useSyncExternalStore(
     () => () => {},
@@ -26,6 +35,7 @@ export default function HomePage() {
   );
   const summary = useQuery(api.mealLogs.daySummary, today ? { date: today } : "skip");
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
+  const profile = useQuery(api.profile.get, {});
 
   if (summary === undefined || budget === undefined) {
     return (
@@ -189,25 +199,178 @@ export default function HomePage() {
         />
       )}
 
-      <section>
-        <SectionLabel>{t("home.plate")}</SectionLabel>
-        <div className="card flex flex-col items-start gap-6 p-5 sm:flex-row sm:items-center">
-          <PlateBalance
-            veg={s.plate.veg}
-            protein={s.plate.protein}
-            grains={s.plate.grains}
-            other={s.plate.other}
-            size={150}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-ink/60">{t("home.plateWhy")}</p>
-            <p className="mt-3 flex gap-2">
-              <SourceTag tag="fctb" />
-              <SourceTag tag="estimated-recipe" />
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Condition-Aware Plate Presets (FR-G-01 & FR-G-02) */}
+      {(() => {
+        const matchedPreset = getPlatePresetForProfile(profile ?? undefined);
+        const activePreset = selectedCondition
+          ? CONDITION_PLATE_PRESETS[selectedCondition]
+          : matchedPreset;
+        const evaluation = evaluatePlateBalance(s.plate, activePreset);
+
+        return (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <SectionLabel>{t("home.plate")}</SectionLabel>
+              <span className="text-xs font-semibold text-violet">
+                {lang === "bn" ? activePreset.titleBn : activePreset.titleEn}
+              </span>
+            </div>
+
+            {/* Condition Mode Selector */}
+            <div className="flex flex-wrap gap-2">
+              <Chip
+                selected={activePreset.id === "general"}
+                onClick={() => setSelectedCondition("general")}
+              >
+                {lang === "bn" ? "সাধারণ সুষম" : "General Healthy"}
+              </Chip>
+              <Chip
+                selected={activePreset.id === "diabetes"}
+                onClick={() => setSelectedCondition("diabetes")}
+              >
+                🩺 {lang === "bn" ? "ডায়াবেটিস গ্লাইসেমিক" : "Diabetes Plate (FR-G-01)"}
+              </Chip>
+              <Chip
+                selected={activePreset.id === "hypertension"}
+                onClick={() => setSelectedCondition("hypertension")}
+              >
+                ❤️ {lang === "bn" ? "উচ্চ রক্তচাপ সোডিয়াম" : "Hypertension Watch (FR-G-02)"}
+              </Chip>
+            </div>
+
+            <div className="card space-y-4 p-5">
+              <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+                <PlateBalance
+                  veg={s.plate.veg}
+                  protein={s.plate.protein}
+                  grains={s.plate.grains}
+                  other={s.plate.other}
+                  size={150}
+                />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="text-sm text-ink/70">
+                    {lang === "bn" ? activePreset.descriptionBn : activePreset.descriptionEn}
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <SourceTag tag="fctb" />
+                    <SourceTag tag="estimated-recipe" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Plate Evaluation Advice */}
+              <div
+                className={`flex items-start gap-3 rounded-card p-3 text-sm ${
+                  evaluation.isWellBalanced
+                    ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                    : "bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+                }`}
+              >
+                {evaluation.isWellBalanced ? (
+                  <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                ) : (
+                  <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+                )}
+                <div>
+                  <p className="font-semibold">
+                    {evaluation.isWellBalanced
+                      ? lang === "bn"
+                        ? "চমৎকার প্লেট ভারসাম্য!"
+                        : "Great Plate Balance!"
+                      : lang === "bn"
+                        ? "প্লেট ভারসাম্যের পরামর্শ:"
+                        : "Plate Adjustment Tip:"}
+                  </p>
+                  <p className="mt-0.5 text-xs opacity-90">
+                    {lang === "bn" ? evaluation.adviceBn : evaluation.adviceEn}
+                  </p>
+                </div>
+              </div>
+
+              {/* Expandable Clinical & Food Details */}
+              <button
+                type="button"
+                onClick={() => setShowPlateDetails(!showPlateDetails)}
+                className="flex w-full items-center justify-between text-xs font-bold text-violet hover:opacity-80 pt-1"
+              >
+                <span>
+                  {showPlateDetails
+                    ? lang === "bn"
+                      ? "পরামর্শ সংক্ষেপ করুন"
+                      : "Hide guideline foods & clinical notes"
+                    : lang === "bn"
+                      ? "প্রস্তাবিত দেশি খাবার ও নির্দেশিকা দেখুন"
+                      : "View recommended deshi foods & rules"}
+                </span>
+                {showPlateDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+
+              {showPlateDetails && (
+                <div className="space-y-4 border-t border-border pt-3">
+                  {/* Rules */}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-ink/50">
+                      {lang === "bn" ? "মূল নিয়মাবলী" : "Key Guidelines"}
+                    </p>
+                    <ul className="mt-1.5 list-inside list-disc space-y-1 text-xs text-ink/70">
+                      {(lang === "bn" ? activePreset.keyRulesBn : activePreset.keyRulesEn).map(
+                        (rule, idx) => (
+                          <li key={idx}>{rule}</li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+
+                  {/* Recommended Foods */}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                      {lang === "bn" ? "প্রস্তাবিত খাবার" : "Recommended Local Foods"}
+                    </p>
+                    <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                      {activePreset.recommendedFoods.map((f, idx) => (
+                        <div key={idx} className="tile p-2.5 text-xs">
+                          <p className="font-bold">
+                            {lang === "bn" ? f.nameBn : f.nameEn}
+                          </p>
+                          <p className="text-[11px] text-ink/55">{f.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Restricted Foods */}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-rose">
+                      {lang === "bn" ? "সীমাবদ্ধ বা বর্জনীয়" : "Foods to Limit"}
+                    </p>
+                    <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                      {activePreset.restrictedFoods.map((f, idx) => (
+                        <div key={idx} className="tile p-2.5 text-xs">
+                          <p className="font-bold text-rose">
+                            {lang === "bn" ? f.nameBn : f.nameEn}
+                          </p>
+                          <p className="text-[11px] text-ink/55">{f.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Clinical Disclaimer */}
+                  <div className="rounded-card border border-amber-300/40 bg-amber-500/10 p-3 text-[11px] leading-relaxed text-ink/75">
+                    <p className="font-bold text-ink">
+                      ⚠️ {lang === "bn" ? "চিকিৎসা সংক্রান্ত সতর্কতা:" : "Clinical Disclaimer:"}
+                    </p>
+                    <p className="mt-0.5">{activePreset.clinicalDisclaimer}</p>
+                    <p className="mt-1 font-semibold text-ink/60">
+                      Source: {activePreset.guidelineSource}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       <section>
         <SectionLabel>{t("home.nextAction")}</SectionLabel>
