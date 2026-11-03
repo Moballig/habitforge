@@ -108,9 +108,9 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Gate:** Friday-biriyani scenario yields a plan matching a hand calculation; zero violations in 5,000 simulated overshoots; feast mode never pushes a day below the floor.
 
-**Progress (Nov 3):** ✅ all three gate tests pass (`engine.test.ts`: Friday-biriyani hand calc, 5,000-sim property test, feast pre-bank floor clamp) · `gentleDeficitKcal()` (FR-ENG-05) · **`budget.get` live** — weekly aggregation from mealLogs, TDEE/gentle-change target, `rebalance()` spread plan; `/plan` reads live data (loading + no-profile states, gentle `noPlan` copy) · **Home live (FR-H-01, FR-C-01, FR-C-02)** — `daySummary` returns macros (seed × grams), `ricePortionLabel`, plate-group kcal via seed index ranges (`groups.ts`, 318-row boundary test); `/home` reads `daySummary` + `budget.get` (overshoot notice, next-action from bySlot, live week chart); fixtures removed · **What-if simulator live (FR-E-08)** — `budget.whatIf` shares `computeBudget` with `budget.get` (extraKcal clamped 0–10k); `/plan` stepper renders real overshoot/plan instead of hardcoded math · **Weigh-ins + adaptive TDEE live (FR-ATDEE-04, FR-E-10)** — `weights.add`/`remove`/`trend` (14-day window → `adaptiveTdee()` with honesty states + noise note); `/insights` replaced its Wave-6 stub with weigh-in form, trend chart and adaptive card. ⬜ Micronutrients/sodium/sugar/GL, reverse mode remain.
+**Progress (Nov 3):** ✅ all three gate tests pass (`engine.test.ts`: Friday-biriyani hand calc, 5,000-sim property test, feast pre-bank floor clamp) · `gentleDeficitKcal()` (FR-ENG-05) · **`budget.get` live** — weekly aggregation from mealLogs, TDEE/gentle-change target, `rebalance()` spread plan; `/plan` reads live data (loading + no-profile states, gentle `noPlan` copy) · **Home live (FR-H-01, FR-C-01, FR-C-02)** — `daySummary` returns macros (seed × grams), `ricePortionLabel`, plate-group kcal via seed index ranges (`groups.ts`, 318-row boundary test); `/home` reads `daySummary` + `budget.get` (overshoot notice, next-action from bySlot, live week chart); fixtures removed · **What-if simulator live (FR-E-08)** — `budget.whatIf` shares `computeBudget` with `budget.get` (extraKcal clamped 0–10k); `/plan` stepper renders real overshoot/plan instead of hardcoded math · **Weigh-ins + adaptive TDEE live (FR-ATDEE-04, FR-E-10)** — `weights.add`/`remove`/`trend` (14-day window → `adaptiveTdee()` with honesty states + noise note); `/insights` replaced its Wave-6 stub with weigh-in form, trend chart and adaptive card · **Reverse mode live (FR-E-09, completes FR-E-06 UI)** — `/plan` "To eat that on…" section: feast date + extra kcal → client-side `feastPreBank()` pre-bank days with floor-clamp note. ⬜ Micronutrients/sodium/sugar/GL remain (need seed micro data).
 
-### Wave 4: Activity — ⬜
+### Wave 4: Activity — 🔄 P0 live (Nov 3, 2026)
 
 | Item | Ref |
 |---|---|
@@ -124,6 +124,8 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 | Gym-light strength plans; exercise safety warnings | §6-D P2 |
 
 **Gate:** poor air quality or extreme heat switches suggestions to indoor options; extra-activity minutes in the plan match the MET formula.
+
+**Progress (Nov 3):** ✅ **P0s live** — `src/lib/engine/mets.ts` (compendium METs, `DEFAULT_MINUTES`, `stepsToMinutes` ~100/min, `netKcalRange` ±15% with 3 gate tests incl. walk-30-min hand check); `convex/activity` (`create` with preset/manual/steps sources, `remove`, `listWeek`); `/activity` reads live data — week gauge vs 150-min goal, preset tiles toggle today's entry, steps input, today's chips removable, food-plan chart from `budget.get`, active-days stat; fixtures removed. ⬜ Gate's AQI/heat half + P1s (context-aware suggestions, prayer slots, privacy mode, beginner plans) need a weather/AQI source.
 
 ### Wave 5: AI coach (RAG) — 🔄 data foundation live
 
@@ -209,8 +211,8 @@ Report the sample size beside every number and state limits found (mixed dishes,
 |------|-------|------|--------|
 | 1 | Foundation (engine, safety, profile, data) | 6 safety profiles · property test · 150+ foods · 154 kcal | ✅ **Done** (Nov 2, 2026) |
 | 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | ✅ **Done** (Nov 3, 2026) — parser 20/20 · shared-pot dal pass · assisted photo gate run on 10 FoodBD plates |
-| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | 🔄 **Gate met** (Nov 3) — gate tests pass; `budget.get`/`whatIf` live on `/plan`; `/home` live (macros/plate/rice/next action); weigh-ins + adaptive TDEE on `/insights`. Micros/sodium/sugar/GL remain |
-| 4 | Activity | AQI/heat → indoor · MET minutes match formula | ⬜ |
+| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | 🔄 **Gate met** (Nov 3) — gate tests pass; `budget.get`/`whatIf` live on `/plan`; `/home` live (macros/plate/rice/next action); weigh-ins + adaptive TDEE on `/insights`; reverse-mode pre-bank on `/plan`. Micros/sodium/sugar/GL remain |
+| 4 | Activity | AQI/heat → indoor · MET minutes match formula | 🔄 P0s live (Nov 3) — MET logging, steps, gauge; AQI/heat half of gate pending weather source |
 | 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | 🔄 Data + hybrid retrieval live; coach wiring pending |
 | 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ⬜ |
 | 7 | Offline/privacy/admin | Airplane mode persists · delete-my-data clears | ⬜ |

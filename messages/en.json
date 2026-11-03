@@ -102,7 +102,7 @@
     "cap": "Activity cap",
     "feast": "Planned feast",
     "whatIf": "If I eat this…",
-    "reverse": "To eat that on…",
+    "reverse": "To eat that on…", "feastDate": "Feast day", "feastExtra": "Extra kcal", "pickFuture": "Pick a future day — calories get banked before it.", "banked": "banked",
     "adaptive": "Adaptive TDEE",
     "improving": "Estimate improving",
     "noPlan": "Nothing to spread right now. Your week is on track.",
@@ -133,7 +133,7 @@
     "onTrack": "Good work — you are on track this week",
     "indoor": "Air quality or heat suggests indoor options today.",
     "privacyBadge": "Home-only plans · no public leaderboard",
-    "netKcal": "Net calories"
+    "netKcal": "Net calories", "empty": "Nothing logged yet — tap an activity above."
   },
   "settings": {
     "title": "Settings",

@@ -3,15 +3,29 @@
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
-import { BarRangeChart } from "@/components/data/Charts";
 import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatShortDate } from "@/lib/format";
+import { feastPreBank } from "@/lib/engine";
 import { Footprints, Utensils, HeartPulse, CalendarClock, Sparkles } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
+
+function parseD(date: string): Date {
+  return new Date(`${date}T12:00:00Z`);
+}
+
+function toISO(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function addDays(d: Date, n: number): Date {
+  const out = new Date(d);
+  out.setUTCDate(out.getUTCDate() + n);
+  return out;
+}
 
 export default function PlanPage() {
   const { t, lang } = useI18n();
@@ -23,6 +37,8 @@ export default function PlanPage() {
   );
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
   const [extraMeals, setExtraMeals] = useState(1); // meal units of 600 kcal
+  const [feastDate, setFeastDate] = useState("");
+  const [feastExtra, setFeastExtra] = useState("800");
   const sim = useQuery(
     api.budget.whatIf,
     extraMeals > 0 && today
@@ -67,6 +83,26 @@ export default function PlanPage() {
       </div>
     );
   }
+
+  // FR-E-09 reverse mode: default feast = next Friday; pre-bank days = today → feast−1 (≤7).
+  const todayD = parseD(today);
+  const defaultFeast = toISO(addDays(todayD, ((5 - todayD.getUTCDay() + 7) % 7) || 7));
+  const feast = /^\d{4}-\d{2}-\d{2}$/.test(feastDate) ? feastDate : defaultFeast;
+  const feastDays = Math.round((parseD(feast).getTime() - todayD.getTime()) / 86_400_000);
+  const daysBefore = Math.min(7, Math.max(0, feastDays));
+  const extra = Math.min(5000, Math.max(0, Number(feastExtra) || 0));
+  const perDay =
+    daysBefore > 0 && extra > 0
+      ? feastPreBank({
+          feastExtraKcal: extra,
+          daysBefore,
+          floorKcal: budget.floorKcal,
+          targetKcal: budget.dailyTargetKcal,
+        })
+      : 0;
+  const banked = perDay * daysBefore;
+  const maxTrim = Math.max(0, budget.dailyTargetKcal - budget.floorKcal);
+  const floorLimited = perDay > 0 && perDay >= maxTrim && (extra * 0.6) / daysBefore > maxTrim;
 
   return (
     <div className="space-y-6">
@@ -211,18 +247,49 @@ export default function PlanPage() {
 
           <section>
             <SectionLabel>{t("plan.reverse")}</SectionLabel>
-            <div className="card p-5">
-              <p className="text-sm text-ink/60">
-                {t("plan.adaptive")} · {t("plan.improving")}
-              </p>
-              <div className="mt-4">
-                <BarRangeChart
-                  days={budget.series.map((w) => formatDayName(w.date, lang))}
-                  values={budget.series.map((w) => w.kcal)}
-                  targets={budget.series.map((w) => w.target)}
-                  highlightToday
-                />
+            <div className="card space-y-4 p-5">
+              <div className="flex flex-wrap gap-3">
+                <label className="min-w-[10rem] flex-1">
+                  <span className="text-xs font-semibold text-ink/50">{t("plan.feastDate")}</span>
+                  <input
+                    type="date"
+                    value={feast}
+                    min={today}
+                    onChange={(e) => setFeastDate(e.target.value)}
+                    className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
+                  />
+                </label>
+                <label className="min-w-[10rem] flex-1">
+                  <span className="text-xs font-semibold text-ink/50">{t("plan.feastExtra")}</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={100}
+                    max={5000}
+                    step={50}
+                    value={feastExtra}
+                    onChange={(e) => setFeastExtra(e.target.value)}
+                    className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
+                  />
+                </label>
               </div>
+              {perDay === 0 ? (
+                <p className="text-sm text-ink/50">{t("plan.pickFuture")}</p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-3 rounded-tile bg-mint px-4 py-3 text-sm font-semibold text-mint-ink">
+                  <Sparkles size={16} />
+                  −{perDay} kcal/d × {daysBefore} d ≈ {banked} kcal {t("plan.banked")}
+                  <span className="font-normal opacity-70">
+                    {formatShortDate(today, lang)} → {formatShortDate(feast, lang)}
+                  </span>
+                </div>
+              )}
+              {floorLimited && (
+                <p className="text-xs text-ink/45">{t("plan.floor")}</p>
+              )}
+              <p className="text-xs text-ink/50">
+                {t("plan.feast")} · {formatShortDate(feast, lang)}
+              </p>
             </div>
           </section>
 

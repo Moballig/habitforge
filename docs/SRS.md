@@ -464,8 +464,8 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-D-01 | MET-based activity logging | P0 | W4 | 🔄 | Engine ready; UI on fixtures |
-| FR-D-02 | Manual steps entry | P0 | W4 | ⬜ | Web substitute |
+| FR-D-01 | MET-based activity logging | P0 | W4 | ✅ | `mets.ts` + `convex/activity` + live `/activity` (tiles, gauge, chips) |
+| FR-D-02 | Manual steps entry | P0 | W4 | ✅ | steps input → `stepsToMinutes()` (~100/min), `source: "steps"` |
 | FR-D-03 | Net-calorie logic | P0 | W4 | ✅ | `metNetKcal()` |
 | FR-D-04 | No-equipment plans | P1 | W4 | ⬜ | Planned |
 | FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | ⬜ | Planned |
@@ -484,10 +484,10 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-E-03 | Spread plan with maths ± range | P0 | W3 | ✅ | `rebalance()` plan rendered with `Range` on `/plan` |
 | FR-E-04 | User controls | P0 | W3 | ✅ | `RebalanceControls` |
 | FR-E-05 | Hard safety floors/caps | P0 | W1 | ✅ | Property test |
-| FR-E-06 | Planned feast mode | P1 | W3 | ✅ | `feastPreBank()` |
+| FR-E-06 | Planned feast mode | P1 | W3 | ✅ | `feastPreBank()` + reverse-mode UI on `/plan` (FR-E-09) |
 | FR-E-07 | Adaptive TDEE + confidence | P1 | W3 | ✅ | `adaptiveTdee()` |
 | FR-E-08 | What-if simulator | P1 | W3 | ✅ | `budget.whatIf` query (extraKcal, clamped 0–10k) + live stepper on `/plan` |
-| FR-E-09 | Reverse mode | P1 | W3 | ⬜ | Planned |
+| FR-E-09 | Reverse mode | P1 | W3 | ✅ | Client-side on `/plan` ("To eat that on…"): date + extra kcal → `feastPreBank()` pre-bank days (no endpoint; engine-tested) |
 | FR-E-10 | Weight trend chart | P2 | W3 | ✅ | `weights.add`/`trend` + `AreaChart` on `/insights` |
 
 #### F. AI Coach

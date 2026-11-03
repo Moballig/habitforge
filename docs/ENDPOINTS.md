@@ -26,7 +26,7 @@
 | `convex/ai` | ✅ Live | `chat` (+RAG `context`, `[n]` citations), `parseMeal` (candidate pick), `rewriteQuery` | W2/5 |
 | `convex/mealLogs` | ✅ Core live | List/create/update/remove/copy/day summary; profile-key checks | W2 |
 | `convex/budget` | ✅ Live | `get` (7-day budget, overshoot, spread plan), `whatIf` simulator — engine-backed, computed on read | W3 |
-| `convex/activity` | ⬜ Planned | MET logging, manual steps | W4 |
+| `convex/activity` | ✅ Live | `create` (preset/manual/steps, MET + net kcal), `remove`, `listWeek` (gauge totals) | W4 |
 | `convex/rag` | ⬜ Planned | `ctx.vectorSearch` + keyword merge (action only) | W5 |
 | `convex/weights` | ✅ Live | `add` (upsert per date), `remove`, `trend` (weigh-ins + adaptive TDEE) | W3 |
 | `convex/prices` | ⬜ Planned | Bazar prices, taka queries | W5–6 |
@@ -175,13 +175,13 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `weights.remove` | mutation | `key?`, id | Key ownership check (same pattern as `mealLogs.remove`) |
 | `weights.trend` | query | `key?`, `today` | Last ≤14 days of weigh-ins (ascending) + `adaptiveTdee()` blend: estimate, confidence, status (formula/improving/settled), more-weigh-ins count, noise note; avg intake over the window. No profile → null |
 
-### `activity` (Wave 4 — ⬜ planned)
+### `activity` (Wave 4 — ✅ P0 live, Nov 3)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `activity.create` | mutation | type, duration | MET via engine; net-calorie logic |
-| `activity.listByDate` | query | `date` | |
-| `activity.addSteps` | mutation | count | Manual steps (web substitute) |
+| `activity.create` | mutation | `key?`, date, type, minutes, source (preset/manual/steps) | MET from `mets.ts`; net kcal ±15% via `netKcalRange` (FR-D-03); steps source: raw count → `stepsToMinutes` (~100/min), validated 1–100,000 before conversion |
+| `activity.remove` | mutation | `key?`, id | Key ownership check |
+| `activity.listWeek` | query | `key?`, `today` | Mon–Sun week: weekMinutes, net kcal totals, activeDays, entries with ids (feeds `/activity` gauge + chips) |
 
 ### `rag` (Wave 5 foundation — ✅ live)
 

@@ -1,12 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import {
+  ACTIVITY_METS,
   adaptiveTdee,
   asianBmiBand,
   bmr,
   feastPreBank,
   gentleDeficitKcal,
+  DEFAULT_MINUTES,
   metNetKcal,
   metNetKcalMinutes,
+  netKcalRange,
+  stepsToMinutes,
   proteinBandGPerKg,
   rebalance,
   safetyMode,
@@ -449,4 +453,26 @@ describe("gate: feast pre-bank", () => {
 test("FR-ENG-05: gentle deficit = 0.5 kg/week ≈ 550 kcal/day", () => {
   expect(gentleDeficitKcal()).toBe(550);
   expect(gentleDeficitKcal(1)).toBe(1100);
+});
+
+// ─── Gate: MET activity logging (Wave 4, FR-D-01..03) ─────
+describe("gate: MET activity", () => {
+  test("every preset type has MET > 1 and default minutes", () => {
+    for (const type of ["walk", "cycle", "home", "cricket", "yoga", "chores", "steps"]) {
+      expect(ACTIVITY_METS[type]).toBeGreaterThan(1);
+      if (type !== "steps") expect(DEFAULT_MINUTES[type]).toBeGreaterThan(0);
+    }
+  });
+
+  test("hand-check: walk 30 min at 70 kg → net 98–133 kcal", () => {
+    // net = (4.3 − 1) × 70 × 0.5 = 115.5; band ±15%
+    const { low, high } = netKcalRange(4.3, 70, 30);
+    expect(low).toBe(98);
+    expect(high).toBe(133);
+  });
+
+  test("steps convert at ~100 steps/min", () => {
+    expect(stepsToMinutes(8000)).toBe(80);
+    expect(stepsToMinutes(0)).toBe(1); // never 0 minutes
+  });
 });
