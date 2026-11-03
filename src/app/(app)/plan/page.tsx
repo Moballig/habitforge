@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
@@ -36,6 +36,7 @@ export default function PlanPage() {
     () => "",
   );
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
+  const setControls = useMutation(api.profile.setBudgetControls);
   const [extraMeals, setExtraMeals] = useState(1); // meal units of 600 kcal
   const [feastDate, setFeastDate] = useState("");
   const [feastExtra, setFeastExtra] = useState("800");
@@ -149,10 +150,70 @@ export default function PlanPage() {
               />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Meta label={t("plan.window")} value={`${budget.windowDays} d`} icon={CalendarClock} />
+              <div className="rounded-tile bg-surface-soft px-3 py-2.5">
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold text-ink/50">
+                  <CalendarClock size={12} /> {t("plan.window")}
+                </p>
+                <div className="mt-1 flex items-center gap-1">
+                  <button
+                    type="button"
+                    className="h-8 w-8 rounded-full bg-white font-bold"
+                    aria-label="Fewer recovery days"
+                    onClick={() =>
+                      void setControls({
+                        windowDays: Math.max(3, budget.windowDays - 1),
+                        intakeShare: budget.intakeShare,
+                      })
+                    }
+                  >
+                    −
+                  </button>
+                  <span className="font-num flex-1 text-center text-sm font-extrabold tabular">
+                    {budget.windowDays} d
+                  </span>
+                  <button
+                    type="button"
+                    className="h-8 w-8 rounded-full bg-white font-bold"
+                    aria-label="More recovery days"
+                    onClick={() =>
+                      void setControls({
+                        windowDays: Math.min(7, budget.windowDays + 1),
+                        intakeShare: budget.intakeShare,
+                      })
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
               <Meta label={t("plan.floor")} value={`${budget.floorKcal}`} icon={HeartPulse} />
               <Meta label={t("plan.cap")} value={`${budget.activityCapNet} kcal`} icon={Footprints} />
-              <Meta label="Intake share" value={`${Math.round(budget.intakeShare * 100)}%`} icon={Utensils} />
+              <div className="rounded-tile bg-surface-soft px-3 py-2.5">
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold text-ink/50">
+                  <Utensils size={12} /> {t("plan.split")}
+                </p>
+                <div className="mt-1 flex gap-1">
+                  {[0.5, 0.6, 0.7].map((share) => (
+                    <button
+                      key={share}
+                      type="button"
+                      className={`flex-1 rounded-full px-1 py-1 text-[11px] font-bold ${
+                        Math.abs(budget.intakeShare - share) < 0.01
+                          ? "bg-violet text-white"
+                          : "bg-white text-ink/60"
+                      }`}
+                      onClick={() =>
+                        void setControls({
+                          windowDays: budget.windowDays,
+                          intakeShare: share,
+                        })
+                      }
+                    >
+                      {Math.round(share * 100)}/{100 - Math.round(share * 100)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
 

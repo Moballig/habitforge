@@ -15,16 +15,16 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Wave 2 complete; Wave 3 gate met** — logging/photo live; `budget.get` + `/plan` live on real mealLogs; RAG coach wired |
+| **Current Phase** | **Wave 3 complete; Wave 4 P0s live** — logging/photo, plan, home, insights, activity all on live Convex data; hybrid RAG retrieval live, coach UI pending |
 | **Day** | Day 3 (Nov 3, 2026) |
-| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 56/56 green |
+| **Build Status** | ✅ `bun run build` passes, lint 0 errors, both TypeScript checks pass, `bun test` 65/65 green |
 | **UI** | ✅ Full route set on Deshi design system (`docs/ui_prompt.md` + `docs/ui-design-system.md`); legacy HabitForge routes/components deleted; `/dev/components` gallery |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b` (probe); **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` (Groq has no embedding models) |
-| **P0 product surface** | 🔄 Onboarding + `/log` use Convex; `/log` has 318-food offline search and live CRUD; plan/coach still on fixtures |
+| **P0 product surface** | 🔄 Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity` on Convex; coach still on fixtures |
 | **Deployment** | ⬜ Not deployed to Vercel |
 | **Browser testing** | ⬜ Pending human click-through (`bun dev`) + real-device mobile pass |
-| **Last Updated** | 2026-11-03 (RAG corpus from `/data` ingested: 9,447 chunks + 66k structured records) |
+| **Last Updated** | 2026-11-03 (Wave 3 done + Wave 4 P0 activity live; RAG corpus from `/data`: 9,447 chunks + 66k structured records) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
@@ -289,7 +289,7 @@
 ```
 Wave 1 ████████████████████████  100% — Foundation gate met
 Wave 2 ████████████████████████ 100% — Gate met: parser + shared-pot + FoodBD photo
-Wave 3 ███████████████████░░░░░  85% — Gate met; budget/what-if/reverse on /plan; home live; weigh-ins + adaptive TDEE on /insights; micros/sodium/sugar remain
+Wave 3 ████████████████████████ 100% — Gate met; budget/what-if/reverse on /plan; home live; weigh-ins + adaptive TDEE on /insights; micros/sodium/sugar carried (docs/deferred.md)
 Wave 4 ██████████░░░░░░░░░░░░░░░░  40% — P0 logging live (MET presets, steps, gauge); AQI/heat gate + P1s pending
 Wave 5 ██████░░░░░░░░░░░░░░░░░░   25% — Corpus + hybrid retrieval live; coach wiring/citations pending
 Wave 6–8 ░░░░░░░░░░░░░░░░░░░░░░    0% — Personalisation, offline/admin, proof

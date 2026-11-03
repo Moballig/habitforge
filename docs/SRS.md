@@ -1,6 +1,6 @@
 # Deshi Health Companion — Software Requirements Specification (SRS)
 
-**Version:** 2.2 (Wave 2 complete; traceability updated)
+**Version:** 2.3 (Wave 3 complete, Wave 4 P0s live; traceability updated)
 **Date:** November 2, 2026
 **Working title:** Deshi Health Companion *(rename freely — research doc title)*
 **Buildathon:** Ostad Presents YUNet AIgnite Buildathon 2026
@@ -398,7 +398,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-REBAL-08 | Forgive / re-spread silently | P0 | W3 | ⬜ | UX copy + rebalance re-run |
 | FR-REBAL-09 | Planned feast mode | P1 | W3 | ✅ | `rebalance.ts` `feastPreBank()` |
 | FR-REBAL-10 | Plain Bangla with ±range | P0 | W3 | ⬜ | Templates in plan UI |
-| FR-REBAL-11 | User controls (window, split, days off) | P0 | W3 | ✅ | `RebalanceControls` type |
+| FR-REBAL-11 | User controls (window, split, days off) | P0 | W3 | ✅ | window + split live: `profile.setBudgetControls` → `/plan` steppers; exercise types/days off pending engine (deferred) |
 | FR-ATDEE-01 | Start from formula estimate | P1 | W3 | ✅ | `adaptive.ts` `adaptiveTdee()` |
 | FR-ATDEE-02 | Weekly compare weight vs intake | P1 | W3 | ✅ | `adaptive.ts` formula |
 | FR-ATDEE-03 | Blend + honesty states | P1 | W3 | ✅ | `adaptive.ts` confidence/status |
@@ -482,7 +482,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-E-01 | 7-day rolling budget | P0 | W3 | ✅ | `budget.get` + `/plan` live |
 | FR-E-02 | Overshoot detection + gentle message | P0 | W3 | ✅ | tolerance 100 in `budget.get`; `plan.noPlan` gentle copy |
 | FR-E-03 | Spread plan with maths ± range | P0 | W3 | ✅ | `rebalance()` plan rendered with `Range` on `/plan` |
-| FR-E-04 | User controls | P0 | W3 | ✅ | `RebalanceControls` |
+| FR-E-04 | User controls | P0 | W3 | ✅ | window stepper + split toggle on `/plan`, persisted `budgetControls`; rest deferred |
 | FR-E-05 | Hard safety floors/caps | P0 | W1 | ✅ | Property test |
 | FR-E-06 | Planned feast mode | P1 | W3 | ✅ | `feastPreBank()` + reverse-mode UI on `/plan` (FR-E-09) |
 | FR-E-07 | Adaptive TDEE + confidence | P1 | W3 | ✅ | `adaptiveTdee()` |

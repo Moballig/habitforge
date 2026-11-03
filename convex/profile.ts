@@ -167,6 +167,38 @@ export const save = mutation({
   },
 });
 
+/** FR-E-04: user controls for the recovery plan (window 3–7 d, intake share). */
+export const setBudgetControls = mutation({
+  args: {
+    key: v.optional(v.string()),
+    windowDays: v.number(),
+    intakeShare: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    if (!(args.windowDays >= 3 && args.windowDays <= 7)) {
+      throw new Error("windowDays must be between 3 and 7");
+    }
+    if (!(args.intakeShare >= 0.3 && args.intakeShare <= 0.9)) {
+      throw new Error("intakeShare must be between 0.3 and 0.9");
+    }
+    const key = args.key ?? DEFAULT_KEY;
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    if (!profile) throw new Error("Set up your profile first");
+    await ctx.db.patch(profile._id, {
+      budgetControls: {
+        windowDays: Math.round(args.windowDays),
+        intakeShare: args.intakeShare,
+      },
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
 /** Derived energy numbers for UI (still deterministic; no LLM). */
 export const energy = query({
   args: { key: v.optional(v.string()) },

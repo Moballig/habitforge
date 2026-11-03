@@ -91,7 +91,7 @@ Each item lists its research reference. Gates are acceptance tests, not dates.
 
 **Progress (Nov 3):** ✅ 318-row reconciled seed · indexed BN/EN server search + bundled offline alias search · live meal CRUD/day-summary · `/log` saves through Convex · 20 deterministic Bangla/Banglish parser cases pass + live Groq candidate smoke passes · shared-pot 1/5 dal math/UI passes · **`ai.analyzePhoto` live (qwen vision, ITPM-aware compact prompt + 429 retry) + `/log/photo` wired (compress → analyze → chips/toggle/slot → save)** · FoodBD gate run (10 images: 49% recall / 55% precision / 123 kcal mean error → assisted mode confirmed). P1 extras (rice calibrator, recipe builder, voice, barcode) carried beyond the gate.
 
-### Wave 3: Tracking and the balance engine — 🔄 GATE MET (Nov 3, 2026)
+### Wave 3: Tracking and the balance engine — ✅ DONE (Nov 3, 2026)
 
 | Item | Ref |
 |---|---|
@@ -211,7 +211,7 @@ Report the sample size beside every number and state limits found (mixed dishes,
 |------|-------|------|--------|
 | 1 | Foundation (engine, safety, profile, data) | 6 safety profiles · property test · 150+ foods · 154 kcal | ✅ **Done** (Nov 2, 2026) |
 | 2 | Logging | 20 Banglish lines · 5 plate photos · shared-pot dal | ✅ **Done** (Nov 3, 2026) — parser 20/20 · shared-pot dal pass · assisted photo gate run on 10 FoodBD plates |
-| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | 🔄 **Gate met** (Nov 3) — gate tests pass; `budget.get`/`whatIf` live on `/plan`; `/home` live (macros/plate/rice/next action); weigh-ins + adaptive TDEE on `/insights`; reverse-mode pre-bank on `/plan`. Micros/sodium/sugar/GL remain |
+| 3 | Tracking + balance engine | Friday-biriyani hand calc · 5,000 sims · feast floor | ✅ **Done** (Nov 3, 2026) — gate tests pass; `budget.get`/`whatIf` live on `/plan`; user controls (window stepper + split toggle → `profile.setBudgetControls`); `/home` live (macros/plate/rice/next action); weigh-ins + adaptive TDEE on `/insights`; reverse-mode pre-bank on `/plan`. Micros/sodium/sugar/GL carried beyond the gate (see `docs/deferred.md`) |
 | 4 | Activity | AQI/heat → indoor · MET minutes match formula | 🔄 P0s live (Nov 3) — MET logging, steps, gauge; AQI/heat half of gate pending weather source |
 | 5 | AI coach (RAG) | 20 guideline Qs · unsafe refused · numbers traceable | 🔄 Data + hybrid retrieval live; coach wiring pending |
 | 6 | Personalisation | Ramadan no deficit · family menu · condition modes | ⬜ |

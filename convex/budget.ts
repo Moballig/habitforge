@@ -129,7 +129,17 @@ async function computeBudget(
       dates: futureDates,
       safetyMode: profile.safetyMode,
     },
-    { floorKcal, toleranceKcal: TOLERANCE_KCAL },
+    {
+      floorKcal,
+      toleranceKcal: TOLERANCE_KCAL,
+      // FR-E-04: persisted user controls override engine defaults
+      ...(profile.budgetControls
+        ? {
+            windowDays: profile.budgetControls.windowDays,
+            intakeShare: profile.budgetControls.intakeShare,
+          }
+        : {}),
+    },
   );
 
   return {

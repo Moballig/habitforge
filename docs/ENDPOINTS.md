@@ -1,6 +1,6 @@
 # Deshi Health Companion — Backend Functions Documentation
 
-**Version:** 3.3 (aligned with Build Plan v3 — Wave 2 complete)
+**Version:** 3.4 (aligned with Build Plan v3 — Wave 3 complete; Wave 4 P0s live)
 **Last Updated:** November 2, 2026
 **Backend:** Convex + shared `lib/engine/` | **Deployment:** `dev:disciplined-zebra-716` (project `habitforge`)
 **URL:** `https://disciplined-zebra-716.ap-southeast-2.convex.cloud`
@@ -20,14 +20,14 @@
 |--------|--------|---------|------|
 | `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee — 27 tests, property-tested | W1 |
 | `convex/schema` | ✅ Done (v2 live) | profiles, foods, mealLogs, activityLogs, budgetState, weighIns, auditLogs | W1 |
-| `convex/profile` | ✅ Done | `get`, `save`, `energy` — engine computes safetyMode server-side | W1 |
+| `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls` — engine computes safetyMode server-side | W1 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
 | `convex/ai` | ✅ Live | `chat` (+RAG `context`, `[n]` citations), `parseMeal` (candidate pick), `rewriteQuery` | W2/5 |
 | `convex/mealLogs` | ✅ Core live | List/create/update/remove/copy/day summary; profile-key checks | W2 |
 | `convex/budget` | ✅ Live | `get` (7-day budget, overshoot, spread plan), `whatIf` simulator — engine-backed, computed on read | W3 |
 | `convex/activity` | ✅ Live | `create` (preset/manual/steps, MET + net kcal), `remove`, `listWeek` (gauge totals) | W4 |
-| `convex/rag` | ⬜ Planned | `ctx.vectorSearch` + keyword merge (action only) | W5 |
+| `convex/rag` | ✅ Live | `rag.search` (action: vector + keyword merge), `rag.keywordSearch` | W5 |
 | `convex/weights` | ✅ Live | `add` (upsert per date), `remove`, `trend` (weigh-ins + adaptive TDEE) | W3 |
 | `convex/prices` | ⬜ Planned | Bazar prices, taka queries | W5–6 |
 | `convex/admin` | ⬜ Planned | Foods/recipes/prices CRUD, report queue | W7 |
@@ -98,7 +98,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ### Other tables
 
-`measure` · `mealLogs` · `profiles` (+ safetyScreen, safetyMode, plate/rice calibration) · `activityLogs` (+ manual steps) · `budgetState` · `auditLogs` · **RAG/data corpus** (see below).
+`measure` · `mealLogs` · `profiles` (+ safetyScreen, safetyMode, plate/rice calibration, budgetControls) · `activityLogs` (+ manual steps) · `budgetState` · `auditLogs` · **RAG/data corpus** (see below).
 
 ### RAG + data corpus tables (Wave 5 foundation — ✅ live)
 
@@ -119,7 +119,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 ---
 
-## 3. Convex Queries & Mutations (current — Wave 2 complete)
+## 3. Convex Queries & Mutations (current — Wave 3 complete)
 
 ### `profile` (Wave 1 — ✅ live)
 
@@ -128,6 +128,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `profile.get` | query | `key?` | Profile row or null | Key defaults to `"default"` |
 | `profile.save` | mutation | demographics + screening + consent | `{ id, safetyMode, asianBmiBand }` | Engine computes `safetyMode` server-side |
 | `profile.energy` | query | `key?` | `{ bmrKcal, tdeeKcal, floorKcal, allowsDeficit, ... }` | Deterministic; no LLM |
+| `profile.setBudgetControls` | mutation | `windowDays` (3–7), `intakeShare` (0.3–0.9) | null | FR-E-04: persisted on profile; `budget.get`/`whatIf` pass them to `rebalance()` |
 
 ### `foods` (Wave 1–2 — ✅ live, 318 rows)
 

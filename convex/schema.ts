@@ -106,6 +106,10 @@ export default defineSchema({
     homeRegion: v.optional(v.string()),
     calibratedPlate: v.optional(v.string()),
     ricePortionLabel: v.optional(v.string()),
+    // FR-E-04 user controls for the recovery plan (window 3–7 d, intake share)
+    budgetControls: v.optional(
+      v.object({ windowDays: v.number(), intakeShare: v.number() }),
+    ),
     consent: v.boolean(),
     consentAt: v.optional(v.number()),
     createdAt: v.optional(v.number()),
