@@ -28,7 +28,7 @@ export default function AppFrame({
               </div>
             </main>
             {rightPanel ? (
-              <aside className="hidden xl:block w-80 shrink-0 border-l border-border bg-surface px-6 py-6">
+              <aside className="hidden xl:block w-80 shrink-0 border-l border-border bg-surface px-6 py-6 sticky top-0 h-dvh overflow-y-auto">
                 {rightPanel}
               </aside>
             ) : null}
