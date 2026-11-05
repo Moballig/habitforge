@@ -6,4 +6,5 @@ export * from "./adaptive";
 export * from "./mets";
 export * from "./context";
 export * from "./water";
+export * from "./prayerTimes";
 

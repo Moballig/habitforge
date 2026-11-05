@@ -8,7 +8,16 @@ import { PastelTile, StatTile } from "@/components/data/Cards";
 import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
-import { ACTIVITY_METS, DEFAULT_MINUTES, outdoorAdvice, stepsToMinutes } from "@/lib/engine";
+import {
+  ACTIVITY_METS,
+  DEFAULT_MINUTES,
+  outdoorAdvice,
+  stepsToMinutes,
+  calculatePrayerTimes,
+  getSafeActivitySlots,
+  getCurrentSlot,
+  getRegionCoords,
+} from "@/lib/engine";
 import { exerciseRec } from "@/lib/engine/exercise";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName } from "@/lib/format";
@@ -21,6 +30,8 @@ import {
   Waves,
   ListTodo,
   Flame,
+  Clock,
+  Moon,
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
@@ -107,6 +118,20 @@ export default function ActivityPage() {
   }
 
   const todayEntries = week.entries.filter((e) => e.date === today);
+
+  const currentMinutes = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const d = new Date();
+      return d.getHours() * 60 + d.getMinutes();
+    },
+    () => 12 * 60,
+  );
+  const isFasting = profile?.eatingStyle?.includes("fasting") ?? false;
+  const regionCoords = getRegionCoords(profile?.homeRegion);
+  const prayerTimes = calculatePrayerTimes(new Date(), profile?.homeRegion);
+  const activitySlots = getSafeActivitySlots(prayerTimes, isFasting);
+  const currentSlotInfo = getCurrentSlot(activitySlots, currentMinutes);
 
   const rec = exerciseRec({
     safetyMode: budget.safetyMode,
@@ -320,6 +345,100 @@ export default function ActivityPage() {
         <p className="mt-2 text-xs text-ink/45">
           ~100 steps/min walking equivalent · {ACTIVITY_METS.steps} MET
         </p>
+      </section>
+
+      {/* Prayer-Time & Ramadan Activity Windows (FR-D-06) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <SectionLabel>
+            {lang === "bn" ? "নামাজের সময় ও নিরাপদ ব্যায়াম স্লট" : "Prayer Times & Safe Activity Windows"}
+          </SectionLabel>
+          <span className="text-xs font-semibold text-ink/50">
+            {lang === "bn" ? "বিভাগ: " : "Division: "}
+            <span className="font-bold text-violet">
+              {lang === "bn" ? regionCoords.nameBn : regionCoords.nameEn}
+            </span>
+          </span>
+        </div>
+
+        {/* 5 Daily Prayer times strip */}
+        <div className="card p-4">
+          <div className="grid grid-cols-5 divide-x divide-border text-center">
+            <div className="px-1">
+              <p className="text-[11px] font-semibold text-ink/50">{lang === "bn" ? "ফজর" : "Fajr"}</p>
+              <p className="font-num text-xs font-bold sm:text-sm">{prayerTimes.fajr}</p>
+            </div>
+            <div className="px-1">
+              <p className="text-[11px] font-semibold text-ink/50">{lang === "bn" ? "যোহর" : "Dhuhr"}</p>
+              <p className="font-num text-xs font-bold sm:text-sm">{prayerTimes.dhuhr}</p>
+            </div>
+            <div className="px-1">
+              <p className="text-[11px] font-semibold text-ink/50">{lang === "bn" ? "আসর" : "Asr"}</p>
+              <p className="font-num text-xs font-bold sm:text-sm">{prayerTimes.asr}</p>
+            </div>
+            <div className="px-1">
+              <p className="text-[11px] font-semibold text-ink/50">{lang === "bn" ? "মাগরিব / ইফতার" : "Maghrib / Iftar"}</p>
+              <p className="font-num text-xs font-bold sm:text-sm text-amber-600 dark:text-amber-400">{prayerTimes.maghrib}</p>
+            </div>
+            <div className="px-1">
+              <p className="text-[11px] font-semibold text-ink/50">{lang === "bn" ? "এশা / তারাবি" : "Isha / Taraweeh"}</p>
+              <p className="font-num text-xs font-bold sm:text-sm">{prayerTimes.isha}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Safe Activity Windows Cards */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          {activitySlots.map((slot) => {
+            const isCurrent = slot.id === currentSlotInfo.activeSlot?.id;
+            const isNext = !currentSlotInfo.activeSlot && slot.id === currentSlotInfo.nextSlot.id;
+            return (
+              <div
+                key={slot.id}
+                className={`card relative p-4 transition ${
+                  isCurrent
+                    ? "border-2 border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
+                    : isNext
+                      ? "border-violet/40 bg-violet/5"
+                      : "opacity-85"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs font-bold text-violet">
+                        {lang === "bn" ? slot.labelBn : slot.labelEn}
+                      </span>
+                      {isCurrent && (
+                        <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                          {lang === "bn" ? "এখন সক্রিয়" : "Active now"}
+                        </span>
+                      )}
+                      {isNext && (
+                        <span className="rounded-full bg-violet/15 px-2 py-0.5 text-[10px] font-bold text-violet">
+                          {lang === "bn" ? "পরবর্তী স্লট" : "Next up"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-num text-xs font-bold text-ink/70 mt-0.5">{slot.windowStr}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-surface-soft px-2 py-0.5 text-[10px] font-bold uppercase text-ink/60">
+                    {slot.intensity === "walk_only" ? "Walk Only" : slot.intensity}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-ink/65">
+                  {lang === "bn"
+                    ? isFasting
+                      ? slot.ramadanNoteBn
+                      : slot.guidanceBn
+                    : isFasting
+                      ? slot.ramadanNoteEn
+                      : slot.guidanceEn}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section>
