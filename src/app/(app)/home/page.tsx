@@ -5,20 +5,40 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { AreaChart, CalorieRing, PlateBalance } from "@/components/data/Charts";
-import { HeroCard, PastelTile, StatTile } from "@/components/data/Cards";
+import { HeroCard } from "@/components/data/Cards";
 import { Range, SectionLabel, SourceTag, Chip } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatDate } from "@/lib/format";
-import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Leaf, UtensilsCrossed, Wheat } from "lucide-react";
+import {
+  AlertCircle,
+  Bike,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Dumbbell,
+  Footprints,
+  Moon,
+  UtensilsCrossed,
+  Waves,
+} from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
+import { outdoorAdvice } from "@/lib/engine";
+import { nextMove } from "@/lib/engine/nextMove";
 import {
   CONDITION_PLATE_PRESETS,
   getPlatePresetForProfile,
   evaluatePlateBalance,
   type HealthCondition,
 } from "@/lib/engine/conditionPlates";
+
+const EXERCISE_ICONS = {
+  walk: Footprints,
+  cycle: Bike,
+  home: Dumbbell,
+  yoga: Waves,
+} as const;
 
 export default function HomePage() {
   const { t, lang } = useI18n();
@@ -36,6 +56,14 @@ export default function HomePage() {
   const summary = useQuery(api.mealLogs.daySummary, today ? { date: today } : "skip");
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
   const profile = useQuery(api.profile.get, {});
+  const weather = useQuery(api.weather.get);
+  const advice = outdoorAdvice(weather?.aqi ?? null, weather?.feelsC ?? null);
+  // Client-only hour; server snapshot matches SSR-safe default
+  const hour = useSyncExternalStore(
+    () => () => {},
+    () => new Date().getHours(),
+    () => 12,
+  );
 
   if (summary === undefined || budget === undefined) {
     return (
@@ -71,21 +99,20 @@ export default function HomePage() {
     !overshootDismissed &&
     budget.overshootKcal > budget.toleranceKcal;
 
-  const nextSlot = !s.bySlot.breakfast
-    ? "breakfast"
-    : !s.bySlot.lunch
-      ? "lunch"
-      : !s.bySlot.dinner
-        ? "dinner"
-        : null;
-  const nextLabel = nextSlot
-    ? nextSlot === "breakfast"
-      ? t("home.logBreakfast")
-      : nextSlot === "lunch"
-        ? t("home.logLunch")
-        : t("home.logDinner")
-    : t("home.walk15");
-  const nextSub = nextSlot ? t("home.walk15") : t("home.plateWhy");
+  const move = nextMove({
+    safetyMode: mode,
+    targetKcal: budget.dailyTargetKcal,
+    eatenLow: s.kcalLow,
+    eatenHigh: s.kcalHigh,
+    overshootKcal: budget.overshootKcal,
+    toleranceKcal: budget.toleranceKcal,
+    bySlot: s.bySlot,
+    plate: s.plate,
+    planActivityMin: budget.plan.find((p) => p.date === today)?.activityMin ?? 0,
+    weightKg: profile?.weightKg ?? 65,
+    hour,
+    indoor: advice.indoor,
+  });
 
   return (
     <div className="space-y-6">
@@ -167,20 +194,46 @@ export default function HomePage() {
             ]}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <StatTile
-              icon={Wheat}
-              label={t("home.rice")}
-              value={s.ricePortionLabel ?? "—"}
-              spark={[1, 1.5, 1.2, 1.5, 1.5, 2, 1.5]}
-            />
-            <StatTile
-              icon={Leaf}
-              label={t("home.fibre")}
-              value={s.macro.fiber}
-              unit="g"
-              spark={[12, 14, 15, 13, 16, 17, 18]}
-            />
+          <div className="card space-y-3 p-5">
+            <p className="text-xs font-semibold text-ink/50">
+              {lang === "bn" ? "সুপারিশ করা ব্যায়াম" : "Recommended exercise"}
+            </p>
+            {(move.exercise ?? []).map((opt) => {
+              const Icon = EXERCISE_ICONS[opt.type];
+              return (
+                <button
+                  key={opt.type}
+                  type="button"
+                  onClick={() => router.push("/activity")}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card bg-emerald-50 p-3 text-left hover:opacity-90 dark:bg-emerald-950/40"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold">
+                      <Icon size={14} className="mr-1 inline align-[-2px]" />
+                      {opt.minutes} min {lang === "bn" ? opt.labelBn : opt.labelEn}
+                    </span>
+                    <span className="block text-xs text-ink/60">
+                      ≈ {opt.kcalLow}–{opt.kcalHigh} kcal ·{" "}
+                      {opt.indoor
+                        ? lang === "bn"
+                          ? "ঘরের ভিতরে"
+                          : "indoors"
+                        : lang === "bn"
+                          ? "বাইরে"
+                          : "outdoors"}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm font-bold text-violet">→</span>
+                </button>
+              );
+            })}
+            {!move.exercise && (
+              <p className="text-sm text-ink/60">
+                {lang === "bn"
+                  ? "বিশ্রামও পরিকল্পনার অংশ — আজ কিছু নির্ধারিত নেই।"
+                  : "Rest is part of the plan — nothing scheduled today."}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -372,15 +425,59 @@ export default function HomePage() {
         );
       })()}
 
-      <section>
+      <section className="space-y-3">
         <SectionLabel>{t("home.nextAction")}</SectionLabel>
-        <PastelTile
-          tone="sky"
-          icon={UtensilsCrossed}
-          label={nextLabel}
-          sublabel={nextSub}
-          onClick={() => router.push(nextSlot ? "/log" : "/activity")}
-        />
+        <div className="card space-y-4 p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet/10 text-violet">
+              {move.kind === "eat" ? (
+                <UtensilsCrossed size={18} />
+              ) : move.kind === "move" ? (
+                <Footprints size={18} />
+              ) : move.kind === "rest" ? (
+                <Moon size={18} />
+              ) : (
+                <CheckCircle2 size={18} />
+              )}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold">{lang === "bn" ? move.headlineBn : move.headlineEn}</p>
+              <p className="mt-0.5 text-sm text-ink/60">
+                {lang === "bn" ? move.detailBn : move.detailEn}
+              </p>
+            </div>
+          </div>
+
+          {move.food && (
+            <button
+              type="button"
+              onClick={() => router.push("/log")}
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card bg-sky-50 p-3 text-left hover:opacity-90 dark:bg-sky-950/40"
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">
+                  🍽 {lang === "bn" ? move.food.nameBn : move.food.nameEn}
+                </span>
+                <span className="block text-xs text-ink/60">
+                  {move.food.kcalLow}–{move.food.kcalHigh} kcal ·{" "}
+                  {lang === "bn" ? move.food.whyBn : move.food.whyEn}
+                </span>
+              </span>
+              <span className="shrink-0 text-sm font-bold text-violet">→</span>
+            </button>
+          )}
+
+          {move.cta === "plan" && (
+            <button
+              type="button"
+              onClick={() => router.push("/plan")}
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card bg-violet/10 p-3 text-left hover:opacity-90"
+            >
+              <span className="text-sm font-bold">{t("plan.spread")}</span>
+              <span className="text-sm font-bold text-violet">→</span>
+            </button>
+          )}
+        </div>
       </section>
     </div>
   );

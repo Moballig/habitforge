@@ -43,7 +43,7 @@ Concretely:
 
 ### 1.3 Contributions
 
-1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 35 passing engine tests (80-test suite).
+1. A **safety-gated deterministic engine** (Mifflin-St Jeor BMR, adaptive TDEE, 7-day banking budget, three safety modes) shared across client and Convex, with 70 passing engine tests (115-test suite).
 2. A **candidate-constrained meal parser**: the LLM may only select from ≤25 client-supplied foods and extract quantities; all math is code-side.
 3. A **Bangladesh-first RAG corpus**: 9,447 chunks + 65,275 structured rows from 16 audited sources, with per-source provenance, quality tiers, and a published defect ledger.
 4. A **local multilingual retrieval stack**: `multilingual-e5-small` (384-d, ONNX q8) embedded in the app server, hybrid vector–keyword search on Convex, and a Groq query rewrite that lifts Bangla medical queries from 1 to 3 guideline pages in the top-5.

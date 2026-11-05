@@ -18,7 +18,7 @@
 
 | Module | Status | Purpose | Wave |
 |--------|--------|---------|------|
-| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice — 35 engine tests (80-test suite), property-tested | W1 |
+| `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice/nextMove/exerciseRec — 70 engine tests (115-test suite), property-tested | W1 |
 | `convex/schema` | ✅ Done (v2 live) | profiles (+budgetControls), foods, mealLogs, activityLogs, budgetState (reserved), weighIns, auditLogs, weatherState, ragChunks + corpus tables | W1 |
 | `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls`, `saveFamilyMembers` — engine computes safetyMode server-side | W1+6 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |

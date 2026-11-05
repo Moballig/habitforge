@@ -468,7 +468,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-D-02 | Manual steps entry | P0 | W4 | ✅ | steps input → `stepsToMinutes()` (~100/min), `source: "steps"` |
 | FR-D-03 | Net-calorie logic | P0 | W4 | ✅ | `metNetKcal()` |
 | FR-D-04 | No-equipment plans | P1 | W4 | ⬜ | Planned |
-| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | 🔄 | AQI + heat live (`weather.refresh` Open-Meteo → `outdoorAdvice` → indoor-first `/activity`); rain/load-shedding/daylight pending sources |
+| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | 🔄 | AQI + heat live (`weather.refresh` Open-Meteo → `outdoorAdvice` → indoor-first `/activity` + `exerciseRec` picks indoor types when gated); rain/load-shedding/daylight pending sources |
 | FR-D-06 | Prayer/Ramadan scheduling | P1 | W4/W6 | ⬜ | Planned |
 | FR-D-07 | Women-friendly privacy | P1 | W4 | ⬜ | Planned |
 | FR-D-08 | Beginner progression | P1 | W4 | ⬜ | Planned |
@@ -527,7 +527,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
-| FR-H-01 | Fast home screen | P0 | W1 | ✅ | Live: `daySummary` + `budget.get` (calories, rice label, plate, next action, overshoot notice); fixtures removed |
+| FR-H-01 | Fast home screen | P0 | W1 | ✅ | Live: `daySummary` + `budget.get` (calories, rice label, plate, overshoot notice); calorie-driven `nextMove` recommender (next food by slot+plate gap, `exerciseRec` options, late-evening rest, restricted/doctor-first safe); fixtures removed |
 | FR-H-02 | Non-judgemental language | P0 | W1 | ✅ | Design system + copy |
 | FR-H-03 | Forgiving streaks | P1 | W7 | ⬜ | Planned |
 | FR-H-04 | Widget / quick-log | P1 | W7 | ⬜ | PWA |

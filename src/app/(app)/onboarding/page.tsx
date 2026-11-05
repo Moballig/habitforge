@@ -19,7 +19,7 @@ import {
 } from "@/lib/engine";
 
 export default function OnboardingPage() {
-  const { t } = useI18n();
+  const { t, largeText, setLargeText } = useI18n();
   const router = useRouter();
   const saveProfile = useMutation(api.profile.save);
   const [step, setStep] = useState(0);
@@ -109,8 +109,8 @@ export default function OnboardingPage() {
               { value: "normal", label: "Normal text" },
               { value: "large", label: "Large text" },
             ]}
-            value="normal"
-            onChange={() => {}}
+            value={largeText ? "large" : "normal"}
+            onChange={(v) => setLargeText(v === "large")}
           />
         </div>
       ),

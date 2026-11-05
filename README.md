@@ -50,7 +50,7 @@ The service worker is production-only. Development automatically unregisters old
 ```bash
 npx tsc --noEmit   # root + convex types
 bun run lint       # 0 errors
-bun run test       # 98 engine/foods/AI tests
+bun run test       # 115 engine/foods/AI tests
 bun run build      # production build
 ```
 

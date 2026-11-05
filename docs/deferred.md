@@ -39,7 +39,7 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 ## Quality / test gaps
 
 - **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary` verified only by live `convex run` checks during the session (values hand-checked, test rows removed after).
-- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions; 98 passing).
+- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders; 115 passing).
 - **No visual/browser check** of any page — verification is HTTP 200 + API-level only.
 - **Plate-group simplification**: mixed dishes and the "Dairy & drinks" section count as `other` in `daySummary.plate` (deliberate; revisit if plate balance gets scrutiny).
 - **`budget.whatIf` extraKcal capped at 10,000** — a single day can't exceed the weekly budget via the simulator alone when the week is empty (correct behaviour, noted so it isn't mistaken for a bug).

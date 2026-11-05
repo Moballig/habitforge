@@ -50,7 +50,7 @@
 |---|---|
 | LLM computes TDEE/budgets | Rejected — nondeterministic, untestable, can be jailbroken into unsafe deficits |
 | DB stored procedures | Works, but splits logic away from the client; the browser needs the *same* math offline for the PWA |
-| **Pure TS module shared by client + Convex** ✅ | Runs in browser (offline logging), runs in actions (plan generation), 35 engine tests (80-test suite), `tsc` catches signature drift |
+| **Pure TS module shared by client + Convex** ✅ | Runs in browser (offline logging), runs in actions (plan generation), 70 engine tests (115-test suite), `tsc` catches signature drift |
 
 `src/lib/engine/` exports `bmr`, `tdee`, `adaptiveTdee`, `rebalance`, `safetyMode`, `sharedPotGrams` — all pure. Property tests assert invariants no LLM could promise (e.g., rebalance never plans below the personal floor; recovery covers 50–70% of overshoot, never 100%).
 

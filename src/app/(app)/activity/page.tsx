@@ -9,6 +9,7 @@ import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
 import { ACTIVITY_METS, DEFAULT_MINUTES, outdoorAdvice, stepsToMinutes } from "@/lib/engine";
+import { exerciseRec } from "@/lib/engine/exercise";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName } from "@/lib/format";
 import {
@@ -46,6 +47,13 @@ function isOutdoor(type: string): boolean {
   return OUTDOOR_TYPES.has(type);
 }
 
+const REC_ICONS = {
+  walk: Footprints,
+  cycle: Bike,
+  home: Dumbbell,
+  yoga: Waves,
+} as const;
+
 export default function ActivityPage() {
   const { t, lang } = useI18n();
   const today = useSyncExternalStore(
@@ -55,6 +63,8 @@ export default function ActivityPage() {
   );
   const week = useQuery(api.activity.listWeek, today ? { today } : "skip");
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
+  const summary = useQuery(api.mealLogs.daySummary, today ? { date: today } : "skip");
+  const profile = useQuery(api.profile.get, {});
   const createActivity = useMutation(api.activity.create);
   const removeActivity = useMutation(api.activity.remove);
   const weather = useQuery(api.weather.get);
@@ -63,10 +73,15 @@ export default function ActivityPage() {
     void refreshWeather();
   }, [refreshWeather]);
   const advice = outdoorAdvice(weather?.aqi ?? null, weather?.feelsC ?? null);
+  const hour = useSyncExternalStore(
+    () => () => {},
+    () => new Date().getHours(),
+    () => 12,
+  );
   const [steps, setSteps] = useState("");
   const [error, setError] = useState("");
 
-  if (week === undefined || budget === undefined) {
+  if (week === undefined || budget === undefined || summary === undefined) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-extrabold md:text-3xl">{t("activity.title")}</h1>
@@ -93,7 +108,17 @@ export default function ActivityPage() {
 
   const todayEntries = week.entries.filter((e) => e.date === today);
 
-  async function log(type: string) {
+  const rec = exerciseRec({
+    safetyMode: budget.safetyMode,
+    overshootKcal: budget.overshootKcal,
+    toleranceKcal: budget.toleranceKcal,
+    planActivityMin: budget.plan.find((p) => p.date === today)?.activityMin ?? 0,
+    weightKg: profile?.weightKg ?? 65,
+    hour,
+    indoor: advice.indoor,
+  });
+
+  async function log(type: string, minutes?: number) {
     setError("");
     const existing = todayEntries.find((e) => e.type === type);
     try {
@@ -103,7 +128,7 @@ export default function ActivityPage() {
         await createActivity({
           date: today,
           type,
-          minutes: DEFAULT_MINUTES[type] ?? 30,
+          minutes: minutes ?? DEFAULT_MINUTES[type] ?? 30,
           source: "preset",
         });
       }
@@ -133,6 +158,49 @@ export default function ActivityPage() {
         <h1 className="text-2xl font-extrabold md:text-3xl">{t("activity.title")}</h1>
         <p className="mt-1 text-xs font-semibold text-ink/50">{t("activity.privacyBadge")}</p>
       </header>
+
+      {rec && (
+        <section>
+          <SectionLabel>
+            {lang === "bn" ? "আজকের সুপারিশ" : "Recommended today"}
+          </SectionLabel>
+          <div className="card space-y-3 p-5">
+            <p className="text-sm text-ink/60">{lang === "bn" ? rec.whyBn : rec.whyEn}</p>
+            {rec.options.map((opt) => {
+              const Icon = REC_ICONS[opt.type];
+              const logged = todayEntries.some((e) => e.type === opt.type);
+              return (
+                <button
+                  key={opt.type}
+                  type="button"
+                  onClick={() => void log(opt.type, opt.minutes)}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card bg-surface-soft p-3 text-left hover:bg-peach"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold">
+                      <Icon size={14} className="mr-1 inline align-[-2px]" />
+                      {opt.minutes} min {lang === "bn" ? opt.labelBn : opt.labelEn}
+                    </span>
+                    <span className="block text-xs text-ink/60">
+                      ≈ {opt.kcalLow}–{opt.kcalHigh} kcal ·{" "}
+                      {opt.indoor
+                        ? lang === "bn"
+                          ? "ঘরের ভিতরে"
+                          : "indoors"
+                        : lang === "bn"
+                          ? "বাইরে"
+                          : "outdoors"}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm font-bold text-violet">
+                    {logged ? `✓ ${opt.minutes} min ×` : `+ ${opt.minutes} min →`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="card flex flex-col items-center gap-6 p-5 sm:flex-row sm:justify-between">
         <SemiGauge

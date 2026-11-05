@@ -18,12 +18,12 @@
 | **Current Phase** | **Waves 1–6 complete (all gates met); Wave 7 (offline/privacy/admin) next** — W6 gate: Ramadan zero-deficit guardrail, family mode `/family` (one menu, per-person portions), condition plates with doctor note; presentation deck ready |
 | **Day** | Day 3 (Nov 3, 2026) |
 | **Build Status** | ✅ `bun run build` passes 100% (21/21 static/dynamic routes), TypeScript check 0 errors, `bun test src/` 98/98 green |
-| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets on /home; live settings & right-panel |
+| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets + calorie-driven `nextMove` (next food) and `exerciseRec` (type/minutes/kcal, weather-gated) on /home + `/activity` Recommended-today tap-to-log; live settings & right-panel |
 | **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`, `mealLogs`, `weighIns`, `profiles` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b`; **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` |
 | **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach`, `/settings` all connected to live Convex backend with zero mock fixtures |
 | **PWA & Offline** | ✅ Service worker `public/sw.js` registered, offline food search across 318 Deshi staples, standalone manifest |
-| **Last Updated** | 2026-11-04 (Wave 6 gate met — `/family` + family engine tests; 98 tests green; fake-save log flows + mobile Insights nav fixed) |
+| **Last Updated** | 2026-11-04 (Exercise rec — `exerciseRec` engine, richer Home block + `/activity` Recommended today; 115 tests green; earlier: Home `nextMove` food rec, Wave 6 gate, fake-save fixes) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
@@ -73,7 +73,7 @@
 - **Family mode (FR-G-06):** `src/lib/engine/family.ts` — one shared `FAMILY_MENU`, per-person portions by relation factor (child 0.5 / teen 0.75 / adult 1.0 / elder 0.8), rice bati + protein servings math; condition members get the `conditionPlates` clinical disclaimer. `/family` page (add/remove members → `profile.saveFamilyMembers`, max 8) + `/plan` CTA + sidebar entry. **6 gate tests** in `family.test.ts`.
 - **Condition modes (FR-G-08):** `/home` condition plate presets render `clinicalDisclaimer` (doctor note) — verified at `home/page.tsx:363`.
 - FR-G-04 marked **partial** (sehri/iftar + hydration live; light-exercise timing still pending). Taka planner, festival calendar, region/plate wiring carried → `docs/deferred.md`.
-- Gates: tsc ✓ · lint 0 errors · **98/98 tests** · build ✓ (21 routes incl. `/family`).
+- Gates: tsc ✓ · lint 0 errors · **115/115 tests** · build ✓ (21 routes incl. `/family`).
 
 ### Docs re-audit (Nov 2, 2026)
 
