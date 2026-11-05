@@ -1,10 +1,239 @@
 # UI Implementation Prompt: Deshi Health Companion (self-contained)
 
-> **Status (Nov 3): build-time artifact — completed.** All Tier A routes are live on Convex (not fixtures); `lib/mock/` remains only for the `/dev/components` gallery and `RightPanel` demo rows (see `docs/deferred.md`).
 > Paste this whole file into Claude Code (or any coding agent) at the repo root.
 > It contains **everything needed to design and build the frontend. No reference images are required.** Every visual pattern is described in words, with exact sizes, colours and layouts.
+> **Two parts:** Part A is a usability pass on the existing app (do first; mostly copy, structure and CSS). Part B is the full visual redesign (adopt after submission). Where they disagree, Part A wins.
 
 ---
+
+## Required skills (mandatory for every agent that touches this repo)
+
+Two skills are required. No agent starts UI work until both are installed and active. Run these in Claude Code, then start a new session so the hooks and skills load:
+
+```
+/plugin marketplace add DietrichGebert/ponytail
+/plugin install ponytail@ponytail
+
+/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
+/plugin install ui-ux-pro-max@ui-ux-pro-max-skill
+```
+
+- If the marketplace route fails for ui-ux-pro-max, use its CLI: `npm install -g ui-ux-pro-max-cli`, then `uipro init --ai claude` (check the repo README for the current package name; older docs call it `uipro-cli`).
+- On other agents (Codex, Cursor, Copilot CLI and so on), use the matching install from the ponytail README. In Codex the skills are called with `@`, for example `@ponytail-review`.
+- If a skill cannot be installed, **stop and report it**. Do not continue without it.
+- Keep a one-line-per-use log in `docs/skills-log.md` (which skill, which page or tier, what it changed).
+
+| Skill | Use it for | Where it stops |
+|---|---|---|
+| **ui-ux-pro-max** | Before each page: UX guidelines, accessibility, chart-type choice, icons, motion and Next.js/Tailwind guidance for that page. After each page: its review checks. Once at the start: run its design-system generator with this brief (Bangladeshi health companion, violet, mobile first, Bangla) and save the output next to our tokens in `docs/ui-design-system.md` | The tokens, fonts, patterns and product rules in this file **win** over its palette, style and font suggestions. Accept a change from it only when it fixes accessibility or usability, and record each one in `docs/ui-design-system.md` |
+| **ponytail** | All code: write the least code that meets the spec; use native HTML/CSS (`<dialog>`, `<details>`, popover, grid, container queries) before adding a component or library; no abstraction with a single caller; mark every deliberate shortcut with a `ponytail:` comment that names its upgrade path. Run `/ponytail-review` on each tier before its commit and `/ponytail-debt` before submission | It never overrides the product rules in section 0, accessibility, Bangla and number formatting through `lib/format.ts`, safety-mode handling, the Tier A scope or the hand-written SVG charts. If it and this spec disagree on **what** to build, this spec decides; on **how much code** to write, ponytail decides |
+
+The built-in `frontend-design` skill stays in use for the plan-review step in section 9. Optional: a Playwright MCP for the screenshots section 9 asks for at 360, 768 and 1280 px.
+
+---
+
+# Part A: Usability pass on the existing app (do this first)
+
+The app already exists (Next.js 16, Tailwind 4, Convex, Groq; routes `/home /log /plan /activity /insights /family /coach /settings /onboarding`). This part makes it easier to use **without rebuilding it**. Where Part A and Part B disagree, **Part A wins**. Part B is the full visual redesign to adopt after submission.
+
+For this pass, `ponytail` means delete, collapse or relabel before you add anything, and `ui-ux-pro-max` supplies the UX and accessibility checks you run on every screen you touch.
+
+## A0. Who we design for and how we measure it
+
+The user is a Bangladeshi adult on a 360 to 400 px phone, often outdoors in bright light, sometimes low-literacy, using one hand, switching between Bangla and English. They want two answers: **What should I do next? Am I OK today?**
+
+Run these four tests before submission, with three real people if you can:
+1. **5-second test:** show `/home`; they say what to do next.
+2. **60-second test:** a new user logs "ruti dim bhaji cha" from the first screen without help.
+3. **Reach test:** the main action on each screen is reachable with the right thumb.
+4. **Jargon test:** nobody asks what a word on the main screens means.
+
+## A1. Findings and fixes, ranked
+
+Effort: **S** under 1 hour, **M** a few hours, **L** after submission.
+
+| # | Problem | Fix | Effort |
+|---|---|---|---|
+| 1 | Home stacks about six blocks (energy banner, plate tabs, disclaimer, next move, water, rice) and the next action is buried | One Today card and one next action first; the rest below or behind Details (A2) | M |
+| 2 | Jargon on screen: TDEE, BMR, Safe Floor, Adaptive TDEE, rolling deficit, rebalance window, what-if simulator | Plain wording (A4) | S |
+| 3 | Bottom tabs leave out Insights and Family, so phone users cannot reach them | A More sheet from the avatar (A3) | S |
+| 4 | Buildathon badge and an always-on sync pill in the top bar | Remove the badge; show the sync pill only when offline or changes are waiting | S |
+| 5 | Calorie overshoot uses coral/rose `#f43f5e`, which reads as red and shames | Amber only; rose is reserved for form errors (A11) | S |
+| 6 | Accent colours used as text fail contrast: emerald `#10b981` about 2.5:1, amber `#f59e0b` about 2.1:1, sky `#0ea5e9` about 2.8:1, indigo `#6366f1` about 4.4:1 | Use them for fills and icons; text uses the text-safe shades in A11 | S |
+| 7 | Numbers set in JetBrains Mono, which has no Bengali digits, so ১২৫০ falls back to another font and breaks alignment | Drop the mono face; use the main fonts with tabular figures (A10) | S |
+| 8 | Ranges everywhere (`≈ 350–420 kcal`) make every number slow to read | Headline "about 385" with the range as a small caption (A10) | S |
+| 9 | Faint neumorphic borders (`rgba(0,0,0,0.06)`) and cold zinc neutrals wash out in sunlight and feel clinical | Flat cards with a visible 1px border and warm neutrals (A11) | S |
+| 10 | "🌸 Women-Friendly Home Mode" badge in the header shows a personal setting to anyone nearby | Rename to "Home workouts only"; keep it in Settings and as a quiet filter chip on Activity; no header badge | S |
+| 11 | Plan shows advanced controls up front (window 3 to 7 days, 60/40 split, what-if slider) | One recommended plan with a single Adjust button (A7) | M |
+| 12 | Activity is one long page (weather, prayer strip, four routines, progression, pyramid, sparklines, gauge) | A Right now card first; the rest collapsed (A8) | M |
+| 13 | Logging depends on typing Banglish on a phone | Big tap tiles for usual foods, smart defaults, live total, undo (A5) | M |
+| 14 | Onboarding asks eight things before any value, including health conditions | Three questions, then show the first day; ask the rest later (A6) | L |
+| 15 | Condition presets (Diabetes, Hypertension, Ramadan) sit as four tabs on Home | Show only the preset that matches the profile; others under Change plate | M |
+| 16 | The right panel repeats Home content on every page | Show it on Home only (desktop) | S |
+| 17 | A pulsing weather badge is constant motion | Static icon plus words ("Good for a walk" or "Stay indoors today") | S |
+| 18 | Cheap-protein finder and the adaptive-TDEE gauge are buried in Insights | Finder becomes an "Eat well on a budget" card in Plan; the gauge goes under "How we estimate" | M |
+
+## A2. Home (`/home`)
+
+```
+┌──────────────────────────────┐
+│ Good afternoon       বাং | EN │
+│ ┌ Today ────────────────────┐│
+│ │  (ring)  about 1,250      ││
+│ │          of 1,800 kcal    ││
+│ │ You're on track.          ││
+│ │ [        Log lunch      ] ││  ← the one action
+│ └───────────────────────────┘│
+│ Water  ▢▢▢▢▯▯▯▯    [+250 ml] │
+│ Rice   1 medium bati · usual │
+│ ▸ Today's plate              │
+│ ▸ Details and how we work it out │
+└──────────────────────────────┘
+```
+
+- **Order:** one-line greeting, Today card, Water row, Rice row, then collapsed sections. Nothing else above the fold.
+- **Today card:** the ring plus one plain sentence chosen from the engine's state: on track; a bigger day (amber, links to Plan); a lighter day; evening "Rest well, nothing more is needed today". Exactly **one primary button**, labelled from the time and the gaps ("Log lunch", "Add water", "Take a 15-minute walk").
+- **Details (collapsed):** calories you use in a day, lowest safe amount, today's goal, each with a one-line "Why?" and a source chip. They stay for people who want them; they are just not first.
+- **Plate presets:** show only the one that matches the profile. "Change plate" opens a sheet with the others. The disclaimer is one sentence behind an info icon; tapping expands the full text and the guideline citation.
+- **Water:** keep the ripple on +250 ml, add a 5-second Undo toast, and vibrate for 10 ms where supported.
+- **Desktop:** the right panel appears on Home only.
+
+## A3. Navigation
+
+- **Mobile bottom bar (5):** Home, Plan, **Log** (raised, centre), Move, Coach. Labels always visible with the icons.
+- **More sheet** from the avatar, a list with icons and labels: Progress, Family, Settings, Language, Help.
+- Rename **Insights to Progress** (the route can stay `/insights`).
+- **Desktop sidebar:** the same two groups with a divider between them.
+- **Top bar:** logo, language switch, avatar. The sync pill appears only when offline or when changes are waiting ("Saved on this phone, will sync").
+- The active item shows icon, label and colour together, never colour alone.
+
+## A4. Plain language
+
+Bangla strings are suggestions; have a native speaker review them before release.
+
+| Now on screen | Replace with (EN) | Bangla |
+|---|---|---|
+| Maintenance TDEE | Calories you use in a day | দৈনিক খরচ হওয়া ক্যালরি |
+| Safe floor / BMR | Lowest safe amount | সর্বনিম্ন নিরাপদ পরিমাণ |
+| Today's target | Today's goal | আজকের লক্ষ্য |
+| Rolling deficit / Rebalancer | Spread it over the week | সপ্তাহজুড়ে ভাগ করে নিন |
+| Rebalance window | Spread over (days) | কত দিনে ভাগ হবে |
+| What-if simulator | Try a meal first | আগে একটু হিসাব করে দেখুন |
+| Adaptive TDEE | Our estimate is getting better | আমাদের হিসাব আরও নির্ভুল হচ্ছে |
+| Insights | Progress | অগ্রগতি |
+| Zero-deficit guardrail | No calorie cut during Ramadan | রমজানে ক্যালরি কমানো নয় |
+
+**Rule:** a word a non-expert would not use in conversation never appears on the main screens. Technical terms may stay inside Details with a one-line explanation.
+
+## A5. Logging (`/log`)
+
+1. Open on the search field with the **meal slot preselected by the clock** (breakfast before 11:00, lunch 11:00 to 16:00, snack 16:00 to 19:00, dinner after).
+2. Under the search, a **"Your usual" row of big tap tiles** (64 px minimum, illustration plus Bangla name) for the user's top 8 foods. A new user sees 8 staples: bhat, dal, ruti, dim, alu bhorta, machh, shobji, cha.
+3. Tapping a tile adds it with the remembered portion. Portions are three chips (small, usual, large) on the added row, not a slider.
+4. A **live total** sits in a sticky bar above the tab bar ("Lunch: about 620 kcal") with a 48 px **Save** button.
+5. **Undo toasts replace confirm dialogs** for remove and save.
+6. Banglish typing shows fuzzy suggestions with the Bangla spelling beside each.
+7. Photo, street food and recipe are secondary icon-and-label buttons under the search.
+8. A failed match says: "I couldn't match 'xyz'. Pick the closest:" followed by five options.
+
+## A6. Onboarding (after submission)
+
+- **Three screens:** age and sex; height and weight; how active (three icon choices). About one minute, with progress dots and a Skip on every screen.
+- The **safety check stays in the first run** (one screen, four yes/no taps, "A quick safety check") and always comes before any goal is shown.
+- Then land on Home with the first day already filled in.
+- Ask the rest later as one **"Make it more accurate"** card at a time on Home: division (for weather), rice portion, eating style, health conditions. Conditions are optional, with a line saying why we ask and a Skip.
+
+## A7. Plan (`/plan`)
+
+- The weekly bar chart first.
+- One **Your plan** card with a plain sentence ("Friday was bigger. Spread about 150 kcal over the next 4 days"), a primary **Looks good** button and a secondary **Adjust**.
+- **Adjust** opens a sheet holding: spread over (3 to 7 days stepper), food and movement split (segmented), preferred exercise. Keep the elastic-band visual inside this sheet because it explains the spread.
+- Feast presets become three large buttons: **Biriyani night**, **Wedding dawat**, **Eid feast**.
+- "Try a meal first" is a link on the plan card that opens the what-if slider in a sheet.
+- A card **Eat well on a budget** links to the cheap-protein finder.
+
+## A8. Activity (`/activity`)
+
+- A **Right now** card first: one suggestion computed from weather, air quality, prayer window and the user's mode ("Good evening for a 15-minute walk after Maghrib") with a **Start** button and an "Another idea" link.
+- Weather is one line: icon plus words. No pulsing.
+- Prayer times are a horizontal chip row with the current window highlighted.
+- Routines, the 10 to 30 minute progression, the activity pyramid and the 150-minute gauge become **collapsed accordion sections**.
+- "Home workouts only" is a filter chip, not a header badge.
+
+## A9. Progress (`/insights`)
+
+- Weight chart: the 7-day trend is the thick primary line, raw weigh-ins are small dots.
+- The weigh-in form offers tag chips inline (Eid feast, salty meal, period, travel, ill). The reassurance text appears only when a tag is chosen.
+- The adaptive estimate lives under a **"How we estimate"** accordion with one sentence ("Our estimate is getting better: day 8 of 14").
+
+## A10. Numbers and type
+
+- **Headline** "about 1,250" at 32 to 40 px (Bengali digits when the language is Bangla) with a caption "range 1,150 to 1,350" at 14 px. In lists show "about 385"; the range is one tap away in the item detail. Ranges are never hidden, just second.
+- **One family for numbers**, with `font-variant-numeric: tabular-nums`. No monospace face.
+- **Sizes:** body 16 px (Bangla 17), captions never below 14 px (Bangla 15), nothing below 12 px anywhere, Bangla line-height at least 1.65.
+- Units always shown: "kcal", "ml", "g" in English; "ক্যালরি", "মি.লি.", "গ্রাম" in Bangla.
+
+## A11. Colour means something (replace the seven-hue palette)
+
+Use these values now. The Part B tokens replace them after submission.
+
+| Role | Fill and icon | Text-safe shade | Used for |
+|---|---|---|---|
+| Brand and action | `#4F46E5` (white text 6.3:1) | `#4338CA` | Buttons, links, active nav |
+| Good, balanced, goal met | `#10B981` | `#047857` | Balanced plate, hydration met |
+| Gentle caution | `#F59E0B` on tint `#FFF7E6` | `#B45309` | A bigger day, near the cap |
+| Water and weather info | `#0EA5E9` | `#0369A1` | Water, weather, air quality |
+| Error only | `#F43F5E` | `#BE123C` | Form errors. **Never for calories** |
+
+- Remove rose and lilac as a "modesty" theme; they carry no meaning.
+- Warm neutrals. Light: background `#FAF8F5`, card `#FFFFFF`, border `#E4DFD8`, ink `#1F1B16`, soft ink `#5E574E`. Dark: background `#12100E`, card `#1C1916`, border `#37312B`, ink `#F3EFE9`, soft ink `#B5ACA0`.
+- Cards are flat with a visible 1px border. No neumorphic inner glows.
+- White text only on 600-level or darker fills. Colour is never the only signal. Check each text and background pair for AA.
+
+## A12. Motion and feedback
+
+- **Keep:** the water ripple, the elastic rebalance band, and the calorie ring filling once when Home loads.
+- **Remove:** constant pulses and any motion nobody triggered.
+- Every tap shows a pressed state within 100 ms. Saves show a toast with Undo. Loading uses skeletons. Reduced motion is respected.
+
+## A13. Trust and help
+
+- A **Why?** icon beside every recommendation opens a popover with one sentence and a source chip.
+- Disclaimers are one sentence behind an info icon; the full text lives in About.
+- The default language follows the browser locale (`bn` gives Bangla); the language switch stays in the top bar.
+- First-run coach marks: three at most, each dismissible, never repeated.
+- **Help** in More: five FAQs ("How do I log rice?", "What does 'about' mean?" and so on).
+
+## A14. Touch and readability
+
+- Primary buttons are 48 px high and full width on mobile, in a sticky bar above the tab bar (thumb zone). Other tap targets are at least 44 px with at least 8 px between them.
+- No hover-only features.
+- Inputs use the right `inputmode` (numeric for height and weight) and keep their values after an error.
+- Test at maximum screen brightness in direct light, and at the large-text setting: the layout must reflow, not clip.
+
+## A15. Ship order
+
+If today is the submission day, do only the first group.
+
+- **Now (copy, structure, CSS; about 2 hours):** A1 items 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 17.
+- **Next (a few hours):** items 1, 11, 12, 13, 15, 18.
+- **After submission:** item 14, the Progress changes (A9) and the Part B token migration.
+
+## A16. Part A acceptance
+
+- [ ] The four tests in A0 pass with at least one real person
+- [ ] `/home` shows one primary action above the fold at 360 px, in Bangla and English
+- [ ] No TDEE, BMR, deficit, rebalance or simulator wording on the main screens
+- [ ] Insights and Family are reachable on a phone in two taps
+- [ ] No red or rose anywhere for calories; every accent used as text passes AA
+- [ ] No monospace face; Bengali digits render in the same font as the text around them
+- [ ] Every estimate shows "about" first with the range one tap away
+- [ ] No Buildathon badge, no constant pulse, no header badge for Home workouts only
+- [ ] Each changed screen was checked with ui-ux-pro-max and logged in `docs/skills-log.md`; `/ponytail-review` ran before the commit
+
+---
+
+# Part B: Full visual redesign spec (adopt after submission)
 
 ## 0. Your role and the job
 
@@ -381,7 +610,8 @@ Grouped white cards (Pattern 3 hierarchy): Profile, Eating style and budget, Hou
 - **Tier B:** `/activity`, `/settings`, rice calibrator, recipe builder, `/log/street`, full onboarding.
 - **Tier C:** the violet-rail tablet mode and Pattern 3 light rail, later-wave routes, admin, dark-mode polish, low-literacy mode.
 
-1. Write `docs/ui-design-system.md` from sections 1 to 3, review it for anything that looks generic, then implement tokens, fonts, `AppFrame`, nav, theme and language switches, and `/_dev/components`.
+0. Install and verify the two required skills (see Required skills) and start `docs/skills-log.md`.
+1. Write `docs/ui-design-system.md` from sections 1 to 3 plus the ui-ux-pro-max design-system output, review it for anything that looks generic, then implement tokens, fonts, `AppFrame`, nav, theme and language switches, and `/_dev/components`.
 2. `/login`, `/signup`, `/onboarding` (with safety outcomes).
 3. `/home` (`HeroCard`, `CalorieRing`, `StatTile`, `PlateBalance`).
 4. `/log` and sub-routes (demo-critical: search, parse sheet, confirm, rice calibrator, photo).
@@ -410,3 +640,4 @@ Tier A items must pass before submission; the rest as time allows.
 - [ ] Keyboard focus visible, touch targets at least 44px, text contrast AA (white text on violet, coral and action fills; `--ink` text on turmeric, leaf and mint tints)
 - [ ] Reduced motion respected; only the home load sequence animates unprompted
 - [ ] Demo path works with seeded data: onboarding, photo log, Banglish log, overshoot plan with live 60/40 toggle, coach citation, airplane-mode check
+- [ ] ponytail and ui-ux-pro-max were installed and used: `docs/skills-log.md` lists each page's ui-ux-pro-max check and each tier's `/ponytail-review`, and every deliberate shortcut has a `ponytail:` comment
