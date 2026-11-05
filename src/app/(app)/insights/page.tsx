@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { useState, useSyncExternalStore } from "react";
 import { useI18n } from "@/lib/i18n";
-import { AreaChart } from "@/components/data/Charts";
+import { AreaChart, WeightTrendChart } from "@/components/data/Charts";
 import { SectionLabel, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
@@ -59,8 +59,8 @@ export default function InsightsPage() {
   if (data === undefined) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-extrabold md:text-3xl">{t("nav.insights")}</h1>
-        <div className="tile h-40 animate-pulse" aria-busy="true" aria-label="Loading insights" />
+        <h1 className="text-2xl font-extrabold md:text-3xl">{t("nav.progress")}</h1>
+        <div className="tile h-40 animate-pulse" aria-busy="true" aria-label="Loading progress" />
       </div>
     );
   }
@@ -68,11 +68,11 @@ export default function InsightsPage() {
   if (data === null) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-extrabold md:text-3xl">{t("nav.insights")}</h1>
+        <h1 className="text-2xl font-extrabold md:text-3xl">{t("nav.progress")}</h1>
         <NoticeCard
           tone="info"
           title={t("states.empty")}
-          body="Set up your profile to see insights."
+          body="Set up your profile to see progress."
         />
         <Link href="/onboarding">
           <Button>{t("home.setup")}</Button>
@@ -141,12 +141,12 @@ export default function InsightsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-extrabold md:text-3xl">{t("nav.insights")}</h1>
+        <h1 className="text-2xl font-extrabold md:text-3xl">{t("nav.progress")}</h1>
         <p className="mt-1 text-sm text-ink/60">{t("insights.subtitle")}</p>
       </div>
 
       {/* ─── Wave 6: Cheap-Protein Finder & Taka Economics (FR-G-05) ─── */}
-      <section className="space-y-4">
+      <section id="cheap-protein" className="space-y-4 scroll-mt-20">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <SectionLabel>
@@ -349,7 +349,7 @@ export default function InsightsPage() {
                 </div>
               </div>
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary">
-                {lang === "bn" ? "০ ক্যালরি ডেফিসিট গার্ডরেইল" : "Zero Deficit Guardrail"}
+                {lang === "bn" ? "রমজানে ক্যালরি কমানো নয়" : "No calorie cut during Ramadan"}
               </span>
             </div>
 
@@ -407,36 +407,25 @@ export default function InsightsPage() {
         )}
       </section>
 
-      {/* ─── Weigh-In & Adaptive TDEE Section (FR-E-10, FR-ATDEE-*) ─── */}
+      {/* ─── Weigh-In & Weight Trend Section (A9) ─── */}
       <section className="space-y-4">
         <SectionLabel>{t("insights.weighIn")}</SectionLabel>
-        <form onSubmit={handleAdd} className="card space-y-3 p-4">
+        <form onSubmit={handleAdd} className="card space-y-3.5 p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <input
-              type="number"
-              step="0.1"
-              min="30"
-              max="300"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder={t("insights.weightPlaceholder")}
-              className="input w-32 font-num text-sm"
-              aria-label={t("insights.weightPlaceholder")}
-            />
-            <span className="text-xs font-semibold text-ink/50">kg</span>
-
-            <select
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="input min-w-44 text-xs font-medium"
-              aria-label="Weigh-in Context Note"
-            >
-              {NOISE_NOTES.map((n) => (
-                <option key={n.value} value={n.value}>
-                  {n.icon} {lang === "bn" ? n.labelBn : n.labelEn}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                step="0.1"
+                min="30"
+                max="300"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder={t("insights.weightPlaceholder")}
+                className="input w-28 font-num text-sm"
+                aria-label={t("insights.weightPlaceholder")}
+              />
+              <span className="text-xs font-semibold text-ink/50">kg</span>
+            </div>
 
             <Button type="submit">{t("insights.logWeight")}</Button>
             {saved && (
@@ -450,35 +439,87 @@ export default function InsightsPage() {
               </span>
             )}
           </div>
-          <p className="text-[11px] text-ink/50">
-            {lang === "bn"
-              ? "💡 বিশেষ দিনের নোট (যেমন দাওয়াত বা লবণাক্ত খাবার) দিলে সাময়িক পানি জমার কারণে স্কেল বিভ্রান্তি এড়ানো যায়।"
-              : "💡 Tagging events (e.g. feast, high salt) prevents panic from temporary water weight spikes."}
-          </p>
+
+          {/* Inline tag chips (A9) */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/40">
+            <span className="text-xs font-semibold text-ink/50 mr-1">
+              {lang === "bn" ? "ট্যাগ / কারণ:" : "Tag / context:"}
+            </span>
+            {NOISE_NOTES.filter((n) => n.value !== "none").map((n) => {
+              const isSelected = note === n.value;
+              return (
+                <button
+                  key={n.value}
+                  type="button"
+                  onClick={() => setNote(isSelected ? "none" : n.value)}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+                    isSelected
+                      ? "bg-violet text-white shadow-sm ring-2 ring-violet/20"
+                      : "bg-surface-soft text-ink/70 hover:bg-surface-soft/80 border border-border/40"
+                  }`}
+                >
+                  <span>{n.icon}</span>
+                  <span>{lang === "bn" ? n.labelBn : n.labelEn}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Reassurance text appears ONLY when a tag is selected (A9) */}
+          {note !== "none" && (
+            <div className="rounded-tile bg-peach/30 border border-peach/50 p-3 text-xs text-ink/80 animate-fade-in flex items-start gap-2">
+              <span className="text-base leading-none">💡</span>
+              <p className="leading-relaxed">
+                {note === "eid_feast"
+                  ? (lang === "bn"
+                      ? "দাওয়াত বা ঈদের ভোজের পর স্কেলে ১-২ কেজি বৃদ্ধি চর্বি নয়, বরং অস্থায়ী গ্লাইকোজেন ও পানি জমা। ২-৩ দিনেই স্কেল স্বাভাবিক হবে।"
+                      : "Weight spikes of 1–2 kg after feasts reflect temporary glycogen and water shifts, not fat gain. It normalizes in 2–3 days.")
+                  : note === "salty_meal"
+                    ? (lang === "bn"
+                        ? "অতিরিক্ত সোডিয়ামযুক্ত খাবারে কোষে পানি আটকে থাকে। পর্যাপ্ত পানি খেলে ২৪-৪৮ ঘণ্টার মধ্যে স্বাভাবিক হবে।"
+                        : "High sodium holds extra fluid in cells. Drinking regular water helps shed it within 24–48 hours.")
+                    : note === "cycle"
+                      ? (lang === "bn"
+                          ? "মাসিক চক্রের হরমোন পরিবর্তনে অস্থায়ী পানি জমা স্বাভাবিক। ৭ দিনের ট্রেন্ড লাইন স্কেলের বিভ্রান্তি দূর করে।"
+                          : "Hormonal fluid retention during your cycle is completely normal. The 7-day smoothed trend filters this out.")
+                      : note === "travel"
+                        ? (lang === "bn"
+                            ? "ভ্রমণ বা ঘুমের পরিবর্তনে শরীরে সাময়িক কর্টিসল ও পানি তারতম্য ঘটে। বিশ্রাম নিলে দ্রুত ঠিক হয়ে যাবে।"
+                            : "Travel and sleep shifts alter fluid retention. Regular rest will settle the scale back on trend.")
+                        : (lang === "bn"
+                            ? "অসুস্থতা বা ওষুধের কারণে ওজনে সাময়িক হেরফের হতে পারে। সুস্থ হওয়াকে অগ্রাধিকার দিন; ওজন নিজে থেকেই স্বাভাবিক হবে।"
+                            : "Illness and medications affect hydration. Prioritize recovery; your weight will steady automatically.")}
+              </p>
+            </div>
+          )}
         </form>
 
         {data.weighIns.length > 0 && (
           <div className="card space-y-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-3 font-semibold">
-                <span className="flex items-center gap-1.5 text-ink/70">
-                  <span className="inline-block h-2 w-3 rounded-full bg-white dark:bg-zinc-300 border border-ink/20" />
-                  {lang === "bn" ? "স্কেলের ওজন" : "Raw scale"}
+                <span className="flex items-center gap-1.5 text-violet">
+                  <span className="inline-block h-1 w-4 rounded-full bg-violet" />
+                  {lang === "bn" ? "৭ দিনের স্মুথড ট্রেন্ড (মূল লাইন)" : "7-day smoothed trend"}
                 </span>
-                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                  <span className="inline-block h-0.5 w-3 border-b-2 border-dashed border-emerald-500" />
-                  {lang === "bn" ? "৭ দিনের স্মুথড ট্রেন্ড" : "7-day smoothed trend"}
+                <span className="flex items-center gap-1.5 text-ink/65">
+                  <span className="inline-block h-2 w-2 rounded-full border border-ink/40 bg-surface" />
+                  {lang === "bn" ? "স্কেলের ওজন (বিন্দু)" : "Raw weigh-ins"}
+                </span>
+                <span className="flex items-center gap-1.5 text-turmeric">
+                  <span className="inline-block h-2 w-2 rounded-full bg-turmeric" />
+                  {lang === "bn" ? "চিহ্নিত দিন" : "Tagged day"}
                 </span>
               </div>
-              <span className="text-[11px] text-ink/40">FR-E-10 · Noise smoothed</span>
+              <span className="text-[11px] text-ink/40">Noise smoothed</span>
             </div>
 
-            <AreaChart
-              data={chartData}
-              secondaryData={chartSmoothed}
+            <WeightTrendChart
+              rawWeights={chartData}
+              smoothedWeights={chartSmoothed}
               labels={chartLabels}
-              animate
-              height={140}
+              noiseTags={data.weighIns.map((w) => w.note)}
+              height={160}
             />
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs text-ink/50">
@@ -490,7 +531,7 @@ export default function InsightsPage() {
                 {data.weightDeltaKg} kg / {data.days} d
                 <SourceTag tag="measured" />
               </p>
-              <span className="font-num font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="font-num font-semibold text-violet">
                 {lang === "bn" ? "বর্তমান স্মুথড: " : "Latest trend: "}
                 {chartSmoothed.at(-1)?.toFixed(1)} kg
               </span>
@@ -519,41 +560,85 @@ export default function InsightsPage() {
         )}
       </section>
 
+      {/* ─── Adaptive Estimate Accordion (A9) ─── */}
       <section>
-        <SectionLabel>{t("plan.adaptive")}</SectionLabel>
-        <div className="card p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="flex items-center gap-2">
-              <Scale size={16} className="text-ink/40" />
-              <span className="font-num text-3xl font-extrabold tabular">
-                {a.estimateKcal.toLocaleString()}
+        <details className="card group overflow-hidden border border-border/80 transition-all open:ring-1 open:ring-violet/20">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-5 hover:bg-surface-soft/40 focus-visible:outline-none">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Scale size={16} className="text-violet" />
+                <span className="font-extrabold text-base text-ink">
+                  {t("insights.howWeEstimate")}
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-ink/75">
+                {lang === "bn"
+                  ? `আমাদের হিসাব আরও নির্ভুল হচ্ছে: ১৪ দিনের মধ্যে ${Math.min(14, data.days || 1)} দিন`
+                  : `Our estimate is getting better: day ${Math.min(14, data.days || 1)} of 14`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone}`}>
+                {statusLabel}
               </span>
-              <span className="text-sm text-ink/50">kcal/day</span>
-            </p>
-            <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone}`}>
-              {statusLabel}
-            </span>
-          </div>
+              <span className="text-ink/40 transition-transform duration-200 group-open:rotate-180">
+                ▾
+              </span>
+            </div>
+          </summary>
 
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            <Meta label={t("plan.adaptive")} value={`${data.formulaTdee}`} sub="formula" />
-            <Meta label={t("insights.avgIntake")} value={`${data.avgIntakeKcal}`} sub="kcal" />
-            <Meta
-              label={t("insights.confidence")}
-              value={`${Math.round(a.confidence * 100)}%`}
-              sub={`${data.days} d`}
-            />
-          </div>
+          <div className="border-t border-border/60 bg-surface p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-ink/50 uppercase font-semibold tracking-wider">
+                  {lang === "bn" ? "বর্তমান দৈনিক খরচ অনুমান" : "Current Daily Burn Estimate"}
+                </p>
+                <p className="font-num text-3xl font-extrabold tabular text-ink mt-0.5">
+                  {a.estimateKcal.toLocaleString()}{" "}
+                  <span className="text-sm font-medium text-ink/50">kcal/day</span>
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-ink/50">
+                  {lang === "bn" ? "আস্থা স্তর" : "Confidence"}
+                </span>
+                <p className="font-num text-base font-extrabold text-violet">
+                  {Math.round(a.confidence * 100)}%
+                </p>
+              </div>
+            </div>
 
-          {a.status !== "settled" && (
-            <p className="mt-4 text-sm text-ink/60">
-              {t("insights.needsWeighIns").replace("{n}", String(a.moreWeighInsNeeded))}
+            <div className="grid grid-cols-3 gap-3">
+              <Meta
+                label={lang === "bn" ? "সূত্র অনুযায়ী" : "Formula base"}
+                value={`${data.formulaTdee}`}
+                sub="kcal"
+              />
+              <Meta
+                label={lang === "bn" ? "গড় খাবার গ্রহণ" : "Avg intake"}
+                value={`${data.avgIntakeKcal}`}
+                sub="kcal"
+              />
+              <Meta
+                label={lang === "bn" ? "লগ করা দিন" : "Days logged"}
+                value={`${data.days}`}
+                sub="of 14 d"
+              />
+            </div>
+
+            <p className="text-xs text-ink/60 leading-relaxed">
+              {lang === "bn"
+                ? "প্রথম ১৪ দিনে ইঞ্জিনটি প্রাথমিক ফর্মুলার ওপর নির্ভরতা কমিয়ে আপনার বাস্তব খাবার গ্রহণ ও ওজনের পরিবর্তনের ট্রেন্ডের ভিত্তিতে দৈনিক ক্যালরি ব্যয়ের হিসাব আরও নির্ভুল করে তোলে।"
+                : "Over the 14-day calibration window, the engine transitions from baseline population formula to your actual logged intake and weight trend for a truly personal estimate."}
             </p>
-          )}
-          {a.noiseNote && (
-            <p className="mt-2 text-xs text-ink/45">{t("insights.noise")}</p>
-          )}
-        </div>
+
+            {a.status !== "settled" && (
+              <p className="text-xs font-semibold text-primary">
+                {t("insights.needsWeighIns").replace("{n}", String(a.moreWeighInsNeeded))}
+              </p>
+            )}
+          </div>
+        </details>
       </section>
     </div>
   );

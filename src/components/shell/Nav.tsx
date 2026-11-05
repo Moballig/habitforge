@@ -53,9 +53,6 @@ export function SideNav() {
         </span>
         <span className="text-[15px] font-bold">Deshi Health</span>
       </Link>
-      <div className="mx-3 mb-4 rounded-xl border border-violet/25 bg-violet/5 p-2 text-center text-[10px] font-extrabold text-violet leading-tight">
-        ⚡ Built For Ostad Presents YUNet AIgnite Buildathon 2026
-      </div>
       {NAV_ITEMS.map((item) => {
         const active = pathname.startsWith(item.href);
         const Icon = item.icon;

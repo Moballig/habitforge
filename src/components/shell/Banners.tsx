@@ -38,20 +38,35 @@ export function OfflineBanner() {
   );
 }
 
-export function SyncStatusPill({ queued }: { queued?: number }) {
+export function SyncStatusPill({ queued = 0, showSynced = false }: { queued?: number; showSynced?: boolean }) {
   const { t } = useI18n();
-  if (!queued) {
+  const offline = useSyncExternalStore(subscribeOnline, getOfflineSnapshot, getServerOfflineSnapshot);
+
+  if (offline) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-mint px-3 py-1 text-xs font-semibold text-mint-ink">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-200">
+        <CloudOff size={12} aria-hidden /> {t("states.offline")}
+      </span>
+    );
+  }
+
+  if (queued > 0) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-200">
+        {queued} {t("states.queued")}
+      </span>
+    );
+  }
+
+  if (showSynced) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200">
         <Wifi size={12} aria-hidden /> Synced
       </span>
     );
   }
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-peach px-3 py-1 text-xs font-semibold text-peach-ink">
-      {queued} {t("states.queued")}
-    </span>
-  );
+
+  return null;
 }
 
 export function SafetyBanner({
@@ -94,10 +109,10 @@ export function NoticeCard({
 }) {
   const bg =
     tone === "gentle"
-      ? "bg-peach text-peach-ink"
+      ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/50"
       : tone === "error"
-        ? "bg-surface-soft text-ink"
-        : "bg-mint text-mint-ink";
+        ? "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800/50"
+        : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800/50";
   return (
     <div className={`relative flex items-start gap-3 rounded-card p-4 ${bg}`}>
       <div className="min-w-0 flex-1">

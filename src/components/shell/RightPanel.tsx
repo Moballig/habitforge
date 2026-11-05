@@ -82,7 +82,7 @@ export default function RightPanel() {
         <NoticeCard
           tone="gentle"
           title={t("home.overshoot")}
-          body={`Recent surplus of ~${Math.round(budget.overshootKcal)} kcal detected. Our 7-day rebalance engine spreads this comfortably.`}
+          body={`Recent surplus of ~${Math.round(budget.overshootKcal)} kcal detected. Spread it gently over the week.`}
           action={
             <Link href="/plan" className="text-sm font-bold underline">
               {t("plan.spread")}

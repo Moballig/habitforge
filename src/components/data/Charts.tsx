@@ -188,6 +188,174 @@ export function AreaChart({
   );
 }
 
+/** Weight Trend Chart (A9): 7-day smoothed trend is the thick primary line; raw weigh-ins are smaller dots. */
+export function WeightTrendChart({
+  rawWeights,
+  smoothedWeights,
+  labels,
+  noiseTags,
+  width = 560,
+  height = 160,
+}: {
+  rawWeights: number[];
+  smoothedWeights: number[];
+  labels?: string[];
+  noiseTags?: (string | undefined)[];
+  width?: number;
+  height?: number;
+}) {
+  const id = useId();
+  if (rawWeights.length === 0 && smoothedWeights.length === 0) return null;
+
+  const allVals = [...rawWeights, ...smoothedWeights].filter((v) => Number.isFinite(v) && v > 0);
+  if (allVals.length === 0) return null;
+
+  const minVal = Math.floor(Math.min(...allVals) - 0.6);
+  const maxVal = Math.ceil(Math.max(...allVals) + 0.6);
+  const valSpan = Math.max(maxVal - minVal, 1);
+
+  const padX = 24;
+  const padTop = 16;
+  const padBottom = 26;
+  const innerW = width - padX * 2;
+  const innerH = height - padTop - padBottom;
+
+  const smoothPts = smoothedWeights.map((v, i) => {
+    const x = padX + (i / Math.max(smoothedWeights.length - 1, 1)) * innerW;
+    const y = padTop + innerH - ((v - minVal) / valSpan) * innerH;
+    return [x, y] as const;
+  });
+
+  const smoothPath = smoothPts
+    .map(([x, y], i) => {
+      if (i === 0) return `M ${x} ${y}`;
+      const [px, py] = smoothPts[i - 1];
+      const cx = (px + x) / 2;
+      return `C ${cx} ${py}, ${cx} ${y}, ${x} ${y}`;
+    })
+    .join(" ");
+
+  const area = smoothPts.length > 0
+    ? `${smoothPath} L ${smoothPts[smoothPts.length - 1][0]} ${padTop + innerH} L ${smoothPts[0][0]} ${padTop + innerH} Z`
+    : "";
+
+  const rawPts = rawWeights.map((v, i) => {
+    const x = padX + (i / Math.max(rawWeights.length - 1, 1)) * innerW;
+    const y = padTop + innerH - ((v - minVal) / valSpan) * innerH;
+    const tag = noiseTags?.[i];
+    const hasNoise = Boolean(tag && tag !== "none");
+    return { x, y, v, hasNoise, tag, label: labels?.[i] };
+  });
+
+  // Calculate 3 grid guide ticks
+  const midVal = (minVal + maxVal) / 2;
+  const ticks = [minVal, Math.round(midVal * 10) / 10, maxVal];
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full select-none"
+      role="img"
+      aria-label="Weight trend: 7-day smoothed line with raw weigh-in dots"
+    >
+      <defs>
+        <linearGradient id={`weightAreaFill-${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--violet, #5b3e9e)" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="var(--violet, #5b3e9e)" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+
+      {/* Horizontal grid lines & ticks */}
+      {ticks.map((tick, i) => {
+        const y = padTop + innerH - ((tick - minVal) / valSpan) * innerH;
+        return (
+          <g key={i}>
+            <line
+              x1={padX}
+              x2={width - padX}
+              y1={y}
+              y2={y}
+              stroke="var(--border, #e4e2ee)"
+              strokeOpacity="0.6"
+              strokeDasharray="3 3"
+              strokeWidth="1"
+            />
+            <text
+              x={padX - 4}
+              y={y + 3.5}
+              textAnchor="end"
+              className="fill-ink/40 text-[9px] font-semibold tabular"
+            >
+              {tick}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Smoothed trend area */}
+      {area && <path d={area} fill={`url(#weightAreaFill-${id})`} />}
+
+      {/* 7-day smoothed trend line: thick primary line (A9) */}
+      {smoothPath && (
+        <path
+          d={smoothPath}
+          fill="none"
+          stroke="var(--violet, #5b3e9e)"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+
+      {/* Raw weigh-in dots: smaller dots (A9) */}
+      {rawPts.map((pt, i) => (
+        <g key={i}>
+          <circle
+            cx={pt.x}
+            cy={pt.y}
+            r={pt.hasNoise ? 4 : 3}
+            fill={pt.hasNoise ? "var(--turmeric, #e9a23b)" : "var(--surface, #ffffff)"}
+            stroke={pt.hasNoise ? "var(--turmeric, #e9a23b)" : "var(--ink, #1e1a2e)"}
+            strokeWidth="1.75"
+          />
+        </g>
+      ))}
+
+      {/* First and Last x-axis labels */}
+      {labels && labels.length > 0 && (
+        <>
+          <text
+            x={padX}
+            y={height - 8}
+            textAnchor="start"
+            className="fill-ink/50 text-[10px] font-medium"
+          >
+            {labels[0]}
+          </text>
+          {labels.length > 2 && (
+            <text
+              x={width / 2}
+              y={height - 8}
+              textAnchor="middle"
+              className="fill-ink/40 text-[10px] font-medium"
+            >
+              {labels[Math.floor(labels.length / 2)]}
+            </text>
+          )}
+          <text
+            x={width - padX}
+            y={height - 8}
+            textAnchor="end"
+            className="fill-ink/50 text-[10px] font-medium"
+          >
+            {labels[labels.length - 1]}
+          </text>
+        </>
+      )}
+    </svg>
+  );
+}
+
 /** Semicircle gauge (ref 4). */
 export function SemiGauge({
   value,
