@@ -86,6 +86,7 @@ export const save = mutation({
     homeRegion: v.optional(v.string()),
     calibratedPlate: v.optional(v.string()),
     ricePortionLabel: v.optional(v.string()),
+    womenFriendlyPrivacy: v.optional(v.boolean()),
     consent: v.boolean(),
   },
   handler: async (ctx, args) => {
@@ -139,6 +140,7 @@ export const save = mutation({
       homeRegion: args.homeRegion,
       calibratedPlate: args.calibratedPlate,
       ricePortionLabel: args.ricePortionLabel,
+      womenFriendlyPrivacy: args.womenFriendlyPrivacy,
       consent: args.consent,
       consentAt: args.consent ? now : undefined,
       updatedAt: now,
@@ -234,6 +236,28 @@ export const setBudgetControls = mutation({
       updatedAt: Date.now(),
     });
     return null;
+  },
+});
+
+/** FR-D-07: Women-friendly privacy & home-only movement mode toggle. */
+export const setWomenFriendlyPrivacy = mutation({
+  args: {
+    key: v.optional(v.string()),
+    enabled: v.boolean(),
+  },
+  returns: v.object({ ok: v.boolean(), enabled: v.boolean() }),
+  handler: async (ctx, args) => {
+    const key = args.key ?? DEFAULT_KEY;
+    const existing = await ctx.db
+      .query("profiles")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    if (!existing) throw new Error("Profile not found");
+    await ctx.db.patch(existing._id, {
+      womenFriendlyPrivacy: args.enabled,
+      updatedAt: Date.now(),
+    });
+    return { ok: true, enabled: args.enabled };
   },
 });
 

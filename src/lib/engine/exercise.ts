@@ -34,6 +34,7 @@ export interface ExerciseInput {
   weightKg: number;
   hour: number;
   indoor: boolean;
+  womenFriendly?: boolean;
 }
 
 const LABELS: Record<ExerciseType, { en: string; bn: string }> = {
@@ -77,8 +78,12 @@ export function exerciseRec(input: ExerciseInput): ExerciseRec | null {
     ? offsetMinutes(overshootKcal, kg)
     : Math.min(60, planActivityMin > 0 ? planActivityMin : 15);
 
-  const why =
-    over
+  const why = input.womenFriendly
+    ? {
+        en: "Private home routine — comfortable in loose house-wear",
+        bn: "ঘরের ভিতরে শালীন চলাচল — সম্পূর্ণ ব্যক্তিগত ও পর্দাবান্ধব",
+      }
+    : over
       ? {
           en: `Gentle offset for today's ~${overshootKcal} kcal`,
           bn: `আজকের ~${overshootKcal} ক্যালোরি মোচনে কোমল পদক্ষেপ`,
@@ -90,7 +95,7 @@ export function exerciseRec(input: ExerciseInput): ExerciseRec | null {
           }
         : { en: "Keeps the week steady", bn: "সপ্তাহকে স্থিতিশীল রাখে" };
 
-  const types: ExerciseType[] = indoor
+  const types: ExerciseType[] = indoor || input.womenFriendly
     ? ["home", "yoga"]
     : over
       ? ["walk", "cycle"]

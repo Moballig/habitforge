@@ -118,6 +118,7 @@ export default function HomePage() {
     weightKg: profile?.weightKg ?? 65,
     hour,
     indoor: advice.indoor,
+    womenFriendly: profile?.womenFriendlyPrivacy ?? false,
   });
 
   return (

@@ -58,6 +58,14 @@ describe("exerciseRec (FR-D-05 weather gate + calorie-driven)", () => {
     expect(offsetMinutes(0, 0)).toBe(10); // weight fallback never NaN
   });
 
+  test("womenFriendly forces indoor/home routines with privacy note", () => {
+    const rec = exerciseRec({ ...base, indoor: false, overshootKcal: 400, womenFriendly: true });
+    expect(rec).not.toBeNull();
+    expect(rec!.options.map((o) => o.type)).toEqual(["home", "yoga"]);
+    expect(rec!.options.every((o) => o.indoor)).toBe(true);
+    expect(rec!.whyEn).toContain("Private home routine");
+  });
+
   test("label present in both languages for every option", () => {
     const rec = exerciseRec(base);
     for (const o of rec!.options) {

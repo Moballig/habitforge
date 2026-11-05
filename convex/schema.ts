@@ -106,6 +106,7 @@ export default defineSchema({
     homeRegion: v.optional(v.string()),
     calibratedPlate: v.optional(v.string()),
     ricePortionLabel: v.optional(v.string()),
+    womenFriendlyPrivacy: v.optional(v.boolean()),
     // FR-G-06 family/caregiver mode: one shared menu, per-person portions
     familyMembers: v.optional(
       v.array(

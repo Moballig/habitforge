@@ -21,6 +21,7 @@ export interface NextMoveInput {
   weightKg: number;
   hour: number;
   indoor: boolean;
+  womenFriendly?: boolean;
 }
 
 export interface NextMoveFood {
@@ -129,6 +130,7 @@ export function nextMove(input: NextMoveInput): NextMove {
     weightKg,
     hour,
     indoor,
+    womenFriendly: input.womenFriendly,
   });
 
   if (safetyMode === "doctor-first") {

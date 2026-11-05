@@ -83,6 +83,7 @@ export default function ActivityPage() {
   const profile = useQuery(api.profile.get, {});
   const createActivity = useMutation(api.activity.create);
   const removeActivity = useMutation(api.activity.remove);
+  const setWomenPrivacy = useMutation(api.profile.setWomenFriendlyPrivacy);
   const weather = useQuery(api.weather.get, {});
   const refreshWeather = useAction(api.weather.refresh);
   useEffect(() => {
@@ -147,6 +148,7 @@ export default function ActivityPage() {
     weightKg: profile?.weightKg ?? 65,
     hour,
     indoor: advice.indoor,
+    womenFriendly: profile?.womenFriendlyPrivacy ?? false,
   });
 
   async function log(type: string, minutes?: number) {
@@ -185,9 +187,27 @@ export default function ActivityPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold md:text-3xl">{t("activity.title")}</h1>
-        <p className="mt-1 text-xs font-semibold text-ink/50">{t("activity.privacyBadge")}</p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold md:text-3xl">{t("activity.title")}</h1>
+          <p className="mt-1 text-xs font-semibold text-ink/50">{t("activity.privacyBadge")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void setWomenPrivacy({ enabled: !profile?.womenFriendlyPrivacy })}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+            profile?.womenFriendlyPrivacy
+              ? "bg-rose/15 text-rose border border-rose/30 shadow-xs"
+              : "bg-surface-soft text-ink/65 border border-border hover:bg-peach"
+          }`}
+          title="Modest home-only workout routines and privacy framing"
+        >
+          <span>🌸</span>
+          <span>{lang === "bn" ? "নারী-বান্ধব হোম মোড" : "Women-Friendly Mode"}</span>
+          <span className="rounded-full bg-ink/10 px-1.5 py-0.2 text-[10px] uppercase tracking-wider">
+            {profile?.womenFriendlyPrivacy ? (lang === "bn" ? "চালু" : "ON") : (lang === "bn" ? "বন্ধ" : "OFF")}
+          </span>
+        </button>
       </header>
 
       {rec && (

@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Database,
   Globe,
+  Heart,
   Info,
   MapPin,
   Palette,
@@ -77,6 +78,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const profile = useQuery(api.profile.get, {});
   const clearData = useMutation(api.profile.clearData);
+  const setWomenPrivacy = useMutation(api.profile.setWomenFriendlyPrivacy);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [dataSaver, setDataSaver] = useState(false);
@@ -210,6 +212,18 @@ export default function SettingsPage() {
       <section>
         <SectionLabel>{t("settings.routine")}</SectionLabel>
         <div className="divide-y divide-border rounded-card border border-border">
+          <Row
+            icon={Heart}
+            label={lang === "bn" ? "নারী-বান্ধব মোড" : "Women-Friendly Home Mode"}
+            value={lang === "bn" ? "শালীন ঘরোয়া চলাচল ও প্রাইভেসি" : "Modest home movement in loose wear"}
+            right={
+              <Toggle
+                label=""
+                checked={profile?.womenFriendlyPrivacy ?? false}
+                onChange={(v) => void setWomenPrivacy({ enabled: v })}
+              />
+            }
+          />
           <Row icon={Wifi} label={t("settings.offline")} right={<SyncStatusPill queued={0} />} />
           <Row icon={Shield} label="Notifications" right={<Toggle label="" checked={notif} onChange={setNotif} />} />
           <Row icon={Database} label={t("settings.dataSaver")} right={<Toggle label="" checked={dataSaver} onChange={setDataSaver} />} />
