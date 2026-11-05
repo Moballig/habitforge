@@ -15,15 +15,15 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Waves 1–6 complete (all gates met); Wave 7 (offline/privacy/admin) next** — W6 gate: Ramadan zero-deficit guardrail, family mode `/family` (one menu, per-person portions), condition plates with doctor note; presentation deck ready |
-| **Day** | Day 3 (Nov 3, 2026) |
-| **Build Status** | ✅ `bun run build` passes 100% (21/21 static/dynamic routes), TypeScript check 0 errors, `bun test src/` 98/98 green |
-| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets + calorie-driven `nextMove` (next food) and `exerciseRec` (type/minutes/kcal, weather-gated) on /home + `/activity` Recommended-today tap-to-log; live settings & right-panel |
-| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks` (+vector/search indexes), `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`, `mealLogs`, `weighIns`, `profiles` |
+| **Current Phase** | **Waves 1–6 complete (all gates met); Deferred features in progress** — W6 gate: Ramadan zero-deficit guardrail, family mode `/family` (one menu, per-person portions), condition plates with doctor note; water tracking & BD division weather/AQI localization shipped |
+| **Day** | Day 5 (Nov 5, 2026) |
+| **Build Status** | ✅ `bun run build` passes 100% (21/21 static/dynamic routes), TypeScript check 0 errors, `bun test src/` 120/120 green |
+| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets + calorie-driven `nextMove` & `exerciseRec`; live hydration tile (+250ml/undo); live settings & right-panel |
+| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks`, `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`, `mealLogs`, `weighIns`, `profiles`, `waterLogs`, `weatherState` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b`; **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` |
-| **P0 product surface** | ✅ Onboarding, `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach`, `/settings` all connected to live Convex backend with zero mock fixtures |
+| **P0 product surface** | ✅ Onboarding (with division selector), `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach`, `/settings` all connected to live Convex backend with zero mock fixtures |
 | **PWA & Offline** | ✅ Service worker `public/sw.js` registered, offline food search across 318 Deshi staples, standalone manifest |
-| **Last Updated** | 2026-11-04 (Exercise rec — `exerciseRec` engine, richer Home block + `/activity` Recommended today; 115 tests green; earlier: Home `nextMove` food rec, Wave 6 gate, fake-save fixes) |
+| **Last Updated** | 2026-11-05 (Water tracking + BD 8-division coordinates & weather localization shipped; 120 tests green) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 

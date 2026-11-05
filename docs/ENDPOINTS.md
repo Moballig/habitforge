@@ -19,7 +19,7 @@
 | Module | Status | Purpose | Wave |
 |--------|--------|---------|------|
 | `lib/engine` | ✅ Done | BMR/TDEE/MET/safetyMode/rebalance/adaptiveTdee/context advice/nextMove/exerciseRec — 70 engine tests (115-test suite), property-tested | W1 |
-| `convex/schema` | ✅ Done (v2 live) | profiles (+budgetControls), foods, mealLogs, activityLogs, budgetState (reserved), weighIns, auditLogs, weatherState, ragChunks + corpus tables | W1 |
+| `convex/schema` | ✅ Done (v2 live) | profiles (+budgetControls, homeRegion), foods, mealLogs, activityLogs, budgetState (reserved), weighIns, auditLogs, weatherState, waterLogs, ragChunks + corpus tables | W1 |
 | `convex/profile` | ✅ Done | `get`, `save`, `energy`, `setBudgetControls`, `saveFamilyMembers` — engine computes safetyMode server-side | W1+6 |
 | `convex/foods` | ✅ Done | Reconciled seed, full-text BN/EN search, get/count/upsert — 318 rows live | W1–2 |
 | `convex/privacy` | ✅ Done | `recordConsent`, `deleteMyData`, `auditTrail` | W1 |
@@ -29,7 +29,8 @@
 | `convex/activity` | ✅ Live | `create` (preset/manual/steps, MET + net kcal), `remove`, `listWeek` (gauge totals) | W4 |
 | `convex/rag` | ✅ Live | `rag.search` (action: vector + keyword merge), `rag.keywordSearch` | W5 |
 | `convex/weights` | ✅ Live | `add` (upsert per date), `remove`, `trend` (weigh-ins + adaptive TDEE) | W3 |
-| `convex/weather` | ✅ Live | `refresh` (action: Open-Meteo AQI + feels-like, 30-min TTL cache), `get` (cached row) — indoor switch for FR-D-05 | W4 |
+| `convex/weather` | ✅ Live | `refresh` (action: Open-Meteo AQI + feels-like for 8 BD divisions, 30-min TTL cache), `get` (cached row) — indoor switch for FR-D-05 | W4 |
+| `convex/water` | ✅ Live | `get` (daily hydration count & target), `log` (+/- glasses) | W4 |
 | `convex/prices` | ⬜ Planned | Bazar prices, taka queries | W5–6 |
 | `convex/admin` | ⬜ Planned | Foods/recipes/prices CRUD, report queue | W7 |
 
@@ -190,8 +191,15 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `weather.refresh` | action | — | Fetches Open-Meteo US AQI + pm2.5 + temp/feels-like (Dhaka coords); skips network when cache < 30 min; on fetch failure serves last-good row; writes `weatherState` |
-| `weather.get` | query | — | Cached `{ aqi, pm25, tempC, feelsC, fetchedAt }` or null; feeds `outdoorAdvice()` indoor switch on `/activity` |
+| `weather.refresh` | action | `region?` | Fetches Open-Meteo US AQI + pm2.5 + temp/feels-like for user's BD division (8 divisions supported); skips network when cache < 30 min; on fetch failure serves last-good row; writes `weatherState` |
+| `weather.get` | query | `region?` | Cached `{ aqi, pm25, tempC, feelsC, fetchedAt, region, regionNameEn, regionNameBn }` or null; feeds `outdoorAdvice()` indoor switch on `/activity` and `/home` |
+
+### `water` (Hydration tracking — ✅ live)
+
+| Function | Type | Args | Notes |
+|----------|------|------|-------|
+| `water.get` | query | `date`, `key?` | Returns `{ glasses, targetGlasses, ml, targetMl }` for profile date (default: 8 glasses = 2000ml; 1 glass = 250ml) |
+| `water.log` | mutation | `date`, `delta`, `key?` | Increments/decrements glasses count (`delta: +1` / `-1`), min 0, max 40 glasses/day |
 
 ### `rag` (Wave 5 foundation — ✅ live)
 

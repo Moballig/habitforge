@@ -1,6 +1,13 @@
 # Deferred / skipped — review list
 
-Everything consciously not built (or only partially built) through Nov 3, 2026 sessions. Nothing here is forgotten work — it was cut for scope, blocked on data/source, or left as a known simplification.
+Everything consciously not built (or only partially built) through Nov 5, 2026 sessions. Nothing here is forgotten work — it was cut for scope, blocked on data/source, or left as a known simplification.
+
+## Resolved from Deferred (Nov 3–5, 2026)
+
+- **Water tracking (FR-C)**: Shipped. `waterLogs` table with `by_profile_and_date` index, `src/lib/engine/water.ts` math (+250ml/glass, 8 glass/2000ml goal, progress %), interactive hydration card on `/home`, and GDPR erasure in `convex/privacy.ts`.
+- **Region → coordinates (FR-D-05, FR-G-02)**: Shipped. `BD_REGIONS` in `src/lib/engine/context.ts` maps all 8 Bangladesh administrative divisions (Dhaka, Chattogram, Sylhet, Rajshahi, Khulna, Barishal, Rangpur, Mymensingh) to lat/lon. `convex/weather.ts` queries Open-Meteo per division with 30m cache. Onboarding collects division; Settings allows recalibration; Activity displays localized region name.
+- **`/log` quick action chips**: Shipped. Recents, Favourites, Copy meal, and Same yesterday sheets wired to live Convex queries.
+- **Mock fixtures eliminated**: `RightPanel` and `/settings` wired to live Convex profile, meal logs, and budget data.
 
 ## Known doc ↔ reality gaps (noticed, not fixed)
 
@@ -17,34 +24,26 @@ Everything consciously not built (or only partially built) through Nov 3, 2026 s
 ## Wave 4 (activity) — remaining
 
 - **FR-D-05 remainder**: rain, load-shedding and daylight context (no sources picked yet). AQI + heat are live (Open-Meteo, `convex/weather.ts`).
-- **Region → coordinates**: `weather.ts` hardcodes Dhaka coords — `homeRegion` is never collected in onboarding, so there is nothing to map yet.
-- **Local AQI scale**: thresholds use US AQI (≥151) per EPA; swap for a Bangla/DAQMS scale when localizing (noted in `src/lib/engine/context.ts`.
+- **Local AQI scale**: thresholds use US AQI (≥151) per EPA; swap for a Bangla/DAQMS scale when localizing (noted in `src/lib/engine/context.ts`).
 - **No-equipment / small-space plans** (FR-D-04, P1) — rooftop/balcony/room/low-noise options.
 - **Prayer-time & Ramadan slots** (FR-D-06, P1) — needs prayer-time library/API.
 - **Women-friendly privacy mode** (FR-D-07, P1) — home-only plans, no leaderboard.
 - **Beginner progression 10→30 min** (FR-D-08, P1) + activity-pyramid guidance.
 - **Gym-light strength plans** (FR-D-09, P2), **exercise safety warnings** (FR-D-10, P2).
-- **Water tracking**: tile/chip removed from home + activity — no `waterLogs` table or any data source ever built.
 - **Static leftovers on `/activity`**: "Next: Evening walk" stat and Active-days sparkline are still decorative (active-days number itself is live).
-- **Mock fixtures still rendered**: `RightPanel` shows `TODAY_MEALS`, `/coach` opens with a `COACH_SEED` demo exchange, `/settings` uses `DEMO_PROFILE`, `/dev/components` gallery — cosmetic only; all live data paths use Convex.
-- **`/log` chips decorative**: Recents / Favourites / Same yesterday / Copy meal render but have no handlers (`listRecent`/`copyMeal` APIs are ready).
+- **Mock fixtures remaining**: `/coach` opens with a `COACH_SEED` demo exchange, `/dev/components` gallery — cosmetic only; all live data paths use Convex.
 
 ## Wave 5+ (gates met; P1s pending)
 
 - Taka-aware weekly planner + shopping list (FR-G-05), dietitian PDF export (FR-G-10).
-- Wave 6 carried beyond the gate: seasonal/festival calendar (FR-G-07), `homeRegion` collection in onboarding → weather coordinates (FR-G-02, see W4 note above), plate/bowl photo calibration UI (FR-G-03), Ramadan light-exercise timing (FR-G-04 remainder).
+- Wave 6 carried beyond the gate: seasonal/festival calendar (FR-G-07), plate/bowl photo calibration UI (FR-G-03), Ramadan light-exercise timing (FR-G-04 remainder).
 - Offline sync queue + data-saver (FR-I-04/05); service worker shipped (FR-I-01 basic offline shell, Nov 3).
 - Admin CRUD, prices/bazar module, analytics dashboard (FR-K-*).
 
 ## Quality / test gaps
 
-- **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary` verified only by live `convex run` checks during the session (values hand-checked, test rows removed after).
-- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders; 115 passing).
+- **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary`, `water` verified only by live `convex run` checks during the session.
+- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders + water math + region coords; 120 passing).
 - **No visual/browser check** of any page — verification is HTTP 200 + API-level only.
 - **Plate-group simplification**: mixed dishes and the "Dairy & drinks" section count as `other` in `daySummary.plate` (deliberate; revisit if plate balance gets scrutiny).
 - **`budget.whatIf` extraKcal capped at 10,000** — a single day can't exceed the weekly budget via the simulator alone when the week is empty (correct behaviour, noted so it isn't mistaken for a bug).
-
-## Tooling (outside the app)
-
-- **opencode restart pending** for the globally installed `ponytail` plugin and `ui-ux-pro-max` skill (registered in `~/.config/opencode/`, not yet active in this session).
-- **6 sibling design skills not installed** (repo has them): ui-styling, design-system, banner-design, slides, brand, design.
