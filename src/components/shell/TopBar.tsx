@@ -38,6 +38,14 @@ export default function TopBar({ title }: { title?: string }) {
           <SyncStatusPill />
         </div>
 
+        <div className="hidden sm:flex items-center shrink-0">
+          <img
+            src="/buildathon-sticker.png"
+            alt="AIgnite Buildathon"
+            className="h-7 w-auto object-contain hover:scale-105 transition duration-200"
+          />
+        </div>
+
         <button
           type="button"
           aria-label={t("common.search")}

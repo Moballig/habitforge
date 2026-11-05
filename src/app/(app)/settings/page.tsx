@@ -248,6 +248,19 @@ export default function SettingsPage() {
 
       <section>
         <SectionLabel>{t("settings.about")}</SectionLabel>
+        <div className="mb-3 overflow-hidden rounded-card border border-border/80 bg-surface p-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <img
+              src="/buildathon-sticker.png"
+              alt="AIgnite Buildathon 2026"
+              className="h-10 w-auto object-contain"
+            />
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <p className="text-sm font-extrabold text-ink">YUNet AIgnite Buildathon 2026</p>
+              <p className="text-xs text-ink/60">Deshi Health Companion • Bangladesh-first AI nutrition platform</p>
+            </div>
+          </div>
+        </div>
         <div className="divide-y divide-border rounded-card border border-border">
           <Row
             icon={Info}

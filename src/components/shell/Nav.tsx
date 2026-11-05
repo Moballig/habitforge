@@ -86,8 +86,17 @@ export function SideNav() {
           {t(item.labelKey)}
         </Link>
       ))}
-      <div className="mt-auto flex items-center gap-2 px-3 pt-6">
-        <ThemeToggle variant="inline" />
+      <div className="mt-auto flex flex-col gap-3 px-3 pt-6">
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-surface-soft p-2.5 shadow-2xs hover:border-violet/40 transition">
+          <img
+            src="/buildathon-sticker.png"
+            alt="AIgnite Buildathon"
+            className="w-full h-auto object-contain"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle variant="inline" />
+        </div>
       </div>
     </nav>
   );
