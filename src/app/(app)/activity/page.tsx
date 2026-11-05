@@ -17,12 +17,16 @@ import {
   getSafeActivitySlots,
   getCurrentSlot,
   getRegionCoords,
+  SMALL_SPACE_ROUTINES,
+  getSmallSpaceRoutineKcal,
 } from "@/lib/engine";
 import { exerciseRec } from "@/lib/engine/exercise";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName } from "@/lib/format";
 import {
   Bike,
+  ChevronDown,
+  ChevronUp,
   Dumbbell,
   Footprints,
   House,
@@ -32,6 +36,7 @@ import {
   Flame,
   Clock,
   Moon,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
@@ -91,6 +96,7 @@ export default function ActivityPage() {
   );
   const [steps, setSteps] = useState("");
   const [error, setError] = useState("");
+  const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
 
   if (week === undefined || budget === undefined || summary === undefined) {
     return (
@@ -435,6 +441,119 @@ export default function ActivityPage() {
                       ? slot.ramadanNoteEn
                       : slot.guidanceEn}
                 </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* No-Equipment & Small-Space Apartment Routines (FR-D-04) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <SectionLabel>
+            {lang === "bn" ? "ছোট জায়গায় শব্দহীন শরীরচর্চা" : "Small-Space & No-Equipment Routines"}
+          </SectionLabel>
+          <span className="text-xs font-semibold text-ink/50">
+            {lang === "bn" ? "ছাদ · বারান্দা · রুম" : "Rooftop · Balcony · Room"}
+          </span>
+        </div>
+
+        <p className="text-xs text-ink/60">
+          {lang === "bn"
+            ? "প্রতিবেশীদের শব্দদূষণ বা স্থানস্বল্পতা ছাড়াই নিজের অ্যাপার্টমেন্ট বা ছাদে শরীর সচল রাখার সহজ প্ল্যান।"
+            : "Zero equipment and low-noise routines tailored for city apartments, thin floors, and rooftop access."}
+        </p>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SMALL_SPACE_ROUTINES.map((routine) => {
+            const kcal = getSmallSpaceRoutineKcal(routine, profile?.weightKg ?? 65);
+            const isExpanded = expandedRoutine === routine.id;
+            const alreadyLogged = todayEntries.some(
+              (e) => e.type === routine.activityType && e.minutes === routine.durationMin,
+            );
+
+            return (
+              <div key={routine.id} className="card space-y-3 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold">
+                      {lang === "bn" ? routine.titleBn : routine.titleEn}
+                    </h3>
+                    <p className="text-xs text-ink/55">
+                      📍 {lang === "bn" ? routine.locationBn : routine.locationEn} · {routine.durationMin} min
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-surface-soft px-2 py-0.5 text-[10px] font-bold text-ink/60">
+                    {routine.noiseLevel === "silent"
+                      ? lang === "bn"
+                        ? "সম্পূর্ণ নীরব"
+                        : "Silent"
+                      : lang === "bn"
+                        ? "অতি মৃদু শব্দ"
+                        : "Ultra-quiet"}
+                  </span>
+                </div>
+
+                <p className="text-xs text-ink/70">
+                  {lang === "bn" ? routine.descriptionBn : routine.descriptionEn}
+                </p>
+
+                <div className="flex items-center justify-between rounded-tile bg-surface-soft px-3 py-2 text-xs">
+                  <span className="text-ink/60 font-semibold">
+                    ≈ {kcal.low}–{kcal.high} kcal net
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedRoutine(isExpanded ? null : routine.id)}
+                    className="inline-flex items-center gap-1 font-bold text-violet hover:underline"
+                  >
+                    <span>{isExpanded ? (lang === "bn" ? "সংক্ষেপ" : "Less") : (lang === "bn" ? "ধাপসমূহ" : "Steps")}</span>
+                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                </div>
+
+                {/* Collapsible Steps list */}
+                {isExpanded && (
+                  <div className="space-y-2 border-t border-border pt-2">
+                    {routine.exercises.map((ex, idx) => (
+                      <div key={idx} className="rounded-card bg-surface-soft/50 p-2.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold">
+                            {idx + 1}. {lang === "bn" ? ex.nameBn : ex.nameEn}
+                          </span>
+                          <span className="font-num font-semibold text-violet">
+                            {lang === "bn" ? ex.repsOrTimeBn : ex.repsOrTimeEn}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-ink/60">
+                          💡 {lang === "bn" ? ex.tipBn : ex.tipEn}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick Log Button */}
+                <button
+                  type="button"
+                  onClick={() => void log(routine.activityType, routine.durationMin)}
+                  className={`flex h-9 w-full items-center justify-center gap-1.5 rounded-card text-xs font-bold transition ${
+                    alreadyLogged
+                      ? "border border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "bg-violet text-white hover:opacity-90 shadow-sm"
+                  }`}
+                >
+                  <Sparkles size={13} />
+                  <span>
+                    {alreadyLogged
+                      ? lang === "bn"
+                        ? "লগ করা হয়েছে ✓"
+                        : "Logged for today ✓"
+                      : lang === "bn"
+                        ? `এই সেশন লগ করুন (+${routine.durationMin} মিনিট)`
+                        : `Log this workout (+${routine.durationMin} min)`}
+                  </span>
+                </button>
               </div>
             );
           })}

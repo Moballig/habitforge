@@ -4,6 +4,7 @@ Everything consciously not built (or only partially built) through Nov 5, 2026 s
 
 ## Resolved from Deferred (Nov 3–5, 2026)
 
+- **No-equipment / small-space routines (FR-D-04)**: Shipped. `src/lib/engine/smallSpace.ts` provides 4 apartment-tailored routines (Rooftop Brisk Walk, Quiet Apartment Bodyweight, Balcony Mobility & Posture, Hallway Pacing) with zero neighbor noise, step-by-step guidance, and one-tap live logging on `/activity`.
 - **Prayer-time & Ramadan safe activity scheduling (FR-D-06)**: Shipped. `src/lib/engine/prayerTimes.ts` computes deterministic solar times for all 8 BD divisions (Karachi/IFB standards), generates 4 safe activity slots (Post-Fajr morning, Pre-Maghrib gentle stroll, Post-Iftar digestive walk, Post-Taraweeh active session), and highlights active/next slot on `/activity`.
 - **Post-feast recovery catch-up (FR-REBAL-09)**: Shipped. `postFeastRecovery()` in `src/lib/engine/rebalance.ts` provides a gentle 2–5 day catch-up plan covering 60% of an unplanned feast/dawat overshoot without crash dieting, with interactive Pre-bank vs Post-feast tabs on `/plan`.
 - **Water tracking (FR-C)**: Shipped. `waterLogs` table with `by_profile_and_date` index, `src/lib/engine/water.ts` math (+250ml/glass, 8 glass/2000ml goal, progress %), interactive hydration card on `/home`, and GDPR erasure in `convex/privacy.ts`.
@@ -26,7 +27,6 @@ Everything consciously not built (or only partially built) through Nov 5, 2026 s
 
 - **FR-D-05 remainder**: rain, load-shedding and daylight context (no sources picked yet). AQI + heat are live (Open-Meteo, `convex/weather.ts`).
 - **Local AQI scale**: thresholds use US AQI (≥151) per EPA; swap for a Bangla/DAQMS scale when localizing (noted in `src/lib/engine/context.ts`).
-- **No-equipment / small-space plans** (FR-D-04, P1) — rooftop/balcony/room/low-noise options.
 - **Women-friendly privacy mode** (FR-D-07, P1) — home-only plans, no leaderboard.
 - **Beginner progression 10→30 min** (FR-D-08, P1) + activity-pyramid guidance.
 - **Gym-light strength plans** (FR-D-09, P2), **exercise safety warnings** (FR-D-10, P2).
@@ -43,7 +43,7 @@ Everything consciously not built (or only partially built) through Nov 5, 2026 s
 ## Quality / test gaps
 
 - **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary`, `water` verified only by live `convex run` checks during the session.
-- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders + water math + region coords + prayer times + feast recovery; 126 passing).
+- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders + water math + region coords + prayer times + feast recovery + small-space routines; 128 passing).
 - **No visual/browser check** of any page — verification is HTTP 200 + API-level only.
 - **Plate-group simplification**: mixed dishes and the "Dairy & drinks" section count as `other` in `daySummary.plate` (deliberate; revisit if plate balance gets scrutiny).
 - **`budget.whatIf` extraKcal capped at 10,000** — a single day can't exceed the weekly budget via the simulator alone when the week is empty (correct behaviour, noted so it isn't mistaken for a bug).
