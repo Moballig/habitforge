@@ -19,6 +19,10 @@ import {
   getRegionCoords,
   SMALL_SPACE_ROUTINES,
   getSmallSpaceRoutineKcal,
+  BEGINNER_WALK_PLAN,
+  getBeginnerWalkStage,
+  getBeginnerWalkKcal,
+  ACTIVITY_PYRAMID_TIERS,
 } from "@/lib/engine";
 import { exerciseRec } from "@/lib/engine/exercise";
 import { todayISO } from "@/lib/foods/search";
@@ -98,6 +102,8 @@ export default function ActivityPage() {
   const [steps, setSteps] = useState("");
   const [error, setError] = useState("");
   const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
+  const [selectedWalkWeek, setSelectedWalkWeek] = useState(1);
+  const [showPyramid, setShowPyramid] = useState(false);
 
   if (week === undefined || budget === undefined || summary === undefined) {
     return (
@@ -150,6 +156,12 @@ export default function ActivityPage() {
     indoor: advice.indoor,
     womenFriendly: profile?.womenFriendlyPrivacy ?? false,
   });
+
+  const walkStage = getBeginnerWalkStage(selectedWalkWeek);
+  const walkKcal = getBeginnerWalkKcal(walkStage.dailyMinutes, profile?.weightKg ?? 65);
+  const nextActivitySlotLabel = currentSlotInfo.activeSlot
+    ? (lang === "bn" ? currentSlotInfo.activeSlot.labelBn : currentSlotInfo.activeSlot.labelEn)
+    : (lang === "bn" ? currentSlotInfo.nextSlot.labelBn : currentSlotInfo.nextSlot.labelEn);
 
   async function log(type: string, minutes?: number) {
     setError("");
@@ -595,6 +607,131 @@ export default function ActivityPage() {
         </div>
       </section>
 
+      {/* Beginner Walk Progression (10→30 min) & National Physical Activity Pyramid (FR-D-08) */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <SectionLabel>
+              {lang === "bn" ? "নতুনদের জন্য হাঁটার ধাপ (১০→৩০ মিনিট)" : "Beginner Walk Progression (10→30 min)"}
+            </SectionLabel>
+            <p className="mt-0.5 text-xs text-ink/60">
+              {lang === "bn"
+                ? "জাতীয় পুষ্টি নির্দেশিকা অনুযায়ী ৪ সপ্তাহের ধাপে ধাপে গড়ে তোলা অভ্যাস।"
+                : "4-week step-up plan to comfortably reach the national 150 min/week aerobic goal."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPyramid(!showPyramid)}
+            className="text-xs font-bold text-violet underline hover:opacity-85"
+          >
+            {showPyramid
+              ? lang === "bn" ? "পিরামিড লুকান ▲" : "Hide Pyramid ▲"
+              : lang === "bn" ? "শারীরিক পরিশ্রম পিরামিড ▼" : "Activity Pyramid ▼"}
+          </button>
+        </div>
+
+        <div className="card space-y-4 p-4">
+          <div className="grid grid-cols-4 gap-2">
+            {BEGINNER_WALK_PLAN.map((stage) => {
+              const active = selectedWalkWeek === stage.week;
+              return (
+                <button
+                  key={stage.week}
+                  type="button"
+                  onClick={() => setSelectedWalkWeek(stage.week)}
+                  className={`rounded-card p-2 text-center transition ${
+                    active
+                      ? "bg-violet text-white font-bold shadow-xs"
+                      : "bg-surface-soft hover:bg-peach text-ink/75 text-xs"
+                  }`}
+                >
+                  <span className="block text-[11px] opacity-75">
+                    {lang === "bn" ? `সপ্তাহ ${stage.week}` : `Wk ${stage.week}`}
+                  </span>
+                  <span className="block text-sm font-extrabold">{stage.dailyMinutes}m</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="rounded-tile bg-surface-soft p-3.5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h4 className="text-sm font-bold">
+                {lang === "bn" ? walkStage.focusBn : walkStage.focusEn}
+              </h4>
+              <span className="text-xs font-bold text-ink/60">
+                {walkStage.frequencyDays} {lang === "bn" ? "দিন/সপ্তাহ" : "days/wk"} · {walkStage.weeklyGoalMinutes} {lang === "bn" ? "মি. লক্ষ্য" : "min goal"}
+              </span>
+            </div>
+            <p className="mt-1.5 text-xs text-ink/65 leading-relaxed">
+              💡 {lang === "bn" ? walkStage.tipBn : walkStage.tipEn}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2.5">
+              <span className="text-xs font-semibold text-ink/60">
+                ≈ {walkKcal.low}–{walkKcal.high} kcal / session
+              </span>
+              <button
+                type="button"
+                onClick={() => void log("walk", walkStage.dailyMinutes)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-violet px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition"
+              >
+                <Footprints size={13} />
+                <span>
+                  {lang === "bn"
+                    ? `আজকের ${walkStage.dailyMinutes} মি. হাঁটা লগ করুন`
+                    : `Log today's ${walkStage.dailyMinutes}m walk`}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {showPyramid && (
+            <div className="space-y-2 border-t border-border pt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-ink/70">
+                  {lang === "bn"
+                    ? "জাতীয় শারীরিক পরিশ্রম পিরামিড (২০২৫)"
+                    : "National Physical Activity Pyramid (Aug 2025)"}
+                </span>
+                <span className="text-[10px] text-ink/45">National Nutrition Services / WHO</span>
+              </div>
+              <div className="space-y-2">
+                {ACTIVITY_PYRAMID_TIERS.map((tier) => (
+                  <div
+                    key={tier.level}
+                    className={`rounded-card p-3 border border-border/40 ${
+                      tier.tone === "mint"
+                        ? "bg-mint/15"
+                        : tier.tone === "sky"
+                          ? "bg-sky/15"
+                          : tier.tone === "lilac"
+                            ? "bg-lilac/15"
+                            : "bg-peach/20"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold">
+                        {lang === "bn" ? tier.titleBn : tier.titleEn}
+                      </span>
+                      <span className="rounded-full bg-surface/80 px-2 py-0.5 text-[10px] font-bold text-ink/70">
+                        {lang === "bn" ? tier.frequencyBn : tier.frequencyEn}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-ink/70">
+                      {(lang === "bn" ? tier.examplesBn : tier.examplesEn).join(" · ")}
+                    </p>
+                    <p className="mt-1 text-[11px] text-ink/50 italic">
+                      {lang === "bn" ? tier.guidelineNoteBn : tier.guidelineNoteEn}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       <section>
         <SectionLabel>{t("activity.habits")}</SectionLabel>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -603,9 +740,9 @@ export default function ActivityPage() {
             label="Active days"
             value={week.activeDays}
             unit="/7"
-            spark={[1, 1, 0, 1, 1, 1, 0]}
+            spark={budget.series.map((s) => (week.entries.some((e) => e.date === s.date) ? 1 : 0))}
           />
-          <StatTile icon={ListTodo} label={t("activity.next")} value="Evening walk" />
+          <StatTile icon={ListTodo} label={t("activity.next")} value={nextActivitySlotLabel} />
         </div>
       </section>
 

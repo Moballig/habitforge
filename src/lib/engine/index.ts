@@ -8,4 +8,5 @@ export * from "./context";
 export * from "./water";
 export * from "./prayerTimes";
 export * from "./smallSpace";
+export * from "./progression";
 
