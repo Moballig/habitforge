@@ -46,12 +46,20 @@ export async function chatCoach(args: {
       ? `\n\nReference excerpts:\n${excerpts.join("\n\n")}\nRules for excerpts: use only when relevant, cite inline [1]. Never quote numbers not in excerpts.`
       : "";
 
-  const system = `You are Deshi Health Companion's nutrition coach for Bangladesh.
-Rules:
+  const system = `You are Deshi Health Companion's nutrition and wellness coach dedicated exclusively to Bangladesh.
+
+STRICT FORMAT RULE (MANDATORY):
+- PLAIN TEXT ONLY: You must ONLY respond in plain text. Never use Markdown formatting of any kind (no asterisks, no double asterisks **, no headers #, no bullet hyphens or asterisks, no code blocks, no HTML tags). Write naturally in standard plain text sentences and paragraphs.
+
+STRICT DOMAIN SCOPE (MANDATORY):
+- HEALTH & BANGLADESHI HEALTH ONLY: You must ONLY answer questions directly related to human health, nutrition, diet, physical activity, and wellness within the Bangladeshi lifestyle and dietary context (e.g., bhat, dal, mach, dim, ruti, local vegetables, lifestyle patterns).
+- OFF-TOPIC REFUSAL: If the user asks about ANYTHING outside of health, nutrition, or Bangladeshi wellness (such as coding, technology, politics, history, math, entertainment, finance, creative writing, or general trivia), you must strictly decline to answer. Politely state in plain text that you are dedicated exclusively to health and Bangladeshi nutrition, and encourage them to ask a health-related question.
+
+BEHAVIORAL RULES:
 - Warm, practical, shame-free. Never say "cheat day" or "bad food".
-- Ground answers in Bangladeshi foods (bhat, dal, mach, dim, ruti).
+- Ground dietary guidance in familiar Bangladeshi foods.
 - Safety mode: ${mode}. Goal: ${goal}.
-- If safety mode is doctor-first or restricted: no calorie deficits, advise consulting a physician.
+- If safety mode is doctor-first or restricted: no calorie deficits, advise consulting a physician or registered dietitian.
 - Numbers: only cite numbers literally appearing in reference excerpts or the user's message.
 - Answer in the user's language (Bangla, English, or Banglish).${contextBlock}`;
 
@@ -88,7 +96,14 @@ Rules:
     }
 
     const data = (await res.json()) as any;
-    const text = data.choices?.[0]?.message?.content || "";
+    const rawText = data.choices?.[0]?.message?.content || "";
+    // Clean any stray markdown formatting to guarantee strict plain text
+    const text = rawText
+      .replace(/^#+\s+/gm, "")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/`([^`]+)`/g, "$1")
+      .trim();
 
     // Guardrail: check unsourced numbers
     const sources = [args.message, ...contextItems.map((c) => c.text)];

@@ -188,7 +188,7 @@ export default function HomePage() {
       <SafetyBanner mode={mode} />
 
       {/* 2. Today Card: Calorie ring + headline + status + single primary action */}
-      <section className="card p-6 space-y-5">
+      <section className="card p-6 space-y-5 bg-gradient-to-br from-surface via-surface to-violet-500/[0.04] border-violet-500/20">
         <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-start">
           <div className="shrink-0">
             <CalorieRing
@@ -255,7 +255,7 @@ export default function HomePage() {
       </section>
 
       {/* 3. Hydration row (+250ml quick action) */}
-      <section className="card flex items-center justify-between gap-3 p-4">
+      <section className="card flex items-center justify-between gap-3 p-4 bg-gradient-to-br from-surface to-sky-500/[0.04] border-sky-500/20">
         <div className="flex items-center gap-3 min-w-0">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky/20 text-sky-600 dark:text-sky-300">
             <Droplets size={20} />
@@ -294,7 +294,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. Rice portion row (calibrated bati) */}
-      <section className="card flex items-center justify-between gap-3 p-4">
+      <section className="card flex items-center justify-between gap-3 p-4 bg-gradient-to-br from-surface to-amber-500/[0.04] border-amber-500/20">
         <div className="flex items-center gap-3 min-w-0">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
             <UtensilsCrossed size={18} />
@@ -470,12 +470,12 @@ export default function HomePage() {
           {detailsAccordionOpen && (
             <div className="border-t border-border p-5 space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="tile p-3">
-                  <p className="text-[11px] font-semibold text-ink/60">{t("plan.maintenance")}</p>
+                <div className="tile p-3 bg-violet-500/[0.05] border-violet-500/20">
+                  <p className="text-[11px] font-bold text-violet-900 dark:text-violet-200">{t("plan.maintenance")}</p>
                   <p className="font-num text-lg font-extrabold text-ink tabular mt-0.5">
                     {formatKcal(budget.dailyTargetKcal, lang)} {t("common.kcal")}
                   </p>
-                  <p className="text-[10px] text-ink/50 mt-1">
+                  <p className="text-[10px] text-ink/60 mt-1">
                     {lang === "bn" ? "বয়স, ওজন ও শারীরিক পরিশ্রম অনুযায়ী দৈনিক শক্তি" : "Energy used daily from profile and activity"}
                   </p>
                   <div className="mt-2">
@@ -483,12 +483,12 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="tile p-3">
-                  <p className="text-[11px] font-semibold text-ink/60">{t("plan.safeFloor")}</p>
+                <div className="tile p-3 bg-amber-500/[0.05] border-amber-500/20">
+                  <p className="text-[11px] font-bold text-amber-900 dark:text-amber-200">{t("plan.safeFloor")}</p>
                   <p className="font-num text-lg font-extrabold text-ink tabular mt-0.5">
                     {formatKcal(budget.floorKcal, lang)} {t("common.kcal")}
                   </p>
-                  <p className="text-[10px] text-ink/50 mt-1">
+                  <p className="text-[10px] text-ink/60 mt-1">
                     {lang === "bn" ? "সর্বনিম্ন নিরাপদ বিপাকীয় সীমা (কখনও এর নিচে নয়)" : "Metabolic minimum floor (never cut below)"}
                   </p>
                   <div className="mt-2">
@@ -496,12 +496,12 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="tile p-3">
-                  <p className="text-[11px] font-semibold text-ink/60">{t("plan.dailyTarget")}</p>
+                <div className="tile p-3 bg-emerald-500/[0.05] border-emerald-500/20">
+                  <p className="text-[11px] font-bold text-emerald-900 dark:text-emerald-200">{t("plan.dailyTarget")}</p>
                   <p className="font-num text-lg font-extrabold text-ink tabular mt-0.5">
                     {formatKcal(budget.dailyTargetKcal, lang)} {t("common.kcal")}
                   </p>
-                  <p className="text-[10px] text-ink/50 mt-1">
+                  <p className="text-[10px] text-ink/60 mt-1">
                     {lang === "bn" ? "ভারসাম্যপূর্ণ স্বাস্থ্যরক্ষার জন্য দৈনিক লক্ষ্য" : "Balanced daily target for sustainable health"}
                   </p>
                   <div className="mt-2">

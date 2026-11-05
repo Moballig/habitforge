@@ -30,58 +30,66 @@ export function CalorieRing({
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Eaten ${Math.round(eatenLow)}–${Math.round(eatenHigh)} of guide ${Math.round(targetLow)}–${Math.round(targetHigh)} kcal`}>
+        {/* Track */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.15)"
+          stroke="var(--surface-soft)"
           strokeWidth={stroke}
         />
-        {/* target notch */}
+        {/* Target notch */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.45)"
+          stroke="var(--border)"
           strokeWidth={stroke}
           strokeDasharray={`${targetPct * circ} ${circ}`}
           strokeDashoffset={circ * 0.25}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          opacity={0.35}
+          opacity={0.8}
         />
+        {/* Definite eaten low */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.25)"
+          stroke="var(--violet)"
           strokeWidth={stroke}
-          strokeDasharray={`${low * circ} ${circ}`}
+          strokeLinecap="round"
+          strokeDasharray={`${Math.max(low * circ, 0.01)} ${circ}`}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           className={animate ? "anim-ring" : ""}
           style={animate ? ({ ["--ring-circ" as string]: String(circ) } as React.CSSProperties) : undefined}
         />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#fff"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${(mid - low) * circ} ${circ}`}
-          strokeDashoffset={-low * circ}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          opacity={0.9}
-        />
+        {/* Range up to eaten high */}
+        {mid > low && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="var(--violet-soft)"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${Math.max((mid - low) * circ, 0.01)} ${circ}`}
+            strokeDashoffset={-low * circ}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            opacity={0.65}
+          />
+        )}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-        <span id={id} className="font-num text-3xl font-extrabold tabular">
-          {Math.round(eatenLow)}–{Math.round(eatenHigh)}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-ink pointer-events-none select-none">
+        <span id={id} className="font-num text-xl sm:text-2xl font-black tabular tracking-tight text-ink">
+          {Math.round(eatenLow) === Math.round(eatenHigh)
+            ? Math.round(eatenLow)
+            : `${Math.round(eatenLow)}–${Math.round(eatenHigh)}`}
         </span>
-        <span className="text-xs font-semibold opacity-80">kcal</span>
+        <span className="text-[11px] font-bold text-ink-soft uppercase tracking-wider">kcal</span>
       </div>
     </div>
   );
