@@ -60,7 +60,7 @@ export default function HomePage() {
   const summary = useQuery(api.mealLogs.daySummary, today ? { date: today } : "skip");
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
   const profile = useQuery(api.profile.get, {});
-  const weather = useQuery(api.weather.get);
+  const weather = useQuery(api.weather.get, {});
   const water = useQuery(api.water.get, today ? { date: today } : "skip");
   const logWater = useMutation(api.water.log);
   const advice = outdoorAdvice(weather?.aqi ?? null, weather?.feelsC ?? null);

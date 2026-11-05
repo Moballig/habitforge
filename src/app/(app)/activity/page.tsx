@@ -67,10 +67,10 @@ export default function ActivityPage() {
   const profile = useQuery(api.profile.get, {});
   const createActivity = useMutation(api.activity.create);
   const removeActivity = useMutation(api.activity.remove);
-  const weather = useQuery(api.weather.get);
+  const weather = useQuery(api.weather.get, {});
   const refreshWeather = useAction(api.weather.refresh);
   useEffect(() => {
-    void refreshWeather();
+    void refreshWeather({});
   }, [refreshWeather]);
   const advice = outdoorAdvice(weather?.aqi ?? null, weather?.feelsC ?? null);
   const hour = useSyncExternalStore(
@@ -256,7 +256,7 @@ export default function ActivityPage() {
           <div className="mb-3">
             <NoticeCard
               tone="info"
-              title={t("activity.indoor")}
+              title={`${t("activity.indoor")}${weather.regionNameEn ? ` · ${lang === "bn" ? weather.regionNameBn : weather.regionNameEn}` : ""}`}
               body={
                 advice.reason === "aqi"
                   ? t("activity.indoorAqi").replace("{aqi}", String(weather.aqi))

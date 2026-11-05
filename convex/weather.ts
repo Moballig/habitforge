@@ -4,20 +4,16 @@ import {
   internalMutation,
   query,
   type MutationCtx,
-  type QueryCtx,
 } from "./_generated/server";
 import { api, internal } from "./_generated/api";
+import { getRegionCoords } from "../src/lib/engine/context";
 
 /**
- * Weather + AQI for context-aware suggestions (Wave-4 gate, FR-D-05).
- * Open-Meteo, no API key. Single cached row; refresh skips the network
- * when the cache is under 30 minutes old.
+ * Weather + AQI for context-aware suggestions (Wave-4 gate, FR-D-05, FR-G-02).
+ * Open-Meteo, no API key. Caches per Bangladesh division (30 min TTL).
  */
-const KEY = "default";
+const KEY_DEFAULT = "default";
 const TTL_MS = 30 * 60 * 1000;
-// homeRegion is not collected yet — Dhaka coords until onboarding asks (deferred).
-const LAT = 23.8103;
-const LON = 90.4125;
 
 type Row = {
   aqi: number;
@@ -25,22 +21,10 @@ type Row = {
   tempC: number;
   feelsC: number;
   fetchedAt: number;
+  region?: string;
+  regionNameEn?: string;
+  regionNameBn?: string;
 };
-
-async function readRow(ctx: QueryCtx): Promise<Row | null> {
-  const row = await ctx.db
-    .query("weatherState")
-    .withIndex("by_key", (q) => q.eq("key", KEY))
-    .unique();
-  if (!row) return null;
-  return {
-    aqi: row.aqi,
-    pm25: row.pm25,
-    tempC: row.tempC,
-    feelsC: row.feelsC,
-    fetchedAt: row.fetchedAt,
-  };
-}
 
 const weatherRow = v.union(
   v.object({
@@ -49,50 +33,101 @@ const weatherRow = v.union(
     tempC: v.number(),
     feelsC: v.number(),
     fetchedAt: v.number(),
+    region: v.optional(v.string()),
+    regionNameEn: v.optional(v.string()),
+    regionNameBn: v.optional(v.string()),
   }),
   v.null(),
 );
 
 export const get = query({
-  args: {},
+  args: {
+    region: v.optional(v.string()),
+  },
   returns: weatherRow,
-  handler: async (ctx): Promise<Row | null> => readRow(ctx),
+  handler: async (ctx, args): Promise<Row | null> => {
+    let reg = args.region;
+    if (!reg) {
+      const profile = await ctx.db
+        .query("profiles")
+        .withIndex("by_key", (q) => q.eq("key", KEY_DEFAULT))
+        .unique();
+      reg = profile?.homeRegion ?? "dhaka";
+    }
+    const coords = getRegionCoords(reg);
+    const cacheKey = `region:${coords.id}`;
+
+    // Try region-specific cache first
+    let row = await ctx.db
+      .query("weatherState")
+      .withIndex("by_key", (q) => q.eq("key", cacheKey))
+      .unique();
+
+    // Fall back to default key
+    if (!row) {
+      row = await ctx.db
+        .query("weatherState")
+        .withIndex("by_key", (q) => q.eq("key", KEY_DEFAULT))
+        .unique();
+    }
+
+    if (!row) return null;
+    return {
+      aqi: row.aqi,
+      pm25: row.pm25,
+      tempC: row.tempC,
+      feelsC: row.feelsC,
+      fetchedAt: row.fetchedAt,
+      region: coords.id,
+      regionNameEn: coords.nameEn,
+      regionNameBn: coords.nameBn,
+    };
+  },
 });
 
 export const save = internalMutation({
   args: {
+    key: v.string(),
     aqi: v.number(),
     pm25: v.number(),
     tempC: v.number(),
     feelsC: v.number(),
     fetchedAt: v.number(),
+    region: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx: MutationCtx, args) => {
     const existing = await ctx.db
       .query("weatherState")
-      .withIndex("by_key", (q) => q.eq("key", KEY))
+      .withIndex("by_key", (q) => q.eq("key", args.key))
       .unique();
     if (existing) await ctx.db.patch(existing._id, args);
-    else await ctx.db.insert("weatherState", { key: KEY, ...args });
+    else await ctx.db.insert("weatherState", args);
     return null;
   },
 });
 
 export const refresh = action({
-  args: {},
+  args: {
+    region: v.optional(v.string()),
+  },
   returns: weatherRow,
-  // Explicit return type breaks the api.weather.get self-reference cycle.
-  handler: async (ctx): Promise<Row | null> => {
-    const cached = await ctx.runQuery(api.weather.get, {});
+  handler: async (ctx, args): Promise<Row | null> => {
+    const cached = await ctx.runQuery(api.weather.get, { region: args.region });
     if (cached && Date.now() - cached.fetchedAt < TTL_MS) return cached;
+
+    const coords = getRegionCoords(args.region ?? cached?.region ?? "dhaka");
+    const lat = coords.lat;
+    const lon = coords.lon;
+    const cacheKey = `region:${coords.id}`;
+
     try {
       const [aq, wx] = await Promise.all([
         fetch(
-          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&current=us_aqi,pm2_5&timezone=auto`,
+          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5&timezone=auto`,
         ),
         fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature&timezone=auto`,
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature&timezone=auto`,
         ),
       ]);
       if (!aq.ok || !wx.ok) throw new Error("weather fetch failed");
@@ -114,11 +149,27 @@ export const refresh = action({
       ) {
         throw new Error("weather payload missing fields");
       }
-      const row = { aqi, pm25, tempC, feelsC, fetchedAt: Date.now() };
+      const row = {
+        key: cacheKey,
+        aqi,
+        pm25,
+        tempC,
+        feelsC,
+        fetchedAt: Date.now(),
+        region: coords.id,
+      };
       await ctx.runMutation(internal.weather.save, row);
-      return row;
+      return {
+        aqi,
+        pm25,
+        tempC,
+        feelsC,
+        fetchedAt: row.fetchedAt,
+        region: coords.id,
+        regionNameEn: coords.nameEn,
+        regionNameBn: coords.nameBn,
+      };
     } catch {
-      // Source down: keep serving the last good row (or null) — no advice beats bad advice.
       return cached;
     }
   },

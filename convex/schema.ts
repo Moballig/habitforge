@@ -348,6 +348,7 @@ export default defineSchema({
     tempC: v.number(),
     feelsC: v.number(),
     fetchedAt: v.number(),
+    region: v.optional(v.string()),
   }).index("by_key", ["key"]),
 
   // ─── Budget state (W3) ─────────────────────────────────

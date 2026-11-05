@@ -1,8 +1,8 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { api } from "../../../../convex/_generated/api";
 import { Button, Field, SegmentedControl, Select, StepperInput } from "@/components/forms/Forms";
@@ -19,8 +19,9 @@ import {
 } from "@/lib/engine";
 
 export default function OnboardingPage() {
-  const { t, largeText, setLargeText } = useI18n();
+  const { t, lang, largeText, setLargeText } = useI18n();
   const router = useRouter();
+  const profile = useQuery(api.profile.get, {});
   const saveProfile = useMutation(api.profile.save);
   const [step, setStep] = useState(0);
   const total = 10;
@@ -33,6 +34,7 @@ export default function OnboardingPage() {
   const [weightKg, setWeightKg] = useState(62);
   const [activity, setActivity] = useState("light");
   const [goal, setGoal] = useState("gentle-change");
+  const [homeRegion, setHomeRegion] = useState("dhaka");
   const [under18, setUnder18] = useState(false);
   const [pregnancy, setPregnancy] = useState(false);
   const [insulin, setInsulin] = useState(false);
@@ -41,6 +43,20 @@ export default function OnboardingPage() {
   const [eatingStyle, setEatingStyle] = useState<string[]>(["rice-heavy"]);
   const [budget, setBudget] = useState(250);
   const [consent, setConsent] = useState(false);
+
+  useEffect(() => {
+    if (profile?.homeRegion) {
+      setHomeRegion(profile.homeRegion);
+    }
+    if (profile?.age) setAge(profile.age);
+    if (profile?.sex) setSex(profile.sex);
+    if (profile?.heightCm) setHeightCm(profile.heightCm);
+    if (profile?.weightKg) setWeightKg(profile.weightKg);
+    if (profile?.activity) setActivity(profile.activity);
+    if (profile?.goal) setGoal(profile.goal);
+    if (profile?.budgetBandTaka) setBudget(profile.budgetBandTaka);
+    if (profile?.eatingStyle?.length) setEatingStyle(profile.eatingStyle);
+  }, [profile]);
 
   const bmiVal = bmi(weightKg, heightCm);
   const band = asianBmiBand(weightKg, heightCm);
@@ -86,6 +102,7 @@ export default function OnboardingPage() {
         eatingDisorderHistory: edHistory,
         eatingStyle,
         budgetBandTaka: budget,
+        homeRegion,
         consent,
       });
       router.push("/home");
@@ -161,6 +178,22 @@ export default function OnboardingPage() {
               { value: "light", label: "Light (walks, light chores)" },
               { value: "moderate", label: "Moderate" },
               { value: "active", label: "Active" },
+            ]}
+          />
+          <Select
+            label={lang === "bn" ? "বিভাগ (আবহাওয়া ও বায়ুমান)" : "Division (Weather & AQI)"}
+            id="homeRegion"
+            value={homeRegion}
+            onChange={setHomeRegion}
+            options={[
+              { value: "dhaka", label: "Dhaka (ঢাকা)" },
+              { value: "chattogram", label: "Chattogram (চট্টগ্রাম)" },
+              { value: "sylhet", label: "Sylhet (সিলেট)" },
+              { value: "rajshahi", label: "Rajshahi (রাজশাহী)" },
+              { value: "khulna", label: "Khulna (খুলনা)" },
+              { value: "barishal", label: "Barishal (বরিশাল)" },
+              { value: "rangpur", label: "Rangpur (রংপুর)" },
+              { value: "mymensingh", label: "Mymensingh (ময়মনসিংহ)" },
             ]}
           />
         </div>

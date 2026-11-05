@@ -15,6 +15,7 @@ import {
   Database,
   Globe,
   Info,
+  MapPin,
   Palette,
   ScrollText,
   Shield,
@@ -22,6 +23,7 @@ import {
   User,
   Wifi,
 } from "lucide-react";
+import { getRegionCoords } from "@/lib/engine/context";
 
 function Row({
   icon: Icon,
@@ -103,6 +105,8 @@ export default function SettingsPage() {
   const pHousehold = profile?.household?.eatersFromPot
     ? `${profile.household.eatersFromPot} people from shared pot`
     : "2 adults";
+  const pRegionInfo = getRegionCoords(profile?.homeRegion);
+  const pRegion = lang === "bn" ? pRegionInfo.nameBn : pRegionInfo.nameEn;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -180,6 +184,12 @@ export default function SettingsPage() {
             icon={ScrollText}
             label="Eating style"
             value={pStyle}
+            onClick={() => router.push("/onboarding")}
+          />
+          <Row
+            icon={MapPin}
+            label={lang === "bn" ? "বিভাগ / অঞ্চল (আবহাওয়া)" : "Division / Region (Weather)"}
+            value={pRegion}
             onClick={() => router.push("/onboarding")}
           />
           <Row
