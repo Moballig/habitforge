@@ -99,6 +99,14 @@ export default function ActivityPage() {
     () => new Date().getHours(),
     () => 12,
   );
+  const currentMinutes = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const d = new Date();
+      return d.getHours() * 60 + d.getMinutes();
+    },
+    () => 12 * 60,
+  );
   const [steps, setSteps] = useState("");
   const [error, setError] = useState("");
   const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
@@ -132,14 +140,6 @@ export default function ActivityPage() {
 
   const todayEntries = week.entries.filter((e) => e.date === today);
 
-  const currentMinutes = useSyncExternalStore(
-    () => () => {},
-    () => {
-      const d = new Date();
-      return d.getHours() * 60 + d.getMinutes();
-    },
-    () => 12 * 60,
-  );
   const isFasting = profile?.eatingStyle?.includes("fasting") ?? false;
   const regionCoords = getRegionCoords(profile?.homeRegion);
   const prayerTimes = calculatePrayerTimes(new Date(), profile?.homeRegion);
