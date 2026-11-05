@@ -80,6 +80,15 @@ export const deleteMyData = mutation({
       deleted++;
     }
 
+    const waters = await ctx.db
+      .query("waterLogs")
+      .withIndex("by_profile_and_date", (q) => q.eq("profileKey", key))
+      .collect();
+    for (const w of waters) {
+      await ctx.db.delete(w._id);
+      deleted++;
+    }
+
     // Keep a tombstone audit line (no PII)
     await ctx.db.insert("auditLogs", {
       profileKey: key,

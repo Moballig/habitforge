@@ -390,6 +390,14 @@ export default defineSchema({
     detail: v.optional(v.string()),
   }).index("by_profile", ["profileKey"]),
 
+  // ─── Water tracking (FR-C) ────────────────────────────
+  waterLogs: defineTable({
+    profileKey: v.string(),
+    date: v.string(), // YYYY-MM-DD
+    glasses: v.number(),
+    targetGlasses: v.optional(v.number()),
+  }).index("by_profile_and_date", ["profileKey", "date"]),
+
   // ─── Legacy HabitForge (removed from UI W1; drop after cutover) ──
   // Intentionally omitted: habits, habitLogs — delete from Convex dashboard
   // once no clients read them, or keep one deploy cycle for rollback.

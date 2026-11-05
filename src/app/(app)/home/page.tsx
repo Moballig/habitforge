@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useI18n } from "@/lib/i18n";
 import { AreaChart, CalorieRing, PlateBalance } from "@/components/data/Charts";
 import { HeroCard } from "@/components/data/Cards";
@@ -16,9 +16,12 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Droplets,
   Dumbbell,
   Footprints,
+  Minus,
   Moon,
+  Plus,
   UtensilsCrossed,
   Waves,
 } from "lucide-react";
@@ -26,6 +29,7 @@ import { useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { outdoorAdvice } from "@/lib/engine";
 import { nextMove } from "@/lib/engine/nextMove";
+import { calculateWaterProgress } from "@/lib/engine/water";
 import {
   CONDITION_PLATE_PRESETS,
   getPlatePresetForProfile,
@@ -57,6 +61,8 @@ export default function HomePage() {
   const budget = useQuery(api.budget.get, today ? { today } : "skip");
   const profile = useQuery(api.profile.get, {});
   const weather = useQuery(api.weather.get);
+  const water = useQuery(api.water.get, today ? { date: today } : "skip");
+  const logWater = useMutation(api.water.log);
   const advice = outdoorAdvice(weather?.aqi ?? null, weather?.feelsC ?? null);
   // Client-only hour; server snapshot matches SSR-safe default
   const hour = useSyncExternalStore(
@@ -194,46 +200,102 @@ export default function HomePage() {
             ]}
           />
 
-          <div className="card space-y-3 p-5">
-            <p className="text-xs font-semibold text-ink/50">
-              {lang === "bn" ? "সুপারিশ করা ব্যায়াম" : "Recommended exercise"}
-            </p>
-            {(move.exercise ?? []).map((opt) => {
-              const Icon = EXERCISE_ICONS[opt.type];
-              return (
-                <button
-                  key={opt.type}
-                  type="button"
-                  onClick={() => router.push("/activity")}
-                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card bg-emerald-50 p-3 text-left hover:opacity-90 dark:bg-emerald-950/40"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold">
-                      <Icon size={14} className="mr-1 inline align-[-2px]" />
-                      {opt.minutes} min {lang === "bn" ? opt.labelBn : opt.labelEn}
-                    </span>
-                    <span className="block text-xs text-ink/60">
-                      ≈ {opt.kcalLow}–{opt.kcalHigh} kcal ·{" "}
-                      {opt.indoor
-                        ? lang === "bn"
-                          ? "ঘরের ভিতরে"
-                          : "indoors"
-                        : lang === "bn"
-                          ? "বাইরে"
-                          : "outdoors"}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-sm font-bold text-violet">→</span>
-                </button>
-              );
-            })}
-            {!move.exercise && (
-              <p className="text-sm text-ink/60">
-                {lang === "bn"
-                  ? "বিশ্রামও পরিকল্পনার অংশ — আজ কিছু নির্ধারিত নেই।"
-                  : "Rest is part of the plan — nothing scheduled today."}
+          <div className="space-y-4">
+            <div className="card space-y-3 p-5">
+              <p className="text-xs font-semibold text-ink/50">
+                {lang === "bn" ? "সুপারিশ করা ব্যায়াম" : "Recommended exercise"}
               </p>
-            )}
+              {(move.exercise ?? []).map((opt) => {
+                const Icon = EXERCISE_ICONS[opt.type];
+                return (
+                  <button
+                    key={opt.type}
+                    type="button"
+                    onClick={() => router.push("/activity")}
+                    className="flex min-h-11 w-full items-center justify-between gap-3 rounded-card bg-emerald-50 p-3 text-left hover:opacity-90 dark:bg-emerald-950/40"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold">
+                        <Icon size={14} className="mr-1 inline align-[-2px]" />
+                        {opt.minutes} min {lang === "bn" ? opt.labelBn : opt.labelEn}
+                      </span>
+                      <span className="block text-xs text-ink/60">
+                        ≈ {opt.kcalLow}–{opt.kcalHigh} kcal ·{" "}
+                        {opt.indoor
+                          ? lang === "bn"
+                            ? "ঘরের ভিতরে"
+                            : "indoors"
+                          : lang === "bn"
+                            ? "বাইরে"
+                            : "outdoors"}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-sm font-bold text-violet">→</span>
+                  </button>
+                );
+              })}
+              {!move.exercise && (
+                <p className="text-sm text-ink/60">
+                  {lang === "bn"
+                    ? "বিশ্রামও পরিকল্পনার অংশ — আজ কিছু নির্ধারিত নেই।"
+                    : "Rest is part of the plan — nothing scheduled today."}
+                </p>
+              )}
+            </div>
+
+            {/* Hydration / Water Tracking Card */}
+            {(() => {
+              const waterData = calculateWaterProgress(water?.glasses ?? 0, water?.targetGlasses ?? 8);
+              return (
+                <div className="card space-y-3 p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
+                        <Droplets size={18} />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold">{t("home.water")}</h3>
+                        <p className="text-xs text-ink/60">
+                          {waterData.glasses} / {waterData.targetGlasses} {lang === "bn" ? "গ্লাস" : "glasses"} ({waterData.ml} ml)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => today && logWater({ date: today, delta: -1 })}
+                        disabled={waterData.glasses === 0}
+                        className="flex h-8 w-8 items-center justify-center rounded-card border border-border text-ink/70 transition hover:bg-surface-soft disabled:opacity-30"
+                        aria-label="Decrease water"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => today && logWater({ date: today, delta: 1 })}
+                        className="flex h-8 items-center gap-1 rounded-card bg-sky-500 px-3 text-xs font-bold text-white transition hover:bg-sky-600 active:scale-95 shadow-sm"
+                      >
+                        <Plus size={14} />
+                        <span>+250ml</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-sky-100 dark:bg-sky-950/40">
+                      <div
+                        className="h-full rounded-full bg-sky-500 transition-all duration-300"
+                        style={{ width: `${waterData.pct}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] text-ink/50">
+                      <span>{waterData.pct}% {lang === "bn" ? "সম্পূর্ণ" : "reached"}</span>
+                      <span>{waterData.targetMl} ml {lang === "bn" ? "লক্ষ্য" : "daily goal"}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
