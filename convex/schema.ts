@@ -382,6 +382,7 @@ export default defineSchema({
     profileKey: v.string(),
     date: v.string(),
     weightKg: v.number(),
+    note: v.optional(v.string()), // FR-E-10: eid_feast | illness | travel | cycle | salty | none
   }).index("by_profile_and_date", ["profileKey", "date"]),
 
   // ─── Privacy / audit (W1) ──────────────────────────────

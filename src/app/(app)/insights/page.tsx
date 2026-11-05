@@ -26,6 +26,15 @@ import {
 } from "@/lib/engine/proteinCost";
 import { generateFastingPlan } from "@/lib/engine/ramadan";
 
+const NOISE_NOTES = [
+  { value: "none", labelEn: "Standard day", labelBn: "স্বাভাবিক দিন", icon: "⚖️" },
+  { value: "eid_feast", labelEn: "Eid / Dawat Feast", labelBn: "ঈদ / দাওয়াত", icon: "🍖" },
+  { value: "salty_meal", labelEn: "High-sodium meal", labelBn: "লবণাক্ত খাবার", icon: "🧂" },
+  { value: "cycle", labelEn: "Menstrual cycle / water", labelBn: "মাসিক চক্র / পানি জমা", icon: "🌸" },
+  { value: "travel", labelEn: "Travel / disrupted sleep", labelBn: "ভ্রমণ / অনিয়ম", icon: "✈️" },
+  { value: "illness", labelEn: "Illness / medications", labelBn: "অসুস্থতা / ওষুধ", icon: "💊" },
+] as const;
+
 export default function InsightsPage() {
   const { t, lang } = useI18n();
   const today = useSyncExternalStore(
@@ -36,6 +45,7 @@ export default function InsightsPage() {
   const data = useQuery(api.weights.trend, today ? { today } : "skip");
   const addWeighIn = useMutation(api.weights.add);
   const [weight, setWeight] = useState("");
+  const [note, setNote] = useState<string>("none");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -86,7 +96,22 @@ export default function InsightsPage() {
         : "bg-surface-soft text-ink/60";
 
   const chartData = data.weighIns.map((w) => w.weightKg);
+  const chartSmoothed = data.weighIns.map((w) => w.smoothedKg);
   const chartLabels = data.weighIns.map((w) => formatShortDate(w.date, lang));
+
+  const recentNotes = data.weighIns
+    .filter((w) => w.note && w.note !== "none")
+    .map((w) => {
+      const match = NOISE_NOTES.find((n) => n.value === w.note);
+      return {
+        date: w.date,
+        tagLabel: match
+          ? lang === "bn"
+            ? `${match.icon} ${match.labelBn}`
+            : `${match.icon} ${match.labelEn}`
+          : w.note,
+      };
+    });
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -96,7 +121,11 @@ export default function InsightsPage() {
       setError(t("insights.weightInvalid"));
       return;
     }
-    await addWeighIn({ date: today, weightKg: Math.round(parsed * 10) / 10 });
+    await addWeighIn({
+      date: today,
+      weightKg: Math.round(parsed * 10) / 10,
+      note: note !== "none" ? note : undefined,
+    });
     setWeight("");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -378,51 +407,114 @@ export default function InsightsPage() {
         )}
       </section>
 
-      {/* ─── Weigh-In & Adaptive TDEE Section ─── */}
+      {/* ─── Weigh-In & Adaptive TDEE Section (FR-E-10, FR-ATDEE-*) ─── */}
       <section className="space-y-4">
         <SectionLabel>{t("insights.weighIn")}</SectionLabel>
-        <form onSubmit={handleAdd} className="card flex flex-wrap items-center gap-3 p-4">
-          <input
-            type="number"
-            step="0.1"
-            min="30"
-            max="300"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            placeholder={t("insights.weightPlaceholder")}
-            className="input w-36 font-num text-sm"
-            aria-label={t("insights.weightPlaceholder")}
-          />
-          <span className="text-xs font-semibold text-ink/50">kg</span>
-          <Button type="submit">{t("insights.logWeight")}</Button>
-          {saved && (
-            <span className="text-xs font-bold text-accent-ink" role="status">
-              ✓ {t("insights.logged")}
-            </span>
-          )}
-          {error && (
-            <span className="text-xs font-bold text-red-600" role="alert">
-              {error}
-            </span>
-          )}
+        <form onSubmit={handleAdd} className="card space-y-3 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="number"
+              step="0.1"
+              min="30"
+              max="300"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              placeholder={t("insights.weightPlaceholder")}
+              className="input w-32 font-num text-sm"
+              aria-label={t("insights.weightPlaceholder")}
+            />
+            <span className="text-xs font-semibold text-ink/50">kg</span>
+
+            <select
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="input min-w-44 text-xs font-medium"
+              aria-label="Weigh-in Context Note"
+            >
+              {NOISE_NOTES.map((n) => (
+                <option key={n.value} value={n.value}>
+                  {n.icon} {lang === "bn" ? n.labelBn : n.labelEn}
+                </option>
+              ))}
+            </select>
+
+            <Button type="submit">{t("insights.logWeight")}</Button>
+            {saved && (
+              <span className="text-xs font-bold text-accent-ink" role="status">
+                ✓ {t("insights.logged")}
+              </span>
+            )}
+            {error && (
+              <span className="text-xs font-bold text-red-600" role="alert">
+                {error}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-ink/50">
+            {lang === "bn"
+              ? "💡 বিশেষ দিনের নোট (যেমন দাওয়াত বা লবণাক্ত খাবার) দিলে সাময়িক পানি জমার কারণে স্কেল বিভ্রান্তি এড়ানো যায়।"
+              : "💡 Tagging events (e.g. feast, high salt) prevents panic from temporary water weight spikes."}
+          </p>
         </form>
 
         {data.weighIns.length > 0 && (
-          <div className="card p-4">
+          <div className="card space-y-3 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-3 font-semibold">
+                <span className="flex items-center gap-1.5 text-ink/70">
+                  <span className="inline-block h-2 w-3 rounded-full bg-white dark:bg-zinc-300 border border-ink/20" />
+                  {lang === "bn" ? "স্কেলের ওজন" : "Raw scale"}
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <span className="inline-block h-0.5 w-3 border-b-2 border-dashed border-emerald-500" />
+                  {lang === "bn" ? "৭ দিনের স্মুথড ট্রেন্ড" : "7-day smoothed trend"}
+                </span>
+              </div>
+              <span className="text-[11px] text-ink/40">FR-E-10 · Noise smoothed</span>
+            </div>
+
             <AreaChart
               data={chartData}
+              secondaryData={chartSmoothed}
               labels={chartLabels}
               animate
               height={140}
             />
-            <p className="mt-2 flex items-center gap-2 text-xs text-ink/50">
-              <TrendingUp size={13} />
-              {data.weighIns[0]!.weightKg.toFixed(1)} →{" "}
-              {data.weighIns.at(-1)!.weightKg.toFixed(1)} kg ·{" "}
-              {data.weightDeltaKg > 0 ? "+" : ""}
-              {data.weightDeltaKg} kg / {data.days} d
-              <SourceTag tag="measured" />
-            </p>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs text-ink/50">
+              <p className="flex items-center gap-2">
+                <TrendingUp size={13} />
+                {data.weighIns[0]!.weightKg.toFixed(1)} →{" "}
+                {data.weighIns.at(-1)!.weightKg.toFixed(1)} kg ·{" "}
+                {data.weightDeltaKg > 0 ? "+" : ""}
+                {data.weightDeltaKg} kg / {data.days} d
+                <SourceTag tag="measured" />
+              </p>
+              <span className="font-num font-semibold text-emerald-600 dark:text-emerald-400">
+                {lang === "bn" ? "বর্তমান স্মুথড: " : "Latest trend: "}
+                {chartSmoothed.at(-1)?.toFixed(1)} kg
+              </span>
+            </div>
+
+            {recentNotes.length > 0 && (
+              <div className="rounded-tile bg-surface-soft p-3 text-xs text-ink/75 space-y-1.5">
+                <span className="font-bold text-[11px] uppercase tracking-wider text-ink/60">
+                  {lang === "bn" ? "চিহ্নিত কারণসমূহ (স্বাভাবিক ওজন তারতম্য)" : "Tagged Context (Normal Water Shifts)"}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentNotes.map((entry, idx) => (
+                    <span key={idx} className="rounded-full bg-peach/40 px-2 py-0.5 text-[11px] font-semibold text-ink/80">
+                      {formatShortDate(entry.date, lang)}: {entry.tagLabel}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-[11px] text-ink/50 leading-relaxed">
+                  {lang === "bn"
+                    ? "💡 দাওয়াত, লবণ বা চক্রের পর স্কেলের ১-২ কেজি বৃদ্ধি চর্বি নয়, বরং অস্থায়ী গ্লাইকোজেন ও পানির সঞ্চয়।"
+                    : "💡 1–2 kg weight spikes after feasts, salty meals, or during cycles reflect fluid retention, not fat gain."}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </section>

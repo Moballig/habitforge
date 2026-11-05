@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   ACTIVITY_METS,
   adaptiveTdee,
+  smoothWeightTrend,
   asianBmiBand,
   bmr,
   feastPreBank,
@@ -309,6 +310,17 @@ describe("adaptiveTdee", () => {
     // 2500 - (0.7*7700/7) = 2500 - 770 = 1730
     expect(r.estimateKcal).toBeLessThan(2500);
     expect(r.estimateKcal).toBeGreaterThan(1700);
+  });
+
+  test("smoothWeightTrend flattens transient feast water spikes over 7-day window", () => {
+    // 70.0 kg baseline, +2.5 kg post-dawat water spike on day 3, then returns
+    const raw = [70.0, 70.1, 70.0, 72.5, 70.4, 70.2, 70.1];
+    const smoothed = smoothWeightTrend(raw);
+    expect(smoothed).toHaveLength(7);
+    expect(smoothed[0]).toBe(70.0);
+    // Spike of 72.5 is smoothed down by the rolling window
+    expect(smoothed[3]).toBeLessThan(71.0);
+    expect(smoothed[6]).toBeCloseTo(70.5, 1);
   });
 });
 

@@ -40,3 +40,19 @@ export function adaptiveTdee(input: AdaptiveTdeeInput): AdaptiveTdeeResult {
     noiseNote: status !== "settled",
   };
 }
+
+/**
+ * 7-day rolling smoothed weight trend to filter scale noise (FR-E-10).
+ * Prevents scale panic from glycogen/water spikes after feasts, travel, or cycles.
+ */
+export function smoothWeightTrend(weights: number[]): number[] {
+  if (weights.length === 0) return [];
+  const smoothed: number[] = [];
+  for (let i = 0; i < weights.length; i++) {
+    const start = Math.max(0, i - 6);
+    const window = weights.slice(start, i + 1);
+    const avg = window.reduce((sum, w) => sum + w, 0) / window.length;
+    smoothed.push(Math.round(avg * 10) / 10);
+  }
+  return smoothed;
+}

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, type QueryCtx } from "./_generated/server";
-import { adaptiveTdee, bmr, tdee } from "../src/lib/engine";
+import { adaptiveTdee, bmr, smoothWeightTrend, tdee } from "../src/lib/engine";
 
 const DEFAULT_KEY = "default";
 const WINDOW_DAYS = 14; // adaptive blend settles over ~2–3 weeks (FR-ATDEE-03)
@@ -42,7 +42,12 @@ async function avgIntakeOver(
 }
 
 export const add = mutation({
-  args: { key: v.optional(v.string()), date: v.string(), weightKg: v.number() },
+  args: {
+    key: v.optional(v.string()),
+    date: v.string(),
+    weightKg: v.number(),
+    note: v.optional(v.string()),
+  },
   returns: v.id("weighIns"),
   handler: async (ctx, args) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(args.date)) {
@@ -59,13 +64,17 @@ export const add = mutation({
       )
       .first();
     if (existing) {
-      await ctx.db.patch(existing._id, { weightKg: args.weightKg });
+      await ctx.db.patch(existing._id, {
+        weightKg: args.weightKg,
+        note: args.note,
+      });
       return existing._id;
     }
     return await ctx.db.insert("weighIns", {
       profileKey: key,
       date: args.date,
       weightKg: args.weightKg,
+      note: args.note,
     });
   },
 });
@@ -90,7 +99,14 @@ export const trend = query({
   returns: v.union(
     v.null(),
     v.object({
-      weighIns: v.array(v.object({ date: v.string(), weightKg: v.number() })),
+      weighIns: v.array(
+        v.object({
+          date: v.string(),
+          weightKg: v.number(),
+          smoothedKg: v.number(),
+          note: v.optional(v.string()),
+        }),
+      ),
       adaptive: v.object({
         estimateKcal: v.number(),
         confidence: v.number(),
@@ -168,8 +184,16 @@ export const trend = query({
       weighIns: kept.length,
     });
 
+    const rawWeights = kept.map((r) => r.weightKg);
+    const smoothed = smoothWeightTrend(rawWeights);
+
     return {
-      weighIns: kept.map((r) => ({ date: r.date, weightKg: r.weightKg })),
+      weighIns: kept.map((r, i) => ({
+        date: r.date,
+        weightKg: r.weightKg,
+        smoothedKg: smoothed[i] ?? r.weightKg,
+        note: r.note,
+      })),
       adaptive,
       formulaTdee,
       avgIntakeKcal,

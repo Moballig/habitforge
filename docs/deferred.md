@@ -4,6 +4,7 @@ Everything consciously not built (or only partially built) through Nov 5, 2026 s
 
 ## Resolved from Deferred (Nov 3–5, 2026)
 
+- **Weight-trend noise smoothing & event notes (FR-E-10, FR-ATDEE-04)**: Shipped. `smoothWeightTrend()` in `src/lib/engine/adaptive.ts` computes a 7-day rolling average to filter water/glycogen noise; `weighIns` schema and `weights.add` mutation support context notes (Eid feast, salty meal, menstrual cycle, travel, illness); `AreaChart` renders raw weigh-ins with dual dashed 7-day smoothed trend line, latest trend readout, tagged context badges, and anti-panic clinical guidance on `/insights`.
 - **Beginner walk progression & activity pyramid (FR-D-08)**: Shipped. `src/lib/engine/progression.ts` provides a 4-week step-up schedule (10→30 min, 50→150 min/wk) aligned with National Nutrition Services guidelines, one-tap walk logging with net-MET kcal estimation, collapsible 4-tier Physical Activity Pyramid guide, and wired live active-days sparkline + prayer/time-based next workout slot on `/activity`.
 - **Women-friendly privacy mode (FR-D-07)**: Shipped. `womenFriendlyPrivacy` toggle in `profiles` schema with `profile.setWomenFriendlyPrivacy` mutation. `src/lib/engine/exercise.ts` and `nextMove.ts` route to modest indoor/home workouts (home exercise, yoga) with loose house-wear privacy notes, integrated with quick-toggles in `/activity` header and `/settings` routine preferences.
 - **No-equipment / small-space routines (FR-D-04)**: Shipped. `src/lib/engine/smallSpace.ts` provides 4 apartment-tailored routines (Rooftop Brisk Walk, Quiet Apartment Bodyweight, Balcony Mobility & Posture, Hallway Pacing) with zero neighbor noise, step-by-step guidance, and one-tap live logging on `/activity`.
@@ -23,7 +24,6 @@ Everything consciously not built (or only partially built) through Nov 5, 2026 s
 - **Preferred exercise types + days-off controls** (FR-REBAL-11 remainder): window length and 60/40 split are live (`profile.setBudgetControls` → `/plan`), but `RebalanceControls` has no fields for exercise preference or days the user cannot train — engine work first.
 - **Micronutrients as ranges** (FR-C-03, P1): iron/vit A/calcium/zinc/D/B12 — needs micro values added to the 318-row seed (data chore, FCTB source).
 - **Sodium/oil awareness** (FR-C-04), **sugar as spoons** (FR-C-05), **glycaemic-load + swap suggestions**, **dietary-diversity score** — same seed-data blocker.
-- **Weight-trend noise smoothing** (FR-E-10 wording): chart shows raw weigh-in points; no smoothing curve, no per-entry Eid/illness/cycle note picker (static noise copy instead — FR-ATDEE-04 is text-only).
 
 ## Wave 4 (activity) — remaining
 
@@ -42,7 +42,7 @@ Everything consciously not built (or only partially built) through Nov 5, 2026 s
 ## Quality / test gaps
 
 - **Convex functions have no `convex-test` suite** — `budget`, `weights`, `activity`, `daySummary`, `water` verified only by live `convex run` checks during the session.
-- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders + water math + region coords + prayer times + feast recovery + small-space routines + women-friendly privacy mode + beginner progression & pyramid; 133 passing across 16 files).
+- **No component/page tests** for `/home`, `/plan`, `/insights`, `/activity`, `/coach` (bun suite covers engine + foods/parser/portion/groups + AI numbers/RAG intent + family portions + home `nextMove`/`exerciseRec` recommenders + water math + region coords + prayer times + feast recovery + small-space routines + women-friendly privacy mode + beginner progression & pyramid + weight-trend smoothing; 134 passing across 16 files).
 - **No visual/browser check** of any page — verification is HTTP 200 + API-level only.
 - **Plate-group simplification**: mixed dishes and the "Dairy & drinks" section count as `other` in `daySummary.plate` (deliberate; revisit if plate balance gets scrutiny).
 - **`budget.whatIf` extraKcal capped at 10,000** — a single day can't exceed the weekly budget via the simulator alone when the week is empty (correct behaviour, noted so it isn't mistaken for a bug).

@@ -90,6 +90,7 @@ export function CalorieRing({
 /** Smooth area chart — hand-written SVG. */
 export function AreaChart({
   data,
+  secondaryData,
   target,
   labels,
   width = 560,
@@ -98,6 +99,7 @@ export function AreaChart({
   animate = false,
 }: {
   data: number[];
+  secondaryData?: number[];
   target?: number;
   labels?: string[];
   width?: number;
@@ -156,6 +158,26 @@ export function AreaChart({
       )}
       <path d={area} fill="url(#areaFill)" />
       <path d={path} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+      {secondaryData && secondaryData.length === data.length && (
+        <path
+          d={secondaryData
+            .map((v, i) => {
+              const x = padX + (i / Math.max(secondaryData.length - 1, 1)) * innerW;
+              const y = padY + innerH - ((v - min) / (max - min || 1)) * innerH;
+              if (i === 0) return `M ${x} ${y}`;
+              const px = padX + ((i - 1) / Math.max(secondaryData.length - 1, 1)) * innerW;
+              const py = padY + innerH - ((secondaryData[i - 1] - min) / (max - min || 1)) * innerH;
+              const cx = (px + x) / 2;
+              return `C ${cx} ${py}, ${cx} ${y}, ${x} ${y}`;
+            })
+            .join(" ")}
+          fill="none"
+          stroke="var(--accent, #10b981)"
+          strokeWidth="2.5"
+          strokeDasharray="4 4"
+          strokeLinecap="round"
+        />
+      )}
       {hi && (
         <>
           <circle cx={hi[0]} cy={hi[1]} r="8" fill="rgba(255,255,255,0.9)" />
