@@ -4,7 +4,7 @@
 **Product:** Deshi Health Companion (বাংলাদেশি পুষ্টি ও স্বাস্থ্য সঙ্গী)  
 **Track:** B2C Lifestyle & Health AI Product  
 **Author:** Solo Student Participant  
-**Live App:** Production-ready on Next.js + Bun + Convex  
+**Live App:** [https://habitforge-aqa91usx1-blogbackend.vercel.app/home](https://habitforge-aqa91usx1-blogbackend.vercel.app/home)  
 **Repository:** `habitforge/`
 
 ---

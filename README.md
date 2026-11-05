@@ -1,5 +1,7 @@
 # Deshi Health Companion
 
+🌐 **Live Deployment**: [https://habitforge-aqa91usx1-blogbackend.vercel.app/home](https://habitforge-aqa91usx1-blogbackend.vercel.app/home)
+
 Bangladesh-first calorie, diet & exercise-balancing app with a RAG-grounded AI coach. Built for the Ostad Presents YUNet AIgnite Buildathon 2026 (Nov 1–5, 2026).
 
 Formerly HabitForge (AI Habit Tracker); product scope follows [`docs/bangladeshi-calorie-companion-research.md`](docs/bangladeshi-calorie-companion-research.md).
