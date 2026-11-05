@@ -8,17 +8,7 @@
  * @module
  */
 
-import type * as activity from "../activity.js";
-import type * as ai from "../ai.js";
-import type * as budget from "../budget.js";
-import type * as foods from "../foods.js";
-import type * as mealLogs from "../mealLogs.js";
-import type * as privacy from "../privacy.js";
-import type * as profile from "../profile.js";
-import type * as rag from "../rag.js";
-import type * as water from "../water.js";
-import type * as weather from "../weather.js";
-import type * as weights from "../weights.js";
+import type * as db from "../db.js";
 
 import type {
   ApiFromModules,
@@ -27,17 +17,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  activity: typeof activity;
-  ai: typeof ai;
-  budget: typeof budget;
-  foods: typeof foods;
-  mealLogs: typeof mealLogs;
-  privacy: typeof privacy;
-  profile: typeof profile;
-  rag: typeof rag;
-  water: typeof water;
-  weather: typeof weather;
-  weights: typeof weights;
+  db: typeof db;
 }>;
 
 /**

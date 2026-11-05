@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, api } from "@/lib/client/api";
 import { useState, useSyncExternalStore } from "react";
 import { useI18n } from "@/lib/i18n";
 import { AreaChart, WeightTrendChart } from "@/components/data/Charts";
@@ -19,7 +19,6 @@ import {
   Droplets,
   CheckCircle2,
 } from "lucide-react";
-import { api } from "../../../../convex/_generated/api";
 import {
   getCheapestProteinSources,
   calculateProteinDailyCost,

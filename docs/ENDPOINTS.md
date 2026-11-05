@@ -280,6 +280,47 @@ await analyzePhoto({
 
 ---
 
+## Next.js Server Backend (`src/server/` & `src/app/api/`)
+
+The application functions and business logic execute on the Next.js backend, with Convex acting as the persistent data and schema store via `ConvexHttpClient`.
+
+### 1. Server Action Modules (`src/server/`)
+
+| Module | Exports | Purpose |
+|--------|---------|---------|
+| `src/server/convex.ts` | `getConvexClient()`, `api` | Singleton `ConvexHttpClient` initialized from `NEXT_PUBLIC_CONVEX_URL` |
+| `src/server/profile.ts` | `getProfile`, `getEnergy`, `saveProfile`, `setBudgetControls`, `saveFamilyMembers`, `clearProfileData` | User profile, metabolic stats, safety mode calculation, and family profiles |
+| `src/server/meals.ts` | `listMealsByDate`, `listRecentMeals`, `getDaySummary`, `createMeal`, `updateMeal`, `removeMeal`, `copyMeal` | Food and meal logging, slot normalization, and multi-item calculation |
+| `src/server/activity.ts` | `createActivity`, `removeActivity`, `listWeekActivity` | Physical activity logging, MET estimation, and weekly totals |
+| `src/server/budget.ts` | `getBudget`, `simulateWhatIf` | 7-day rolling calorie budget and overshoot spread simulations |
+| `src/server/weights.ts` | `addWeight`, `removeWeight`, `getWeightTrend` | Weigh-in logs and adaptive TDEE trend analysis |
+| `src/server/water.ts` | `getWater`, `logWater` | Daily water hydration counters and progress |
+| `src/server/weather.ts` | `getWeather`, `refreshWeather` | 8-division Open-Meteo weather and US AQI cache |
+| `src/server/coach.ts` | `chatCoach`, `searchRag`, `rewriteCoachQuery` | AI coach conversation, RAG hybrid search, and query refinement |
+| `src/server/foods.ts` | `searchFoods`, `countFoods`, `getFoodById` | Food database querying, counting, and ID lookup |
+| `src/server/ai.ts` | `parseMealText`, `analyzeMealPhoto` | Assisted meal parsing and photo identification |
+| `src/server/index.ts` | Barrel export | Central access for all server functions |
+
+### 2. Next.js API Route Handlers (`src/app/api/`)
+
+Standard REST endpoints matching Next.js App Router conventions:
+
+| Route | Methods | Query / Body Parameters | Response |
+|-------|---------|-------------------------|----------|
+| `/api/profile` | GET, POST, PATCH, DELETE | `?key=...`, profile body | Profile document, energy stats, or mutation status |
+| `/api/meals` | GET, POST, PATCH, DELETE | `?date=...`, `?recent=true`, `?summary=true`, meal body (`action="copy"` for copying) | Meal logs list, summary, or meal ID |
+| `/api/activity` | GET, POST, DELETE | `?key=...`, activity body (`{ date, type, minutes, steps, met }`) | Weekly activities or created log ID |
+| `/api/budget` | GET | `?date=...&key=...&whatIf=100` | 7-day budget state or simulation result |
+| `/api/weights` | GET, POST, DELETE | `?key=...`, `{ date, weightKg }` | Weight trend with adaptive TDEE or log status |
+| `/api/water` | GET, POST | `?date=...`, `{ date, deltaGlasses }` | Water status (`{ glasses, targetGlasses, ml }`) |
+| `/api/weather` | GET, POST | `?region=Dhaka`, `{ region }` | Current weather/AQI or refreshed cached record |
+| `/api/coach` | POST | `{ message, lang, context, todayContext }` | Coach AI response with safety mode checks |
+| `/api/foods` | GET | `?q=...&limit=20`, `?id=...`, `?count=true` | Search results, single food, or total count |
+| `/api/ai/parse-meal` | POST | `{ text, candidates }` | Parsed items with matched staple IDs |
+| `/api/ai/analyze-photo` | POST | `{ imageBase64, candidates, platePreset }` | Identified food items with portion classes |
+
+---
+
 ## Error Handling Strategy
 
 | Failure | Behavior |

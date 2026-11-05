@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, api } from "@/lib/client/api";
 import { useI18n } from "@/lib/i18n";
 import { NoticeCard } from "@/components/shell/Banners";
-import { api } from "../../../convex/_generated/api";
 import { todayISO } from "@/lib/foods/search";
 import { formatKcal } from "@/lib/format";
 

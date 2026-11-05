@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, api } from "@/lib/client/api";
 import { useI18n } from "@/lib/i18n";
 import { SectionLabel, Range, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
@@ -21,7 +21,6 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
-import { api } from "../../../../convex/_generated/api";
 
 function parseD(date: string): Date {
   return new Date(`${date}T12:00:00Z`);

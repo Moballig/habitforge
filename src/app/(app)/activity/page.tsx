@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery, api } from "@/lib/client/api";
 import { useI18n } from "@/lib/i18n";
 import { SemiGauge } from "@/components/data/Charts";
 import { PastelTile, StatTile } from "@/components/data/Cards";
@@ -41,7 +41,6 @@ import {
   ListTodo,
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { api } from "../../../../convex/_generated/api";
 
 const WEEK_GOAL = 150; // WHO: 150 min moderate activity per week
 

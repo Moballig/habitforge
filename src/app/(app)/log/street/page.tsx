@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, api } from "@/lib/client/api";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { Button, Select, Field } from "@/components/forms/Forms";
 import { Range, SectionLabel, SourceTag, Chip } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
-import { api } from "../../../../../convex/_generated/api";
 import { todayISO } from "@/lib/foods/search";
 import type { MealSlot } from "@/lib/types";
 

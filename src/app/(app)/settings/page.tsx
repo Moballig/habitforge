@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, api } from "@/lib/client/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -9,7 +9,6 @@ import { Toggle } from "@/components/data/Cards";
 import { ConfirmDialog, SegmentedControl } from "@/components/forms/Forms";
 import { NoticeCard, SyncStatusPill } from "@/components/shell/Banners";
 import ThemeToggle from "@/components/ThemeToggle";
-import { api } from "../../../../convex/_generated/api";
 import {
   ChevronRight,
   Database,

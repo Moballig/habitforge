@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useQuery, api } from "@/lib/client/api";
 import { Send, Square } from "lucide-react";
-import { api } from "../../../../convex/_generated/api";
 import { useI18n } from "@/lib/i18n";
 import { COACH_SEED } from "@/lib/mock";
 import { embedQuery, type RagHit } from "@/lib/ai/rag";

@@ -23,16 +23,19 @@ flowchart TB
         UI <--> Eng
     end
 
-    subgraph Convex["Convex Cloud"]
-        Q["queries: foods, mealLogs, profile, ..."]
-        M["mutations: log meal, save profile, ..."]
-        A["actions: ai.*, rag.search (vectorSearch), parse/photo"]
+    subgraph NextServer["Next.js Backend (src/server & src/app/api)"]
+        SA["Server Actions: profile, meals, budget, coach, weather, ..."]
+        RH["Route Handlers: /api/profile, /api/meals, /api/activity, ..."]
+        CHC["ConvexHttpClient"]
+        SA --> CHC
+        RH --> SA
+    end
+
+    subgraph Convex["Convex Cloud (Data Store)"]
         Tables[(Convex Tables)]
         VI[("vectorIndex: ragChunks")]
-        Q --> Tables
-        M --> Tables
-        A --> Tables
-        A --> VI
+        CHC --> Tables
+        CHC --> VI
     end
 
     subgraph External["External Services"]

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, api } from "@/lib/client/api";
 import { useI18n } from "@/lib/i18n";
 import { CalorieRing, PlateBalance } from "@/components/data/Charts";
 import { SourceTag, Chip } from "@/components/data/Primitives";
@@ -24,7 +24,6 @@ import {
   Waves,
 } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
-import { api } from "../../../../convex/_generated/api";
 import { outdoorAdvice } from "@/lib/engine";
 import { nextMove } from "@/lib/engine/nextMove";
 import { calculateWaterProgress } from "@/lib/engine/water";

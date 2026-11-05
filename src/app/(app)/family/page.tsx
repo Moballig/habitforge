@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, api } from "@/lib/client/api";
 import { UserPlus, Users, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { api } from "../../../../convex/_generated/api";
 import { todayISO } from "@/lib/foods/search";
 import {
   buildFamilyMenu,
@@ -68,7 +67,7 @@ export default function FamilyPage() {
     );
   }
 
-  const members: FamilyMember[] = profile.familyMembers ?? [];
+  const members: FamilyMember[] = (profile.familyMembers as FamilyMember[]) ?? [];
   const baseKcal = budget.dailyTargetKcal;
   const you: FamilyMember = { id: "me", name: lang === "bn" ? "আপনি" : "You", relation: "adult" };
   const { menu, portions } = buildFamilyMenu(baseKcal, [you, ...members]);

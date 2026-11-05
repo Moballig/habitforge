@@ -1,10 +1,9 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, api } from "@/lib/client/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { api } from "../../../../convex/_generated/api";
 import { Button, Field, SegmentedControl, Select, StepperInput } from "@/components/forms/Forms";
 import { SegmentedProgress } from "@/components/data/Charts";
 import { SourceTag } from "@/components/data/Primitives";

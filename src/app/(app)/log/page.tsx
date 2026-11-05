@@ -1,11 +1,10 @@
 "use client";
 
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery, api } from "@/lib/client/api";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Camera, Mic, ScanBarcode, Search } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
   getOfflineFood,
@@ -231,7 +230,7 @@ export default function LogPage() {
     }
   }
 
-  async function deleteMeal(id: Id<"mealLogs">) {
+  async function deleteMeal(id: Id<"mealLogs"> | string) {
     await removeMeal({ id });
   }
 

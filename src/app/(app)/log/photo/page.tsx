@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, api } from "@/lib/client/api";
 import { Camera, RefreshCw, Upload } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { api } from "../../../../../convex/_generated/api";
 import { Button } from "@/components/forms/Forms";
 import { Chip, Range, SectionLabel, SourceTag } from "@/components/data/Primitives";
 import { NoticeCard } from "@/components/shell/Banners";
