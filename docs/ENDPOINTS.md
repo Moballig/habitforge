@@ -132,6 +132,7 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `profile.energy` | query | `key?` | `{ bmrKcal, tdeeKcal, floorKcal, allowsDeficit, ... }` | Deterministic; no LLM |
 | `profile.setBudgetControls` | mutation | `windowDays` (3–7), `intakeShare` (0.3–0.9) | null | FR-E-04: persisted on profile; `budget.get`/`whatIf` pass them to `rebalance()` |
 | `profile.saveFamilyMembers` | mutation | `members[]` (max 8: `id`, `name`, `relation`, `condition?`) | null | FR-G-06: persisted on profile; `/family` renders one menu with per-person portions via `lib/engine/family.ts` |
+| `profile.setWomenFriendlyPrivacy` | mutation | `key?`, `enabled` (boolean) | `{ ok, enabled }` | FR-D-07: sets modest home-only movement mode and house-wear privacy notes on profile |
 
 ### `foods` (Wave 1–2 — ✅ live, 318 rows)
 
@@ -171,13 +172,13 @@ Pure functions, shared client + Convex. **LLM never produces these numbers.**
 | `budget.get` | query | `today` (YYYY-MM-DD) | Live weekly aggregation from mealLogs → TDEE/gentle-change target → `rebalance()` plan; activity logs credited against excess (FR-REBAL-08); returns overshoot, safety mode, 7-day series, plan days, profile name. Replaces the planned `budget.state` + `budget.plan` split (plan is computed on read, no budgetState writes) |
 | `budget.whatIf` | query | `today`, `extraKcal` (0–10,000) | FR-E-08: same view as `budget.get` with simulated extra intake today (shared `computeBudget`); live on `/plan` stepper |
 
-### `weights` (Wave 3 — ✅ live, Nov 3)
+### `weights` (Wave 3 — ✅ live, Nov 3–5)
 
 | Function | Type | Args | Notes |
 |----------|------|------|-------|
-| `weights.add` | mutation | `key?`, date, weightKg (20–300) | Upsert per profile+date; feeds FR-ATDEE-* |
+| `weights.add` | mutation | `key?`, date, weightKg (20–300), `note?` | Upsert per profile+date; feeds FR-ATDEE-* and records optional event tags (`eid_feast`, `salty_meal`, `cycle`, `travel`, `illness`, `none`) for FR-E-10 |
 | `weights.remove` | mutation | `key?`, id | Key ownership check (same pattern as `mealLogs.remove`) |
-| `weights.trend` | query | `key?`, `today` | Last ≤14 days of weigh-ins (ascending) + `adaptiveTdee()` blend: estimate, confidence, status (formula/improving/settled), more-weigh-ins count, noise note; avg intake over the window. No profile → null |
+| `weights.trend` | query | `key?`, `today` | Last ≤14 days of weigh-ins (ascending) with `smoothedKg` (7-day rolling window) + `adaptiveTdee()` blend: estimate, confidence, status (formula/improving/settled), more-weigh-ins count, noise note; avg intake over the window. No profile → null |
 
 ### `activity` (Wave 4 — ✅ P0 live, Nov 3)
 

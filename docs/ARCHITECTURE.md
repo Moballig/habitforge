@@ -219,12 +219,13 @@ Browser `SpeechRecognition` is **Chrome-only (139+)**; Firefox/Safari unsupporte
 
 | Table | Key content | Indexes | Source |
 |-------|-------------|---------|--------|
-| `profiles` | Demographics, goal/pace, eating style, budget band, household, routine, **safetyScreen + safetyMode** (engine-derived), Asian BMI/band, waist/WHtR, homeRegion, calibrated plate/rice portion, consent | `by_key` | §6-A/G |
+| `profiles` | Demographics, goal/pace, eating style, budget band, household, routine, **safetyScreen + safetyMode** (engine-derived), Asian BMI/band, waist/WHtR, homeRegion, calibrated plate/rice portion, womenFriendlyPrivacy, consent | `by_key` | §6-A/G |
 | `foods` | `nameBn`, `nameEn`, `aliases[]`, per-100g values, `measures[{label, grams}]`, `sourceTag`, `isCooked`, optional `rangeLow/rangeHigh`, region tags | `by_name_en`, `by_source` | §4.1, §6-B/K |
 | `mealLogs` | Date/time, items + quantities, method (text/voice/photo/preset), editable result, confidence, source | `by_profile_and_date`, `by_date` | §6-B |
 | `activityLogs` | Type, duration, MET energy, net energy, source (manual/steps/preset) | `by_profile_and_date` | §6-D |
 | `budgetState` | **Reserved — not written.** Plan/target/overshoot computed on read by `budget.get` (FR-REBAL-08 credit included) | `by_profile_and_week` | §5.2 |
-| `weighIns` | Weight trend entries | `by_profile_and_date` | §3, §5.3 |
+| `weighIns` | Weight trend entries + context note (`eid_feast`, `salty_meal`, `cycle`, `travel`, `illness`, `none`) | `by_profile_and_date` | §3, §5.3 |
+| `waterLogs` | Daily hydration count in 250 ml glass units + timestamp | `by_profile_and_date` | §6-C |
 | `auditLogs` | Consent/AI audit trail | `by_profile` | §6-J |
 
 ### 5.2 Planned tables (later waves)
@@ -233,7 +234,7 @@ Browser `SpeechRecognition` is **Chrome-only (139+)**; Firefox/Safari unsupporte
 |-------|-------------|------|--------|
 | `measures` | Household standards from kitchen-scale session (bati S/M/L, spoons, glasses, ladle, plate diameters) | W2 | **Implemented inline** as `foods.measures[]` — no separate table |
 | `recipes` (user) | Per-serving values, owner label ("Amma's dal"), method | W2 | Corpus `recipes` table live (5,938 rows); user-authored fields pending |
-| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height | W3 | **`weighIns` live** (adaptive TDEE); notes/waist fields pending |
+| `healthMeasures` | Weight trend + notes (Eid, illness, travel, cycle), waist, waist-to-height | W3 | **`weighIns` live** with note tags and 7-day smoothing; waist fields pending |
 | `priceRecords` | Bazar price/kg by season (user-entered) | W5–6 | Corpus `priceObservations` live (34,491 WFP rows); user bazar entries pending |
 | `ragChunks` | Guidelines/FCTB/FAQ text + metadata (**section, page**, language, date) — vector-indexed | W5 | **✅ Live** — 9,447 chunks, keyword + 384-dim vector indexes |
 

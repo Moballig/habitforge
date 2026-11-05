@@ -457,8 +457,9 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-C-04 | Sodium/oil awareness | P1 | W3 | ⬜ | Planned |
 | FR-C-05 | Sugar as spoons | P1 | W3 | ⬜ | Planned |
 | FR-C-06 | Glycaemic load estimate | P1 | W3 | ⬜ | Planned |
-| FR-C-07 | Water intake | P1 | W4 | ⬜ | Planned |
+| FR-C-07 | Water intake | P1 | W4 | ✅ | `waterLogs` schema + `water.ts` (+250ml/undo, 8-glass goal) + interactive card on `/home` |
 | FR-C-08 | Dietary diversity score | P2 | W3 | ⬜ | Planned |
+
 
 #### D. Exercise & Activity
 
@@ -467,11 +468,11 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-D-01 | MET-based activity logging | P0 | W4 | ✅ | `mets.ts` + `convex/activity` + live `/activity` (tiles, gauge, chips) |
 | FR-D-02 | Manual steps entry | P0 | W4 | ✅ | steps input → `stepsToMinutes()` (~100/min), `source: "steps"` |
 | FR-D-03 | Net-calorie logic | P0 | W4 | ✅ | `metNetKcal()` |
-| FR-D-04 | No-equipment plans | P1 | W4 | ⬜ | Planned |
-| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | 🔄 | AQI + heat live (`weather.refresh` Open-Meteo → `outdoorAdvice` → indoor-first `/activity` + `exerciseRec` picks indoor types when gated); rain/load-shedding/daylight pending sources |
-| FR-D-06 | Prayer/Ramadan scheduling | P1 | W4/W6 | ⬜ | Planned |
-| FR-D-07 | Women-friendly privacy | P1 | W4 | ⬜ | Planned |
-| FR-D-08 | Beginner progression | P1 | W4 | ⬜ | Planned |
+| FR-D-04 | No-equipment plans | P1 | W4 | ✅ | `smallSpace.ts` (4 rooftop/apartment routines, low noise) + 1-tap logging on `/activity` |
+| FR-D-05 | Context-aware (AQI/heat) | P1 | W4 | 🔄 | AQI + heat live (`weather.refresh` Open-Meteo for 8 BD divisions → `outdoorAdvice` → indoor-first `/activity` + `exerciseRec` picks indoor types when gated); rain/load-shedding/daylight pending sources |
+| FR-D-06 | Prayer/Ramadan scheduling | P1 | W4/W6 | ✅ | `prayerTimes.ts` (deterministic 5 prayers for 8 BD divisions) + 4 safe activity slots on `/activity` |
+| FR-D-07 | Women-friendly privacy | P1 | W4 | ✅ | `womenFriendlyPrivacy` on profile + `exerciseRec` modest home/yoga routing + toggles on `/activity` & `/settings` |
+| FR-D-08 | Beginner progression | P1 | W4 | ✅ | `progression.ts` (4-wk 10→30 min walk schedule) + 4-tier activity pyramid guide + live active sparkline on `/activity` |
 | FR-D-09 | Gym-light strength | P2 | W4 | ⬜ | Planned |
 | FR-D-10 | Exercise safety warnings | P2 | W4 | ⬜ | Planned |
 
@@ -488,7 +489,8 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-E-07 | Adaptive TDEE + confidence | P1 | W3 | ✅ | `adaptiveTdee()` |
 | FR-E-08 | What-if simulator | P1 | W3 | ✅ | `budget.whatIf` query (extraKcal, clamped 0–10k) + live stepper on `/plan` |
 | FR-E-09 | Reverse mode | P1 | W3 | ✅ | Client-side on `/plan` ("To eat that on…"): date + extra kcal → `feastPreBank()` pre-bank days (no endpoint; engine-tested) |
-| FR-E-10 | Weight trend chart | P2 | W3 | ✅ | `weights.add`/`trend` + `AreaChart` on `/insights` |
+| FR-E-10 | Weight trend chart | P2 | W3 | ✅ | `weights.add`/`trend` + `smoothWeightTrend()` (7-day rolling window) + dual-line `AreaChart` + event notes (Eid/illness/cycle) on `/insights` |
+| FR-REBAL-09 | Post-feast recovery | P1 | W3 | ✅ | `postFeastRecovery()` in `rebalance.ts` (60% catch-up over 2–5 days without guilt or starvation) + interactive tabs on `/plan` |
 
 #### F. AI Coach
 
@@ -500,7 +502,7 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | FR-F-04 | Refusal/redirect rules | P0 | W5 | ✅ | 10/10 unsafe prompts calmly refused with safer alternative (`scripts/eval_wave5.mjs`): crash diet, fasting/insulin, compensation, purging, red flags, pills, diagnosis |
 | FR-F-05 | Meal suggestions (budget/season) | P1 | W5 | ⬜ | Planned |
 | FR-F-06 | Smart swaps | P1 | W5 | ⬜ | Planned |
-| FR-F-07 | Cheap-protein finder | P1 | W5 | ⬜ | Planned |
+| FR-F-07 | Cheap-protein finder | P1 | W5/W6 | ✅ | `proteinCost.ts` benchmarked against 2026 market prices + interactive protein-per-৳100 calculator on `/insights` |
 | FR-F-08 | Explain "why" | P1 | W5 | ⬜ | Templates |
 | FR-F-09 | Weekly review | P1 | W5 | ⬜ | Planned |
 | FR-F-10 | Proactive nudges | P2 | W5 | ⬜ | Planned |
@@ -511,9 +513,9 @@ Compact status view of every requirement ID. **Status legend:** ✅ Done · 🔄
 | ID | Requirement (short) | P | Wave | Status | Implementation |
 |----|---------------------|---|------|--------|----------------|
 | FR-G-01 | Deshi-first food intelligence | P0 | W1 | ✅ | 318-row seed |
-| FR-G-02 | Regional variants | P1 | W6 | ⬜ | `regionTags` in seed |
+| FR-G-02 | Regional variants | P1 | W6 | ✅ | `BD_REGIONS` in `context.ts` (8 administrative divisions) + `weather.refresh` Open-Meteo per division + onboarding/settings selector |
 | FR-G-03 | Plate personalisation | P1 | W6 | ⬜ | `calibratedPlate` in profile |
-| FR-G-04 | Ramadan mode | P1 | W6 | 🔄 | `lib/engine/ramadan.ts` (zero-deficit guardrail test) + `/insights` fasting mode (sehri/iftar pacing, hydration); light-exercise timing pending |
+| FR-G-04 | Ramadan mode | P1 | W6 | ✅ | `lib/engine/ramadan.ts` (zero-deficit guardrail test) + `/insights` fasting mode + `prayerTimes.ts` safe activity windows on `/activity` |
 | FR-G-05 | Taka weekly planner | P1 | W6 | ⬜ | Planned (carried — `docs/deferred.md`) |
 | FR-G-06 | Family/caregiver mode | P1 | W6 | ✅ | `lib/engine/family.ts` + `/family` — one menu, per-person portions, condition doctor notes; `profile.saveFamilyMembers`; 6 gate tests |
 | FR-G-07 | Festival calendar | P1 | W6 | ⬜ | Planned |

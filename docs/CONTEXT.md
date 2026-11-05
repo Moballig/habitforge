@@ -15,15 +15,15 @@
 | Item | Status |
 |------|--------|
 | **Product** | 🔄 Pivot to Deshi Health Companion — docs suite rewritten (SRS/Arch/Endpoints/Plan v3) |
-| **Current Phase** | **Waves 1–6 complete (all gates met); Deferred features in progress** — W6 gate: Ramadan zero-deficit guardrail, family mode `/family` (one menu, per-person portions), condition plates with doctor note; water tracking & BD division weather/AQI localization shipped |
+| **Current Phase** | **Waves 1–6 complete (all gates met); Deferred roadmap cleared** — W6 gate: Ramadan zero-deficit guardrail, family mode `/family` (one menu, per-person portions), condition plates with doctor note; water tracking (FR-C), BD 8-division weather/AQI (FR-D-05/G-02), prayer/Ramadan safe slots (FR-D-06), post-feast recovery (FR-REBAL-09), small-space apartment workouts (FR-D-04), women-friendly privacy mode (FR-D-07), beginner walk progression & activity pyramid (FR-D-08), weight-trend noise smoothing & notes (FR-E-10, FR-ATDEE-04) shipped |
 | **Day** | Day 5 (Nov 5, 2026) |
-| **Build Status** | ✅ `bun run build` passes 100% (21/21 static/dynamic routes), TypeScript check 0 errors, `bun test src/` 120/120 green |
-| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets + calorie-driven `nextMove` & `exerciseRec`; live hydration tile (+250ml/undo); live settings & right-panel |
-| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks`, `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`, `mealLogs`, `weighIns`, `profiles`, `waterLogs`, `weatherState` |
+| **Build Status** | ✅ `bun run build` passes 100% (21/21 static/dynamic routes), TypeScript check 0 errors, `bun test src/` 134/134 green across 16 test files |
+| **UI** | ✅ Full route set on Deshi design system; official "Built For Ostad Presents YUNet AIgnite Buildathon 2026" sticker on navbar & sidebar; condition plate presets + calorie-driven `nextMove` & `exerciseRec`; live hydration tile (+250ml/undo); live settings & right-panel; dual-line smoothed weight trend; 4-week walk progression |
+| **Convex Deployment** | ✅ `dev:disciplined-zebra-716` (project `habitforge`); schema live incl. `ragChunks`, `foodFacts`, `recipes`, `priceObservations`, `markets`, `nutritionIndicators`, `datasetSources`, `mealLogs`, `weighIns` (with event notes), `profiles` (with women-friendly privacy), `waterLogs`, `weatherState` |
 | **AI (Groq)** | ✅ `GROQ_API_KEY` on Convex; chat `openai/gpt-oss-120b`; vision `qwen/qwen3.8-27b`; **embeddings local** `Xenova/multilingual-e5-small` (384d) via `/api/embed` |
 | **P0 product surface** | ✅ Onboarding (with division selector), `/log`, `/plan`, `/home`, `/insights`, `/activity`, `/coach`, `/settings` all connected to live Convex backend with zero mock fixtures |
 | **PWA & Offline** | ✅ Service worker `public/sw.js` registered, offline food search across 318 Deshi staples, standalone manifest |
-| **Last Updated** | 2026-11-05 (Water tracking + BD 8-division coordinates & weather localization shipped; 120 tests green) |
+| **Last Updated** | 2026-11-05 (All Wave 3/4 deferred features completed: water, weather, prayer slots, feast recovery, small-space, women privacy, beginner progression, weight smoothing; 134 tests green) |
 
 ### Wave 1 gate (Nov 2, 2026) — MET
 
