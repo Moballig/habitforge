@@ -190,3 +190,86 @@ export function feastPreBank(opts: {
   const maxTrim = Math.max(0, opts.targetKcal - opts.floorKcal);
   return Math.round(Math.min(perDay, maxTrim));
 }
+
+export interface PostFeastPlanDay {
+  dayIndex: number;
+  trimKcal: number;
+  extraWalkMinutes: number;
+  activityNetKcal: number;
+  noteEn: string;
+  noteBn: string;
+}
+
+export interface PostFeastRecoveryResult {
+  coveredKcal: number;
+  totalOvershootKcal: number;
+  coveragePercent: number;
+  days: number;
+  dailyTrimKcal: number;
+  dailyWalkMinutes: number;
+  dailyActivityNetKcal: number;
+  schedule: PostFeastPlanDay[];
+  safeFloorProtected: boolean;
+}
+
+/**
+ * Post-feast recovery (rule 8 after-event counterpart):
+ * Generates a gentle 2–5 day catch-up plan after an unplanned feast/dawat.
+ * Respects 50–70% cover cap (never 100%), 60/40 food/activity split,
+ * personal BMR floor, and 200 kcal/day activity cap.
+ */
+export function postFeastRecovery(opts: {
+  overshootKcal: number;
+  recoveryDays?: number;
+  targetKcal: number;
+  floorKcal: number;
+  weightKg?: number;
+  coverShare?: number;
+}): PostFeastRecoveryResult {
+  const overshoot = Math.max(0, opts.overshootKcal);
+  const days = clamp(opts.recoveryDays ?? 3, 2, 5);
+  const cover = clamp(opts.coverShare ?? 0.6, 0.5, 0.7);
+  const totalToCover = Math.round(overshoot * cover);
+
+  // 60% intake trim, 40% light activity
+  const foodShareKcal = totalToCover * 0.6;
+  const activityShareKcal = totalToCover * 0.4;
+
+  const rawDailyTrim = Math.round(foodShareKcal / days);
+  const maxAllowableTrim = Math.max(0, opts.targetKcal - opts.floorKcal);
+  const dailyTrim = Math.min(rawDailyTrim, maxAllowableTrim);
+  const safeFloorProtected = rawDailyTrim > maxAllowableTrim;
+
+  const weight = opts.weightKg ?? 65;
+  const rawDailyActivityKcal = Math.round(activityShareKcal / days);
+  // Cap extra activity at 200 net kcal per day (rule 5)
+  const dailyActivityNet = Math.min(200, Math.max(0, rawDailyActivityKcal));
+
+  // Net kcal per minute for brisk walk (MET 4.3 -> net MET 3.3)
+  const kcalPerMinute = Math.max(1.5, (3.3 * weight) / 60);
+  const dailyWalkMinutes = Math.min(45, Math.max(10, Math.round(dailyActivityNet / kcalPerMinute)));
+
+  const schedule: PostFeastPlanDay[] = Array.from({ length: days }, (_, i) => ({
+    dayIndex: i + 1,
+    trimKcal: dailyTrim,
+    extraWalkMinutes: dailyWalkMinutes,
+    activityNetKcal: dailyActivityNet,
+    noteEn: `Day ${i + 1}: −${dailyTrim} kcal food trim + ${dailyWalkMinutes} min walk (≈${dailyActivityNet} kcal)`,
+    noteBn: `দিন ${i + 1}: −${dailyTrim} ক্যালরি খাবার সাশ্রয় + ${dailyWalkMinutes} মিনিট হাঁটা (≈${dailyActivityNet} ক্যালরি)`,
+  }));
+
+  const actualCovered = (dailyTrim + dailyActivityNet) * days;
+
+  return {
+    coveredKcal: actualCovered,
+    totalOvershootKcal: overshoot,
+    coveragePercent: Math.round(cover * 100),
+    days,
+    dailyTrimKcal: dailyTrim,
+    dailyWalkMinutes,
+    dailyActivityNetKcal: dailyActivityNet,
+    schedule,
+    safeFloorProtected,
+  };
+}
+

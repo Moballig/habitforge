@@ -8,7 +8,7 @@ import { NoticeCard, SafetyBanner } from "@/components/shell/Banners";
 import { Button } from "@/components/forms/Forms";
 import { todayISO } from "@/lib/foods/search";
 import { formatDayName, formatShortDate } from "@/lib/format";
-import { feastPreBank } from "@/lib/engine";
+import { feastPreBank, postFeastRecovery } from "@/lib/engine";
 import { Footprints, Utensils, HeartPulse, CalendarClock, Sparkles } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { api } from "../../../../convex/_generated/api";
@@ -40,6 +40,9 @@ export default function PlanPage() {
   const [extraMeals, setExtraMeals] = useState(1); // meal units of 600 kcal
   const [feastDate, setFeastDate] = useState("");
   const [feastExtra, setFeastExtra] = useState("800");
+  const [feastTab, setFeastTab] = useState<"pre" | "post">("pre");
+  const [postFeastOvershoot, setPostFeastOvershoot] = useState("800");
+  const [postFeastDays, setPostFeastDays] = useState(3);
   const sim = useQuery(
     api.budget.whatIf,
     extraMeals > 0 && today
@@ -104,6 +107,15 @@ export default function PlanPage() {
   const banked = perDay * daysBefore;
   const maxTrim = Math.max(0, budget.dailyTargetKcal - budget.floorKcal);
   const floorLimited = perDay > 0 && perDay >= maxTrim && (extra * 0.6) / daysBefore > maxTrim;
+
+  const postOvershootNum = Math.min(5000, Math.max(100, Number(postFeastOvershoot) || 800));
+  const postRecovery = postFeastRecovery({
+    overshootKcal: postOvershootNum,
+    recoveryDays: postFeastDays,
+    targetKcal: budget.dailyTargetKcal,
+    floorKcal: budget.floorKcal,
+    weightKg: 65,
+  });
 
   return (
     <div className="space-y-6">
@@ -310,52 +322,187 @@ export default function PlanPage() {
             </div>
           </section>
 
-          <section>
-            <SectionLabel>{t("plan.reverse")}</SectionLabel>
-            <div className="card space-y-4 p-5">
-              <div className="flex flex-wrap gap-3">
-                <label className="min-w-[10rem] flex-1">
-                  <span className="text-xs font-semibold text-ink/50">{t("plan.feastDate")}</span>
-                  <input
-                    type="date"
-                    value={feast}
-                    min={today}
-                    onChange={(e) => setFeastDate(e.target.value)}
-                    className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
-                  />
-                </label>
-                <label className="min-w-[10rem] flex-1">
-                  <span className="text-xs font-semibold text-ink/50">{t("plan.feastExtra")}</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={100}
-                    max={5000}
-                    step={50}
-                    value={feastExtra}
-                    onChange={(e) => setFeastExtra(e.target.value)}
-                    className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
-                  />
-                </label>
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <SectionLabel>{t("plan.feast")}</SectionLabel>
+              <div className="inline-flex rounded-full bg-surface-soft p-1">
+                <button
+                  type="button"
+                  onClick={() => setFeastTab("pre")}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                    feastTab === "pre" ? "bg-violet text-white shadow-sm" : "text-ink/60 hover:text-ink"
+                  }`}
+                >
+                  {lang === "bn" ? "ভোজের আগে সঞ্চয়" : "Pre-bank"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeastTab("post")}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                    feastTab === "post" ? "bg-violet text-white shadow-sm" : "text-ink/60 hover:text-ink"
+                  }`}
+                >
+                  {lang === "bn" ? "ভোজের পর পুনরুদ্ধার" : "Post-feast catch-up"}
+                </button>
               </div>
-              {perDay === 0 ? (
-                <p className="text-sm text-ink/50">{t("plan.pickFuture")}</p>
-              ) : (
-                <div className="flex flex-wrap items-center gap-3 rounded-tile bg-mint px-4 py-3 text-sm font-semibold text-mint-ink">
-                  <Sparkles size={16} />
-                  −{perDay} kcal/d × {daysBefore} d ≈ {banked} kcal {t("plan.banked")}
-                  <span className="font-normal opacity-70">
-                    {formatShortDate(today, lang)} → {formatShortDate(feast, lang)}
-                  </span>
-                </div>
-              )}
-              {floorLimited && (
-                <p className="text-xs text-ink/45">{t("plan.floor")}</p>
-              )}
-              <p className="text-xs text-ink/50">
-                {t("plan.feast")} · {formatShortDate(feast, lang)}
-              </p>
             </div>
+
+            {feastTab === "pre" ? (
+              <div className="card space-y-4 p-5">
+                <p className="text-xs text-ink/60">
+                  {lang === "bn"
+                    ? "সামনে কোনো অনুষ্ঠান বা দাওয়াত আছে? আগে থেকেই ছোট ছোট সঞ্চয় করে সপ্তাহের বাজেট ঠিক রাখুন।"
+                    : "Upcoming dawat or wedding? Bank a little each day beforehand so the feast stays inside your weekly budget."}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <label className="min-w-[10rem] flex-1">
+                    <span className="text-xs font-semibold text-ink/50">{t("plan.feastDate")}</span>
+                    <input
+                      type="date"
+                      value={feast}
+                      min={today}
+                      onChange={(e) => setFeastDate(e.target.value)}
+                      className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
+                    />
+                  </label>
+                  <label className="min-w-[10rem] flex-1">
+                    <span className="text-xs font-semibold text-ink/50">{t("plan.feastExtra")}</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={100}
+                      max={5000}
+                      step={50}
+                      value={feastExtra}
+                      onChange={(e) => setFeastExtra(e.target.value)}
+                      className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
+                    />
+                  </label>
+                </div>
+                {perDay === 0 ? (
+                  <p className="text-sm text-ink/50">{t("plan.pickFuture")}</p>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-3 rounded-tile bg-mint px-4 py-3 text-sm font-semibold text-mint-ink">
+                    <Sparkles size={16} />
+                    −{perDay} kcal/d × {daysBefore} d ≈ {banked} kcal {t("plan.banked")}
+                    <span className="font-normal opacity-70">
+                      {formatShortDate(today, lang)} → {formatShortDate(feast, lang)}
+                    </span>
+                  </div>
+                )}
+                {floorLimited && (
+                  <p className="text-xs text-ink/45">{t("plan.floor")}</p>
+                )}
+                <p className="text-xs text-ink/50">
+                  {t("plan.feast")} · {formatShortDate(feast, lang)}
+                </p>
+              </div>
+            ) : (
+              <div className="card space-y-4 p-5">
+                <div>
+                  <h3 className="text-sm font-bold">
+                    {lang === "bn" ? "দাওয়াত বা ভারী খাবারের পর সহমর্মী প্ল্যান" : "Gentle Post-Dawat Catch-Up Plan"}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-ink/60">
+                    {lang === "bn"
+                      ? "কোনো অপরাধবোধ বা উপবাস নয়। ৬০% অতিরিক্ত ক্যালরি ২–৫ দিনে হালকা খাবার সাশ্রয় ও হাঁটায় সমন্বয় করা হবে।"
+                      : "No guilt, no crash starvation. Covers ~60% across 2–5 days through modest meal trims and light walking."}
+                  </p>
+                </div>
+
+                {/* Quick preset chips */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-ink/50">{lang === "bn" ? "দ্রুত বাছাই:" : "Presets:"}</span>
+                  {[
+                    { label: "500 kcal (Biriyani)", val: "500" },
+                    { label: "800 kcal (Wedding Dawat)", val: "800" },
+                    { label: "1200 kcal (Eid Feast)", val: "1200" },
+                  ].map((p) => (
+                    <button
+                      key={p.val}
+                      type="button"
+                      onClick={() => setPostFeastOvershoot(p.val)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                        postFeastOvershoot === p.val
+                          ? "bg-violet text-white"
+                          : "bg-surface-soft text-ink/70 hover:bg-surface-soft/80"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <label className="min-w-[10rem] flex-1">
+                    <span className="text-xs font-semibold text-ink/50">
+                      {lang === "bn" ? "অতিরিক্ত ক্যালরি (আনুমানিক)" : "Estimated excess kcal"}
+                    </span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={100}
+                      max={5000}
+                      step={50}
+                      value={postFeastOvershoot}
+                      onChange={(e) => setPostFeastOvershoot(e.target.value)}
+                      className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num tabular outline-none focus:border-violet"
+                    />
+                  </label>
+                  <label className="min-w-[10rem] flex-1">
+                    <span className="text-xs font-semibold text-ink/50">
+                      {lang === "bn" ? "পুনরুদ্ধার সময়কাল" : "Recovery spread window"}
+                    </span>
+                    <select
+                      value={postFeastDays}
+                      onChange={(e) => setPostFeastDays(Number(e.target.value))}
+                      className="mt-1 w-full rounded-tile border border-line bg-white px-3 py-2.5 font-num outline-none focus:border-violet"
+                    >
+                      <option value={2}>2 {lang === "bn" ? "দিন" : "days"}</option>
+                      <option value={3}>3 {lang === "bn" ? "দিন (সুপারিশকৃত)" : "days (recommended)"}</option>
+                      <option value={4}>4 {lang === "bn" ? "দিন" : "days"}</option>
+                      <option value={5}>5 {lang === "bn" ? "দিন (অতি মৃদু)" : "days (gentle)"}</option>
+                    </select>
+                  </label>
+                </div>
+
+                {/* Summary banner */}
+                <div className="rounded-tile bg-violet/10 p-3.5 text-xs text-ink/80 space-y-1">
+                  <p className="font-bold text-violet">
+                    {lang === "bn"
+                      ? `মোট সাশ্রয়: ~${postRecovery.coveredKcal} ক্যালরি (${postRecovery.coveragePercent}% কভার) · দৈনিক −${postRecovery.dailyTrimKcal} খাবার + ${postRecovery.dailyWalkMinutes} মিনিট হাঁটা`
+                      : `Target recovery: ~${postRecovery.coveredKcal} kcal (${postRecovery.coveragePercent}% cover) · Daily −${postRecovery.dailyTrimKcal} food + ${postRecovery.dailyWalkMinutes} min walk`}
+                  </p>
+                  <p className="text-ink/60">
+                    {lang === "bn"
+                      ? "কখনই আপনার BMR ফ্লোরের নিচে নামানো হবে না। বাকি ক্যালরি সাপ্তাহিক স্বাভাবিক মেটাবলিজম নিজেই সামলে নেবে।"
+                      : "Never pushes below your personal BMR floor. The weekly trend easily handles the rest without starvation."}
+                  </p>
+                </div>
+
+                {/* Day-by-day plan breakdown */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-ink/50">
+                    {lang === "bn" ? "দৈনিক কর্মপরিকল্পনা:" : "Daily action plan:"}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {postRecovery.schedule.map((day) => (
+                      <div key={day.dayIndex} className="rounded-card border border-border bg-surface-soft/60 p-3">
+                        <p className="text-xs font-bold text-violet">
+                          {lang === "bn" ? `দিন ${day.dayIndex}` : `Day ${day.dayIndex}`}
+                        </p>
+                        <p className="mt-1 text-xs text-ink/75">
+                          🥗 −{day.trimKcal} kcal {lang === "bn" ? "খাবার" : "food"}
+                        </p>
+                        <p className="text-xs text-ink/75">
+                          🚶‍♂️ +{day.extraWalkMinutes} min {lang === "bn" ? "হাঁটা" : "walk"} (≈{day.activityNetKcal} kcal)
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="flex flex-wrap gap-3">

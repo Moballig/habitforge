@@ -5,6 +5,7 @@ import {
   asianBmiBand,
   bmr,
   feastPreBank,
+  postFeastRecovery,
   gentleDeficitKcal,
   DEFAULT_MINUTES,
   metNetKcal,
@@ -433,7 +434,7 @@ describe("gate: Friday biriyani", () => {
   });
 });
 
-// ─── Gate: feast pre-bank (Wave 3) ───────────────────────
+// ─── Gate: feast pre-bank & post-feast recovery (Wave 3) ───
 describe("gate: feast pre-bank", () => {
   test("per-day trim ≤ target − floor so feast week stays above floor", () => {
     // 2400 extra × 0.6 cover / 4 days = 360 ≤ headroom 500
@@ -448,6 +449,37 @@ describe("gate: feast pre-bank", () => {
     expect(
       feastPreBank({ feastExtraKcal: 1000, daysBefore: 3, floorKcal: 1800, targetKcal: 1800 }),
     ).toBe(0);
+  });
+
+  test("post-feast recovery covers 60% of wedding dawat overshoot over 3 days without punishment", () => {
+    const res = postFeastRecovery({
+      overshootKcal: 800,
+      recoveryDays: 3,
+      targetKcal: 2000,
+      floorKcal: 1500,
+      weightKg: 65,
+    });
+
+    expect(res.totalOvershootKcal).toBe(800);
+    expect(res.coveragePercent).toBe(60);
+    expect(res.days).toBe(3);
+    expect(res.dailyTrimKcal).toBe(96); // 800 * 0.6 * 0.6 / 3 = 96 kcal
+    expect(res.dailyActivityNetKcal).toBe(64); // 800 * 0.6 * 0.4 / 3 = 64 kcal
+    expect(res.dailyWalkMinutes).toBeGreaterThanOrEqual(15);
+    expect(res.schedule.length).toBe(3);
+    expect(res.safeFloorProtected).toBe(false);
+  });
+
+  test("post-feast recovery clamps daily trim to target - floor headroom", () => {
+    const res = postFeastRecovery({
+      overshootKcal: 3000,
+      recoveryDays: 2,
+      targetKcal: 1600,
+      floorKcal: 1550, // headroom only 50 kcal
+    });
+
+    expect(res.dailyTrimKcal).toBe(50);
+    expect(res.safeFloorProtected).toBe(true);
   });
 });
 
